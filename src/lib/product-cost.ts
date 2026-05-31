@@ -35,28 +35,58 @@ export async function resolveProductCost(
     throw new Error(`Product not found: ${productId}`);
   }
 
-  // Resolve per-sponge cost: yield-based when available, else fallback.
+  // ── Pre-fetch every ProductSponge row we'll need to evaluate the yield
+  //    plans, in a single round-trip. Before this change each yield entry
+  //    fired its own SELECT, producing an N+1 storm on product pages with
+  //    multiple sponges. Now the loops below resolve from an in-memory map.
+  const yieldLookupKeys = new Set<string>(); // "<productId>:<spongeId>"
+  for (const ps of product.sponges) {
+    if (ps.sponge.yields.length > 0 && ps.sponge.yields.some((y) => y.productId === product.id)) {
+      for (const y of ps.sponge.yields) {
+        yieldLookupKeys.add(`${y.productId}:${ps.sponge.id}`);
+      }
+    }
+  }
+  const cutVolByKey = new Map<string, number>();
+  if (yieldLookupKeys.size > 0) {
+    const productIds = new Set<string>();
+    const spongeIds  = new Set<string>();
+    for (const k of yieldLookupKeys) {
+      const [p, s] = k.split(":");
+      productIds.add(p);
+      spongeIds.add(s);
+    }
+    const rows = await prisma.productSponge.findMany({
+      where: {
+        productId: { in: [...productIds] },
+        spongeId:  { in: [...spongeIds] },
+      },
+      select: {
+        productId: true, spongeId: true,
+        cutWidthCm: true, cutDepthCm: true, cutHeightCm: true, cuts: true,
+      },
+    });
+    for (const r of rows) {
+      cutVolByKey.set(`${r.productId}:${r.spongeId}`, cutVolumeCm3(r));
+    }
+  }
+
+  // ── Per-sponge cost: yield-based when available, else fallback.
+  //    No async work needed here anymore — all data is pre-loaded.
   const spongeInputs: ProductCostInput["sponges"] = [];
-  const yieldSpongeCosts: number[] = []; // dollar-cost contributions from yield-based blocks
+  const yieldSpongeCosts: number[] = [];
 
   for (const ps of product.sponges) {
     const yields = ps.sponge.yields;
     const hasMe = yields.some((y) => y.productId === product.id);
 
     if (yields.length > 0 && hasMe) {
-      // Yield-based: compute the per-unit cost directly.
-      const entries: BlockYieldEntry[] = await Promise.all(
-        yields.map(async (y) => ({
-          productId: y.productId,
-          unitsPerBlock: y.unitsPerBlock,
-          cutVolumePerUnit: await cutVolumeForProductFromBlock(
-            y.productId,
-            ps.sponge.id,
-          ),
-        })),
-      );
-      const perUnit = spongeCostFromYield(ps.sponge, product.id, entries);
-      yieldSpongeCosts.push(perUnit);
+      const entries: BlockYieldEntry[] = yields.map((y) => ({
+        productId: y.productId,
+        unitsPerBlock: y.unitsPerBlock,
+        cutVolumePerUnit: cutVolByKey.get(`${y.productId}:${ps.sponge.id}`) ?? 0,
+      }));
+      yieldSpongeCosts.push(spongeCostFromYield(ps.sponge, product.id, entries));
     } else {
       // No yield plan → use per-product allocation. If the user set a manual
       // `unitsPerBlockOverride` on the BOM line, it takes precedence over the
@@ -83,11 +113,22 @@ export async function resolveProductCost(
     }
   }
 
-  // Resolve cost contributions from sub-products (composition / bundle).
+  // ── Resolve sub-product cost contributions in parallel rather than serially
+  //    so a product with N children pays max(child_time) instead of sum.
   let compositionCost = 0;
-  for (const c of product.compositions ?? []) {
-    const child = await resolveProductCost(c.childProductId, new Set(visited));
-    compositionCost += child.breakdown.totalCost * c.quantity;
+  if ((product.compositions ?? []).length > 0) {
+    const childResults = await Promise.all(
+      product.compositions.map((c) =>
+        resolveProductCost(c.childProductId, new Set(visited)).then((res) => ({
+          totalCost: res.breakdown.totalCost,
+          quantity: c.quantity,
+        })),
+      ),
+    );
+    compositionCost = childResults.reduce(
+      (acc, r) => acc + r.totalCost * r.quantity,
+      0,
+    );
   }
 
   const input: ProductCostInput & { compositionCost: number } = {
@@ -145,27 +186,6 @@ export async function resolveProductCost(
   };
 
   return { product, breakdown };
-}
-
-/**
- * Volume of one cut of `productId` taken from `spongeId` — looks up the
- * matching ProductSponge row. Returns 0 if the product doesn't have a BOM
- * line for that block.
- */
-async function cutVolumeForProductFromBlock(
-  productId: string,
-  spongeId: string,
-): Promise<number> {
-  const row = await prisma.productSponge.findFirst({
-    where: { productId, spongeId },
-  });
-  if (!row) return 0;
-  return cutVolumeCm3({
-    cutWidthCm: row.cutWidthCm,
-    cutDepthCm: row.cutDepthCm,
-    cutHeightCm: row.cutHeightCm,
-    cuts: row.cuts,
-  });
 }
 
 function round(n: number) {
