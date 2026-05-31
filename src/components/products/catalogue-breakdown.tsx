@@ -97,13 +97,13 @@ export function CatalogueBreakdown({
   const priceWithVat = priceCost * (1 + vatRate);
 
   return (
-    <article className="rounded-2xl border bg-[#F2ECE2] p-6 text-[#332919] dark:bg-sand-900 dark:text-sand-50 md:p-8">
+    <article className="rounded-2xl border bg-[#F2ECE2] p-4 text-[#332919] dark:bg-sand-900 dark:text-sand-50 sm:p-6 md:p-8">
       {/* ── Header ───────────────────────────────────────────────── */}
       <header className="space-y-1.5">
-        <div className="font-display text-2xl italic tracking-tight text-[#5a4a36] dark:text-sand-200">
+        <div className="font-display text-xl italic tracking-tight text-[#5a4a36] dark:text-sand-200 sm:text-2xl">
           Sponge Couch
         </div>
-        <h2 className="font-display text-3xl font-bold uppercase tracking-tight md:text-4xl">
+        <h2 className="font-display text-2xl font-bold uppercase tracking-tight sm:text-3xl md:text-4xl">
           Cost Breakdown
         </h2>
         <div className="pt-2 font-display italic text-[#5a4a36] dark:text-sand-200">
@@ -136,15 +136,15 @@ export function CatalogueBreakdown({
           ) : (
             spongeRows.map((r) => (
               <tr key={r.key}>
-                <td className="py-2 px-3 font-medium">{r.type}</td>
-                <td className="py-2 px-3 tabular-nums">{r.blockDims}</td>
-                <td className="py-2 px-3 text-right tabular-nums">
+                <td className="py-1.5 px-2 sm:py-2 sm:px-3 font-medium">{r.type}</td>
+                <td className="py-1.5 px-2 sm:py-2 sm:px-3 tabular-nums">{r.blockDims}</td>
+                <td className="py-1.5 px-2 sm:py-2 sm:px-3 text-right tabular-nums">
                   {formatNumber(r.blockCost)}
                 </td>
-                <td className="py-2 px-3 text-right tabular-nums">
+                <td className="py-1.5 px-2 sm:py-2 sm:px-3 text-right tabular-nums">
                   {r.units || "—"}
                 </td>
-                <td className="py-2 px-3 text-right tabular-nums font-semibold">
+                <td className="py-1.5 px-2 sm:py-2 sm:px-3 text-right tabular-nums font-semibold">
                   {formatNumber(r.perUnit)}
                 </td>
               </tr>
@@ -160,12 +160,12 @@ export function CatalogueBreakdown({
           ) : (
             fabricRows.map((r) => (
               <tr key={r.key}>
-                <td className="py-2 px-3 font-medium">{r.name}</td>
-                <td className="py-2 px-3 tabular-nums">{r.meters} m</td>
-                <td className="py-2 px-3 text-right tabular-nums">
+                <td className="py-1.5 px-2 sm:py-2 sm:px-3 font-medium">{r.name}</td>
+                <td className="py-1.5 px-2 sm:py-2 sm:px-3 tabular-nums">{r.meters} m</td>
+                <td className="py-1.5 px-2 sm:py-2 sm:px-3 text-right tabular-nums">
                   {formatNumber(r.costPerMeter)}
                 </td>
-                <td className="py-2 px-3 text-right tabular-nums font-semibold">
+                <td className="py-1.5 px-2 sm:py-2 sm:px-3 text-right tabular-nums font-semibold">
                   {formatNumber(r.lineCost)}
                 </td>
               </tr>
@@ -186,19 +186,19 @@ export function CatalogueBreakdown({
           ]}
         >
           <tr>
-            <td className="py-2 px-3 text-center tabular-nums">
+            <td className="py-1.5 px-2 sm:py-2 sm:px-3 text-center tabular-nums">
               {formatNumber(additional)}
             </td>
-            <td className="py-2 px-3 text-center tabular-nums">
+            <td className="py-1.5 px-2 sm:py-2 sm:px-3 text-center tabular-nums">
               {formatNumber(fiber)}
             </td>
-            <td className="py-2 px-3 text-center tabular-nums">
+            <td className="py-1.5 px-2 sm:py-2 sm:px-3 text-center tabular-nums">
               {formatNumber(packaging)}
             </td>
-            <td className="py-2 px-3 text-center tabular-nums">
+            <td className="py-1.5 px-2 sm:py-2 sm:px-3 text-center tabular-nums">
               {formatNumber(susta)}
             </td>
-            <td className="py-2 px-3 text-center tabular-nums font-display text-lg font-bold text-[#a8331a] dark:text-rose-300">
+            <td className="py-1.5 px-2 sm:py-2 sm:px-3 text-center tabular-nums font-display text-lg font-bold text-[#a8331a] dark:text-rose-300">
               {formatNumber(totalCost)}
             </td>
           </tr>
@@ -221,17 +221,17 @@ export function CatalogueBreakdown({
               const childCost = childCosts[c.childProductId] ?? 0;
               return (
                 <tr key={c.id}>
-                  <td className="py-2 px-3 font-medium">{c.child.name}</td>
-                  <td className="py-2 px-3 tabular-nums text-muted-foreground">
+                  <td className="py-1.5 px-2 sm:py-2 sm:px-3 font-medium">{c.child.name}</td>
+                  <td className="py-1.5 px-2 sm:py-2 sm:px-3 tabular-nums text-muted-foreground">
                     {c.child.sku}
                   </td>
-                  <td className="py-2 px-3 text-right tabular-nums">
+                  <td className="py-1.5 px-2 sm:py-2 sm:px-3 text-right tabular-nums">
                     {c.quantity}
                   </td>
-                  <td className="py-2 px-3 text-right tabular-nums text-muted-foreground">
+                  <td className="py-1.5 px-2 sm:py-2 sm:px-3 text-right tabular-nums text-muted-foreground">
                     {formatNumber(childCost)}
                   </td>
-                  <td className="py-2 px-3 text-right tabular-nums font-semibold">
+                  <td className="py-1.5 px-2 sm:py-2 sm:px-3 text-right tabular-nums font-semibold">
                     {formatNumber(childCost * c.quantity)}
                   </td>
                 </tr>
@@ -275,13 +275,19 @@ function CatalogueTable({
   headers: string[];
   children: React.ReactNode;
 }) {
+  // `overflow-x-auto` + `min-w-max` together preserve natural column widths
+  // and let the user horizontally swipe the table on mobile instead of
+  // seeing columns get squashed to unreadable widths.
   return (
-    <div className="overflow-hidden rounded-lg border border-[#d6c4a6] bg-white text-sm dark:border-sand-700 dark:bg-sand-800">
-      <table className="w-full">
-        <thead className="bg-[#FAF7F2] text-[10px] uppercase tracking-wider text-[#5a4a36] dark:bg-sand-700 dark:text-sand-100">
+    <div className="overflow-x-auto rounded-lg border border-[#d6c4a6] bg-white text-xs sm:text-sm dark:border-sand-700 dark:bg-sand-800 scrollbar-thin">
+      <table className="w-full min-w-max">
+        <thead className="bg-[#FAF7F2] text-[9px] uppercase tracking-wider text-[#5a4a36] sm:text-[10px] dark:bg-sand-700 dark:text-sand-100">
           <tr>
             {headers.map((h) => (
-              <th key={h} className="py-2 px-3 text-left font-semibold">
+              <th
+                key={h}
+                className="whitespace-nowrap py-1.5 px-2 text-left font-semibold sm:py-2 sm:px-3"
+              >
                 {h}
               </th>
             ))}

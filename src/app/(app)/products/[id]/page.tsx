@@ -324,13 +324,18 @@ export default async function ProductDetailPage({ params }: PageProps) {
       </div>
 
       <Tabs defaultValue="catalogue">
-        <TabsList>
-          <TabsTrigger value="catalogue">Catalogue</TabsTrigger>
-          <TabsTrigger value="sponges">Sponge cuts</TabsTrigger>
-          <TabsTrigger value="fabrics">Fabric</TabsTrigger>
-          <TabsTrigger value="bulk">Fiber & packaging</TabsTrigger>
-          <TabsTrigger value="manufacturing">Manufacturing</TabsTrigger>
-        </TabsList>
+        {/* Horizontally scrollable on mobile so "Fiber & packaging" and
+         *  "Manufacturing" don't get clipped at the right edge. The native
+         *  scrollbar is hidden — users swipe to reach the off-screen tabs. */}
+        <div className="-mx-4 overflow-x-auto px-4 scrollbar-thin sm:mx-0 sm:px-0">
+          <TabsList className="inline-flex w-auto">
+            <TabsTrigger value="catalogue">Catalogue</TabsTrigger>
+            <TabsTrigger value="sponges">Sponge cuts</TabsTrigger>
+            <TabsTrigger value="fabrics">Fabric</TabsTrigger>
+            <TabsTrigger value="bulk">Fiber & packaging</TabsTrigger>
+            <TabsTrigger value="manufacturing">Manufacturing</TabsTrigger>
+          </TabsList>
+        </div>
 
         <TabsContent value="catalogue">
           <CatalogueBreakdown
