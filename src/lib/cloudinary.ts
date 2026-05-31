@@ -28,6 +28,10 @@ interface UploadOpts {
   resourceType?: ResourceKind;
   /** When true, an existing asset at the same publicId is overwritten. */
   overwrite?: boolean;
+  /** Force a specific stored format (e.g. "pdf"). Useful when the source
+   *  shares a binary signature with another format Cloudinary may prefer
+   *  (PDF vs AI both begin with `%PDF-`, so we have to be explicit). */
+  format?: string;
 }
 
 /**
@@ -48,6 +52,7 @@ export async function uploadBuffer(
         overwrite: opts.overwrite ?? false,
         use_filename: !opts.publicId, // ignore when publicId is fixed
         unique_filename: !opts.publicId,
+        ...(opts.format ? { format: opts.format } : {}),
       },
       (err, res) => {
         if (err || !res) return reject(err ?? new Error("Empty response"));
@@ -128,10 +133,17 @@ export async function deleteByUrl(url: string | null | undefined): Promise<boole
   }
 }
 
-/** Picks the right Cloudinary resource kind given a MIME type. */
+/** Picks the right Cloudinary resource kind given a MIME type.
+ *
+ *  PDFs are deliberately routed to `image` even though they're documents:
+ *  Cloudinary's image pipeline treats PDF as a first-class format with
+ *  proper `Content-Type: application/pdf` + `Content-Disposition: inline`,
+ *  so the browser previews them in an <iframe>. Uploading PDFs as `raw`
+ *  serves them as `application/octet-stream` and forces a download. */
 export function resourceKindFor(mime: string | undefined): ResourceKind {
   if (!mime) return "raw";
   if (mime.startsWith("image/")) return "image";
+  if (mime === "application/pdf") return "image";
   if (mime.startsWith("video/")) return "video";
-  return "raw"; // PDF, DWG, DXF, etc.
+  return "raw"; // DWG, DXF, etc. — keep original bytes, accept download UX.
 }

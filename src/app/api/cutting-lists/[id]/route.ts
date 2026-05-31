@@ -78,9 +78,15 @@ export const PATCH = withApi(async (
         `Unsupported file "${fileEntry.name}" (${fileEntry.type || "no MIME type"}). Use PDF, image, or AutoCAD DWG/DXF.`,
       );
     }
+    // Same PDF-vs-AI pinning as the POST route.
+    const replaceFormat = fileEntry.type === "application/pdf" ? "pdf" : undefined;
     const uploaded = await uploadBuffer(
       Buffer.from(await fileEntry.arrayBuffer()),
-      { folder, resourceType: resourceKindFor(fileEntry.type) },
+      {
+        folder,
+        resourceType: resourceKindFor(fileEntry.type),
+        format: replaceFormat,
+      },
     );
     newFilePath = uploaded.url;
     newFileName = fileEntry.name;

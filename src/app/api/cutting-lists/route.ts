@@ -95,9 +95,13 @@ export const POST = withApi(async (req: NextRequest) => {
   // on download. Images go as `image` so transformations stay available.
   const folder = `cutting-lists/${productId}`;
   const mainResource = resourceKindFor(file.type);
+  // PDFs share their binary signature with Adobe Illustrator; pin the format
+  // so Cloudinary stores them as .pdf and serves Content-Type: application/pdf.
+  const mainFormat = file.type === "application/pdf" ? "pdf" : undefined;
   const mainUpload = await uploadBuffer(Buffer.from(await file.arrayBuffer()), {
     folder,
     resourceType: mainResource,
+    format: mainFormat,
   });
 
   let thumbnailPath: string | undefined;
