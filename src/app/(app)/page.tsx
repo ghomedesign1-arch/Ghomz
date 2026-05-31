@@ -181,8 +181,11 @@ export default async function DashboardHome({
               <TableHeader>
                 <TableRow>
                   <TableHead>Product</TableHead>
-                  <TableHead className="text-right">Retail</TableHead>
-                  <TableHead className="text-right">Unit cost</TableHead>
+                  {/* Retail + Unit cost are reference numbers — hide on
+                   *  mobile so Product / Profit / Margin stay fully visible
+                   *  without the user having to swipe-scroll the table. */}
+                  <TableHead className="hidden text-right sm:table-cell">Retail</TableHead>
+                  <TableHead className="hidden text-right sm:table-cell">Unit cost</TableHead>
                   <TableHead className="text-right">Profit</TableHead>
                   <TableHead className="text-right">Margin</TableHead>
                 </TableRow>
@@ -195,11 +198,17 @@ export default async function DashboardHome({
                       <div className="text-xs text-muted-foreground">
                         {p.sku}
                       </div>
+                      {/* On mobile, fold Retail + Unit cost into a small
+                       *  secondary line under the SKU so the data isn't lost. */}
+                      <div className="mt-1 flex gap-3 text-[11px] text-muted-foreground sm:hidden">
+                        <span>Retail {formatLE(p.retail)}</span>
+                        <span>Cost {formatLE(p.cost)}</span>
+                      </div>
                     </TableCell>
-                    <TableCell className="text-right tabular-nums">
+                    <TableCell className="hidden text-right tabular-nums sm:table-cell">
                       {formatLE(p.retail)}
                     </TableCell>
-                    <TableCell className="text-right tabular-nums text-muted-foreground">
+                    <TableCell className="hidden text-right tabular-nums text-muted-foreground sm:table-cell">
                       {formatLE(p.cost)}
                     </TableCell>
                     <TableCell
