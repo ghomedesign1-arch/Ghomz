@@ -39,27 +39,39 @@ export async function resolveProductCost(
   //    plans, in a single round-trip. Before this change each yield entry
   //    fired its own SELECT, producing an N+1 storm on product pages with
   //    multiple sponges. Now the loops below resolve from an in-memory map.
-  const yieldLookupKeys = new Set<string>(); // "<productId>:<spongeId>"
+  //
+  // Note: we use Array helpers (filter / Object.keys) rather than `[...new Set()]`
+  // because the project's tsconfig doesn't set `target` (defaults to ES3) and
+  // Set spread requires ES2015+ or `downlevelIteration`.
+  const yieldLookupKeys: string[] = []; // "<productId>:<spongeId>"
+  const seenKeys: Record<string, true> = {};
   for (const ps of product.sponges) {
-    if (ps.sponge.yields.length > 0 && ps.sponge.yields.some((y) => y.productId === product.id)) {
+    if (
+      ps.sponge.yields.length > 0 &&
+      ps.sponge.yields.some((y) => y.productId === product.id)
+    ) {
       for (const y of ps.sponge.yields) {
-        yieldLookupKeys.add(`${y.productId}:${ps.sponge.id}`);
+        const key = `${y.productId}:${ps.sponge.id}`;
+        if (!seenKeys[key]) {
+          seenKeys[key] = true;
+          yieldLookupKeys.push(key);
+        }
       }
     }
   }
-  const cutVolByKey = new Map<string, number>();
-  if (yieldLookupKeys.size > 0) {
-    const productIds = new Set<string>();
-    const spongeIds  = new Set<string>();
+  const cutVolByKey: Record<string, number> = {};
+  if (yieldLookupKeys.length > 0) {
+    const productIdSet: Record<string, true> = {};
+    const spongeIdSet:  Record<string, true> = {};
     for (const k of yieldLookupKeys) {
       const [p, s] = k.split(":");
-      productIds.add(p);
-      spongeIds.add(s);
+      productIdSet[p] = true;
+      spongeIdSet[s]  = true;
     }
     const rows = await prisma.productSponge.findMany({
       where: {
-        productId: { in: [...productIds] },
-        spongeId:  { in: [...spongeIds] },
+        productId: { in: Object.keys(productIdSet) },
+        spongeId:  { in: Object.keys(spongeIdSet)  },
       },
       select: {
         productId: true, spongeId: true,
@@ -67,7 +79,7 @@ export async function resolveProductCost(
       },
     });
     for (const r of rows) {
-      cutVolByKey.set(`${r.productId}:${r.spongeId}`, cutVolumeCm3(r));
+      cutVolByKey[`${r.productId}:${r.spongeId}`] = cutVolumeCm3(r);
     }
   }
 
@@ -84,7 +96,7 @@ export async function resolveProductCost(
       const entries: BlockYieldEntry[] = yields.map((y) => ({
         productId: y.productId,
         unitsPerBlock: y.unitsPerBlock,
-        cutVolumePerUnit: cutVolByKey.get(`${y.productId}:${ps.sponge.id}`) ?? 0,
+        cutVolumePerUnit: cutVolByKey[`${y.productId}:${ps.sponge.id}`] ?? 0,
       }));
       yieldSpongeCosts.push(spongeCostFromYield(ps.sponge, product.id, entries));
     } else {
