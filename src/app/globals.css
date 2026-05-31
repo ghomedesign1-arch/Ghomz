@@ -1,0 +1,124 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* G-Homz brand theme — warm sand light / deep espresso dark */
+
+@layer base {
+  :root {
+    --background: 36 30% 97%;
+    --foreground: 28 25% 12%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 28 25% 12%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 28 25% 12%;
+
+    --primary: 0 0% 0%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 36 25% 92%;
+    --secondary-foreground: 28 30% 18%;
+
+    --muted: 36 20% 94%;
+    --muted-foreground: 28 12% 42%;
+
+    --accent: 32 50% 60%;
+    --accent-foreground: 28 30% 12%;
+
+    --destructive: 0 70% 48%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 30 20% 88%;
+    --input: 30 20% 88%;
+    --ring: 0 0% 10%;
+
+    --radius: 0.9rem;
+
+    --chart-1: 28 55% 45%;
+    --chart-2: 38 70% 60%;
+    --chart-3: 200 30% 50%;
+    --chart-4: 150 25% 45%;
+    --chart-5: 12 65% 55%;
+  }
+
+  .dark {
+    --background: 26 18% 8%;
+    --foreground: 36 25% 95%;
+
+    --card: 26 16% 11%;
+    --card-foreground: 36 25% 95%;
+
+    --popover: 26 16% 11%;
+    --popover-foreground: 36 25% 95%;
+
+    --primary: 0 0% 100%;
+    --primary-foreground: 0 0% 0%;
+
+    --secondary: 26 12% 18%;
+    --secondary-foreground: 36 25% 95%;
+
+    --muted: 26 12% 16%;
+    --muted-foreground: 36 14% 65%;
+
+    --accent: 32 55% 55%;
+    --accent-foreground: 26 30% 10%;
+
+    --destructive: 0 65% 55%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 26 12% 20%;
+    --input: 26 12% 20%;
+    --ring: 32 55% 60%;
+
+    --chart-1: 32 75% 70%;
+    --chart-2: 42 80% 70%;
+    --chart-3: 200 50% 65%;
+    --chart-4: 150 35% 60%;
+    --chart-5: 12 75% 65%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground antialiased;
+    font-feature-settings:
+      "ss01" on,
+      "cv11" on;
+  }
+  html {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+}
+
+@layer utilities {
+  .scrollbar-thin::-webkit-scrollbar {
+    height: 8px;
+    width: 8px;
+  }
+  .scrollbar-thin::-webkit-scrollbar-thumb {
+    @apply bg-border rounded-full;
+  }
+  .scrollbar-thin::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .gradient-card {
+    background: radial-gradient(
+        1200px circle at 0% 0%,
+        hsl(var(--accent) / 0.08),
+        transparent 40%
+      ),
+      radial-gradient(
+        800px circle at 100% 100%,
+        hsl(var(--primary) / 0.06),
+        transparent 40%
+      ),
+      hsl(var(--card));
+  }
+}

@@ -1,0 +1,37 @@
+# ── Dependencies ─────────────────────────────────────────────────────────
+node_modules
+.pnp
+.pnp.js
+
+# ── Next.js build output ─────────────────────────────────────────────────
+.next
+out
+build
+next-env.d.ts
+
+# ── Environment / secrets ────────────────────────────────────────────────
+.env
+.env.local
+.env.*.local
+.env.*.bak
+firebase-admin.json
+*.pem
+
+# ── Local Postgres / Prisma artifacts ────────────────────────────────────
+prisma/dev.db
+prisma/dev.db-journal
+
+# ── Local file uploads (cutting lists, brand logos, etc.) ────────────────
+# These never belong in version control — they're per-deployment user data.
+public/uploads/
+
+# ── OS / editor noise ────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+*.log
+.idea
+.vscode/*
+!.vscode/extensions.json
+
+# ── Vercel ───────────────────────────────────────────────────────────────
+.vercel

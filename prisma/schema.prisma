@@ -1,0 +1,573 @@
+// G-Homz manufacturing & cost-management ERP schema
+// Connects sponge blocks, fabrics, fiber, packaging and labor into a single
+// product-cost graph. All currency values are stored in EGP (LE).
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+//  Users & roles
+// ─────────────────────────────────────────────────────────────────────────────
+
+enum UserRole {
+  ADMIN
+  MANAGER
+  PRODUCTION
+  VIEWER
+}
+
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  emailVerified DateTime?
+  name          String
+  passwordHash  String?
+  role          UserRole  @default(VIEWER)
+  avatarUrl     String?
+  image         String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  accounts       Account[]
+  sessions       Session[]
+  productionLogs ProductionLog[]
+  purchases      Purchase[]
+  cuttingLists   CuttingList[]
+  customOrders   CustomOrder[]
+}
+
+// Auth.js (NextAuth) adapter tables — kept here so the Prisma adapter can
+// store OAuth accounts and sessions alongside our own User profile.
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+//  Suppliers
+// ─────────────────────────────────────────────────────────────────────────────
+
+model Supplier {
+  id        String   @id @default(cuid())
+  name      String
+  contact   String?
+  phone     String?
+  email     String?
+  address   String?
+  notes     String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  sponges   Sponge[]
+  fabrics   Fabric[]
+  purchases Purchase[]
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+//  Sponge inventory
+// ─────────────────────────────────────────────────────────────────────────────
+//
+//  Sponge cost formula (per block):
+//    W × D × H × density × pricePerDensity = cost in LE
+//  Stored as a derived field but recomputed on every write to stay honest.
+
+enum SpongeHardness {
+  SUPER_SOFT
+  SOFT
+  MEDIUM
+  HARD
+}
+
+model Sponge {
+  id               String         @id @default(cuid())
+  name             String         // e.g. "Yellow 26 Soft"
+  density          Int            // kg/m³
+  hardness         SpongeHardness
+  color            String
+  widthCm          Float
+  depthCm          Float
+  heightCm         Float
+  pricePerDensity  Float          // LE per density unit per cm³ multiplier
+  unitCost         Float          // auto-calculated; see formula above
+  stockBlocks      Int            @default(0)
+  reservedBlocks   Int            @default(0)
+  wastePct         Float          @default(5) // expected cutting waste %
+  supplierId       String?
+  supplier         Supplier?      @relation(fields: [supplierId], references: [id])
+  /// When this batch was manufactured by the supplier. Useful for tracking
+  /// sponge age (foam degrades over time) and FIFO consumption.
+  manufactureDate  DateTime?
+  notes            String?
+  imageUrl         String?
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+
+  productUsages    ProductSponge[]
+  consumptions     SpongeConsumption[]
+  yields           SpongeYield[]
+
+  @@index([name])
+}
+
+/// Block-level cutting plan: one sponge block produces a mix of products
+/// (e.g. "2 sofas + 6 chairs from one Yellow 26 Soft block"). When yields
+/// exist for a block, the block cost is split across the products by
+/// volume-weighted share. When no yields exist, the per-product fallback
+/// (volume share + waste factor) is used.
+model SpongeYield {
+  id            String   @id @default(cuid())
+  spongeId      String
+  productId     String
+  unitsPerBlock Int
+  notes         String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  sponge  Sponge  @relation(fields: [spongeId], references: [id], onDelete: Cascade)
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@unique([spongeId, productId])
+  @@index([spongeId])
+  @@index([productId])
+}
+
+/// Volume helper materialized at the application layer:
+/// volumeCm3 = widthCm * depthCm * heightCm
+
+// ─────────────────────────────────────────────────────────────────────────────
+//  Fabric inventory
+// ─────────────────────────────────────────────────────────────────────────────
+
+model Fabric {
+  id           String   @id @default(cuid())
+  name         String   // e.g. "Twix Reef"
+  collection   String?
+  color        String?
+  texture      String?
+  costPerMeter Float    // LE / m
+  stockMeters  Float    @default(0)
+  reorderLevel Float    @default(0)
+  supplierId   String?
+  supplier     Supplier? @relation(fields: [supplierId], references: [id])
+  imageUrl     String?
+  notes        String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  productUsages ProductFabric[]
+  consumptions  FabricConsumption[]
+
+  @@index([name])
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+//  Bulk materials (fiber & packaging)
+// ─────────────────────────────────────────────────────────────────────────────
+//
+//  Both fiber and packaging are measured in grams at product level and stored
+//  in kg at inventory level. We keep them as a single polymorphic table so the
+//  UI can render a unified "Bulk Materials" view.
+
+enum BulkMaterialKind {
+  FIBER
+  PACKAGING
+  EXTRA
+}
+
+model BulkMaterial {
+  id           String           @id @default(cuid())
+  name         String           // e.g. "Polyester fiber", "Vaseline"
+  kind         BulkMaterialKind
+  costPerKg    Float
+  stockKg      Float            @default(0)
+  reorderLevel Float            @default(0)
+  notes        String?
+  createdAt    DateTime         @default(now())
+  updatedAt    DateTime         @updatedAt
+
+  productUsages ProductBulkMaterial[]
+  consumptions  BulkConsumption[]
+
+  @@index([kind])
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+//  Products & their bill-of-materials
+// ─────────────────────────────────────────────────────────────────────────────
+
+enum ProductCategory {
+  SOFA_2_SEAT
+  SOFA_3_SEAT
+  L_SHAPE_SOFA
+  MODULAR_SOFA
+  CHAIR
+  OUTDOOR
+  KIDS_BED
+  OTTOMAN
+  BEAN_SEAT
+  OTHER
+}
+
+model Product {
+  id              String          @id @default(cuid())
+  sku             String          @unique
+  name            String          // e.g. "Fluff L Shape Sofa"
+  category        ProductCategory
+  description     String?
+  widthCm         Float
+  depthCm         Float
+  heightCm        Float
+  imageUrl        String?
+  retailPrice     Float           @default(0)
+  wholesalePrice  Float           @default(0)
+  stockQty        Int             @default(0)
+  active          Boolean         @default(true)
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+
+  /// Variant system — a product family (e.g. "Butter Chair 80") can have
+  /// multiple variants (Classic, Premium…). Each variant is a full Product
+  /// with its own BOM, SKU, and pricing. The parent product acts as the
+  /// family anchor; its `variantName` is null.
+  parentId        String?         // null = standalone or family parent; set = variant
+  variantName     String?         // e.g. "Classic", "Premium" — null for standalone/parent
+
+  parent          Product?        @relation("ProductVariants", fields: [parentId], references: [id])
+  variants        Product[]       @relation("ProductVariants")
+
+  sponges         ProductSponge[]
+  fabrics         ProductFabric[]
+  bulkMaterials   ProductBulkMaterial[]
+  manufacturing   ManufacturingCost[]
+  productionLogs  ProductionLog[]
+  spongeYields    SpongeYield[]
+  /// Sub-products that compose this one. A "Fluff Set" might contain
+  /// 1 × L-shape sofa + 6 × chairs — those go in here.
+  compositions    ProductComposition[] @relation("ParentToChildren")
+  /// Where this product is itself a child of another bundle.
+  partOf          ProductComposition[] @relation("ChildToParents")
+  /// PDFs / images attached as cutting-list references for the manufacturer.
+  cuttingLists    CuttingList[]
+
+  @@index([name])
+  @@index([category])
+  @@index([parentId])
+}
+
+/// Sponge consumption per product, expressed as a cut volume so we can
+/// compute how many product units fit into one full sponge block.
+model ProductSponge {
+  id          String  @id @default(cuid())
+  productId   String
+  spongeId    String
+  cutWidthCm  Float
+  cutDepthCm  Float
+  cutHeightCm Float
+  cuts        Int     @default(1) // number of cuts of this shape per product
+  /// Manual override for "how many of this product fit in one block". When
+  /// set, the costing engine uses `block_cost / override` instead of the
+  /// auto-computed volume-based number.
+  unitsPerBlockOverride Int?
+  notes       String?
+
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  sponge  Sponge  @relation(fields: [spongeId], references: [id])
+
+  @@unique([productId, spongeId, cutWidthCm, cutDepthCm, cutHeightCm])
+}
+
+model ProductFabric {
+  id         String  @id @default(cuid())
+  productId  String
+  fabricId   String
+  meters     Float
+
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  fabric  Fabric  @relation(fields: [fabricId], references: [id])
+
+  @@unique([productId, fabricId])
+}
+
+model ProductBulkMaterial {
+  id              String       @id @default(cuid())
+  productId       String
+  bulkMaterialId  String
+  grams           Float
+
+  product       Product      @relation(fields: [productId], references: [id], onDelete: Cascade)
+  bulkMaterial  BulkMaterial @relation(fields: [bulkMaterialId], references: [id])
+
+  @@unique([productId, bulkMaterialId])
+}
+
+/// One product can include other products as components ("bundle" / "set").
+/// E.g. a Fluff Set = 1 L-shape sofa + 6 chairs. The set's cost is the sum
+/// of each child product's resolved cost × the quantity below.
+model ProductComposition {
+  id              String   @id @default(cuid())
+  parentProductId String
+  childProductId  String
+  quantity        Float
+  notes           String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  parent Product @relation("ParentToChildren", fields: [parentProductId], references: [id], onDelete: Cascade)
+  child  Product @relation("ChildToParents",  fields: [childProductId],  references: [id])
+
+  @@unique([parentProductId, childProductId])
+  @@index([parentProductId])
+  @@index([childProductId])
+}
+
+enum ManufacturingKind {
+  LABOR
+  SEWING
+  COMPRESSION
+  PACKAGING_LABOR
+  TRANSPORT
+  FIXED_FEE
+  OTHER
+}
+
+model ManufacturingCost {
+  id        String            @id @default(cuid())
+  productId String
+  kind      ManufacturingKind
+  label     String
+  amount    Float
+
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+//  Production & consumption ledger
+// ─────────────────────────────────────────────────────────────────────────────
+
+enum ProductionStatus {
+  DRAFT
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
+
+model ProductionLog {
+  id           String           @id @default(cuid())
+  productId    String
+  quantity     Int
+  status       ProductionStatus @default(IN_PROGRESS)
+  startedAt    DateTime         @default(now())
+  finishedAt   DateTime?
+  unitCost     Float            // snapshotted at creation
+  totalCost    Float
+  notes        String?
+  operatorId   String?
+
+  // Client / order info
+  clientName    String?
+  clientPhone   String?
+  clientAddress String?
+  deposit       Float?          // advance payment received
+  discount      Float           @default(0) // discount given to client (deducted from totalCost)
+  startDate     DateTime?       // when manufacturing begins
+  deliveryDate  DateTime?       // promised delivery to client
+  priority      String?         @default("NORMAL") // NORMAL | HIGH | URGENT
+
+  product   Product  @relation(fields: [productId], references: [id])
+  operator  User?    @relation(fields: [operatorId], references: [id])
+
+  spongeConsumptions  SpongeConsumption[]
+  fabricConsumptions  FabricConsumption[]
+  bulkConsumptions    BulkConsumption[]
+
+  @@index([status])
+  @@index([startedAt])
+  @@index([deliveryDate])
+}
+
+model SpongeConsumption {
+  id              String   @id @default(cuid())
+  productionLogId String
+  spongeId        String
+  blocksUsed      Float
+  wasteCm3        Float
+  createdAt       DateTime @default(now())
+
+  productionLog ProductionLog @relation(fields: [productionLogId], references: [id], onDelete: Cascade)
+  sponge        Sponge        @relation(fields: [spongeId], references: [id])
+}
+
+model FabricConsumption {
+  id              String   @id @default(cuid())
+  productionLogId String
+  fabricId        String
+  meters          Float
+  createdAt       DateTime @default(now())
+
+  productionLog ProductionLog @relation(fields: [productionLogId], references: [id], onDelete: Cascade)
+  fabric        Fabric        @relation(fields: [fabricId], references: [id])
+}
+
+model BulkConsumption {
+  id              String   @id @default(cuid())
+  productionLogId String
+  bulkMaterialId  String
+  grams           Float
+  createdAt       DateTime @default(now())
+
+  productionLog ProductionLog @relation(fields: [productionLogId], references: [id], onDelete: Cascade)
+  bulkMaterial  BulkMaterial  @relation(fields: [bulkMaterialId], references: [id])
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+//  Purchases (raw material restock history)
+// ─────────────────────────────────────────────────────────────────────────────
+
+enum PurchaseItemKind {
+  SPONGE
+  FABRIC
+  BULK
+  MARKETING
+  OTHER
+}
+
+model Purchase {
+  id          String   @id @default(cuid())
+  supplierId  String?
+  totalAmount Float
+  reference   String?
+  notes       String?
+  createdAt   DateTime @default(now())
+  createdById String?
+
+  supplier  Supplier? @relation(fields: [supplierId], references: [id])
+  createdBy User?     @relation(fields: [createdById], references: [id])
+  items     PurchaseItem[]
+}
+
+/// Custom (free-form) sales order — not tied to the product catalog.
+/// Used when selling bundles, custom items, or at special prices.
+model CustomOrder {
+  id            String    @id @default(cuid())
+  invoiceNo     String    @unique
+  clientName    String
+  clientPhone   String?
+  clientAddress String?
+  deliveryDate  DateTime?
+  deposit       Float     @default(0)
+  notes         String?
+  status        String    @default("PENDING")
+  createdAt     DateTime  @default(now())
+  createdById   String?
+
+  createdBy User?             @relation(fields: [createdById], references: [id])
+  items     CustomOrderItem[]
+}
+
+model CustomOrderItem {
+  id          String @id @default(cuid())
+  orderId     String
+  name        String
+  description String?
+  quantity    Int    @default(1)
+  unitPrice   Float
+  /// Internal production cost per unit — used to compute profit/margin
+  unitCost    Float  @default(0)
+
+  order CustomOrder @relation(fields: [orderId], references: [id], onDelete: Cascade)
+}
+
+/// Cutting-list attachment for a product — typically a PDF or image the
+/// factory uses to know exactly how to cut sponge for this SKU.
+model CuttingList {
+  id           String   @id @default(cuid())
+  productId    String
+  /// Original filename as the user uploaded it (for display + download).
+  fileName     String
+  /// Server-side path the file is served from (e.g. `/uploads/cutting-lists/{id}/{stored}`).
+  filePath     String
+  /// MIME type (`application/pdf`, `image/png`, etc.)
+  fileType     String
+  fileSize     Int
+  /// Optional cover image for the card. Useful when the main file is a PDF
+  /// and you'd like a visual preview without opening it.
+  thumbnailPath String?
+  thumbnailType String?
+  title        String?
+  notes        String?
+  createdAt    DateTime @default(now())
+  uploadedById String?
+
+  product    Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  uploadedBy User?   @relation(fields: [uploadedById], references: [id])
+
+  @@index([productId])
+}
+
+model PurchaseItem {
+  id              String           @id @default(cuid())
+  purchaseId      String
+  kind            PurchaseItemKind
+  /// Free-form item name as entered by the user (e.g. "Yellow 26 Soft Block").
+  /// Purchases are a standalone log — they do NOT bump any inventory or link
+  /// to the sponge/fabric catalog, so we don't keep a foreign-key reference.
+  /// Nullable so we can migrate without dropping existing legacy rows; new
+  /// rows are validated as required at the API boundary.
+  itemName        String?
+  itemDescription String?
+  /// Deprecated — only kept for legacy rows created by the earlier
+  /// inventory-bumping model. New rows leave this null.
+  referenceId     String?
+  quantity        Float
+  unitCost        Float
+  totalCost       Float
+
+  purchase Purchase @relation(fields: [purchaseId], references: [id], onDelete: Cascade)
+}
+
+/// Tiny key/value store for workspace-wide settings. First user is the brand
+/// logo URL hosted on Cloudinary — saved as `brand.logoUrl`. New small global
+/// flags should land here too instead of growing standalone tables.
+model Setting {
+  key       String   @id
+  value     String
+  updatedAt DateTime @updatedAt
+}
