@@ -26,6 +26,7 @@ export default async function AppLayout({
             email: session.user?.email ?? "",
             role: (session.user as { role?: string }).role ?? "VIEWER",
           }}
+          logoUrl={logoUrl}
         />
         <main className="flex-1 px-6 py-8 md:px-10">{children}</main>
       </div>

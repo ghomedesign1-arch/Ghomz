@@ -3,60 +3,9 @@
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import {
-  BarChart3,
-  Boxes,
-  ClipboardList,
-  Factory,
-  FileText,
-  LayoutDashboard,
-  Layers,
-  PackageSearch,
-  ReceiptText,
-  Scissors,
-  Settings,
-  ShoppingBag,
-  Tags,
-  Truck,
-} from "lucide-react";
 import { cn } from "@/lib/utils";
 import { motion } from "framer-motion";
-
-const NAV = [
-  {
-    section: "Overview",
-    items: [
-      { href: "/", label: "Dashboard", icon: LayoutDashboard },
-      { href: "/analytics", label: "Analytics", icon: BarChart3 },
-    ],
-  },
-  {
-    section: "Catalog",
-    items: [
-      { href: "/products", label: "Products", icon: ShoppingBag },
-      { href: "/sponges", label: "Sponges", icon: Layers },
-      { href: "/sponges/intake", label: "Sponge intake", icon: ReceiptText },
-      { href: "/cutting-lists", label: "Cutting lists", icon: FileText },
-      { href: "/fabrics", label: "Fabrics", icon: Scissors },
-      { href: "/materials", label: "Bulk materials", icon: Boxes },
-    ],
-  },
-  {
-    section: "Operations",
-    items: [
-      { href: "/production", label: "Production", icon: Factory },
-      { href: "/custom-orders", label: "Custom orders", icon: ClipboardList },
-      { href: "/pricing", label: "Pricing scenarios", icon: Tags },
-      // { href: "/inventory", label: "Inventory", icon: PackageSearch },  // hidden — re-enable when ready
-      { href: "/purchases", label: "Purchases", icon: ReceiptText },
-      { href: "/suppliers", label: "Suppliers", icon: Truck },
-    ],
-  },
-  {
-    section: "System",
-    items: [{ href: "/settings", label: "Settings", icon: Settings }],
-  },
-];
+import { NAV, isActive } from "./nav-config";
 
 interface SidebarProps {
   /** Custom brand logo (uploaded via Settings). Falls back to the bundled
@@ -101,22 +50,7 @@ export function Sidebar({ logoUrl }: SidebarProps = {}) {
             </div>
             <ul className="space-y-1">
               {group.items.map((item) => {
-                // An item is active when its href matches the pathname AND no
-                // sibling has a longer matching prefix (so /sponges/intake
-                // doesn't also light up /sponges).
-                const matches =
-                  item.href === "/"
-                    ? pathname === "/"
-                    : pathname === item.href ||
-                      pathname.startsWith(item.href + "/");
-                const longerMatch = group.items.some(
-                  (other) =>
-                    other.href !== item.href &&
-                    other.href.length > item.href.length &&
-                    (pathname === other.href ||
-                      pathname.startsWith(other.href + "/")),
-                );
-                const active = matches && !longerMatch;
+                const active = isActive(item.href, pathname, group.items);
                 const Icon = item.icon;
                 return (
                   <li key={item.href}>

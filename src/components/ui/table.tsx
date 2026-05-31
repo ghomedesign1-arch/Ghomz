@@ -5,10 +5,14 @@ export const Table = React.forwardRef<
   HTMLTableElement,
   React.HTMLAttributes<HTMLTableElement>
 >(({ className, ...props }, ref) => (
-  <div className="relative w-full overflow-auto scrollbar-thin">
+  <div className="relative w-full overflow-x-auto scrollbar-thin">
+    {/* `min-w-max` forces the table to keep its natural column widths even
+     *  when the viewport is narrower than its content — so on mobile the
+     *  user can horizontally swipe to read the wider columns instead of
+     *  seeing cramped, truncated text. */}
     <table
       ref={ref}
-      className={cn("w-full caption-bottom text-sm", className)}
+      className={cn("w-full min-w-max caption-bottom text-sm", className)}
       {...props}
     />
   </div>
