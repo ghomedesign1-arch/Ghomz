@@ -141,12 +141,15 @@ export default async function ProductsPage() {
             <TableHeader>
               <TableRow>
                 <TableHead>Product</TableHead>
-                <TableHead>Category</TableHead>
-                <TableHead className="text-right">Dimensions</TableHead>
-                <TableHead className="text-right">Unit cost</TableHead>
+                {/* On mobile, Category / Dimensions / Unit cost / Stock are
+                 *  folded into a secondary line inside the Product cell so
+                 *  Product · Retail · Margin · ⋯ fit cleanly on iPhone. */}
+                <TableHead className="hidden sm:table-cell">Category</TableHead>
+                <TableHead className="hidden text-right md:table-cell">Dimensions</TableHead>
+                <TableHead className="hidden text-right md:table-cell">Unit cost</TableHead>
                 <TableHead className="text-right">Retail</TableHead>
                 <TableHead className="text-right">Margin</TableHead>
-                <TableHead className="text-right">Stock</TableHead>
+                <TableHead className="hidden text-right sm:table-cell">Stock</TableHead>
                 <TableHead className="w-px" />
               </TableRow>
             </TableHeader>
@@ -186,18 +189,30 @@ export default async function ProductsPage() {
                                 </span>
                               )}
                             </div>
+                            {/* Mobile-only secondary line: cat · dims · cost · stock. */}
+                            <div className="mt-1 flex flex-wrap gap-x-2 gap-y-0.5 text-[11px] text-muted-foreground sm:hidden">
+                              <span>{CATEGORY_LABEL[p.category] ?? p.category}</span>
+                              <span>·</span>
+                              <span className="tabular-nums">
+                                {p.widthCm}×{p.depthCm}×{p.heightCm} cm
+                              </span>
+                              <span>·</span>
+                              <span className="tabular-nums">Cost {formatLE(p.unitCost)}</span>
+                              <span>·</span>
+                              <span className="tabular-nums">Stock {p.stockQty}</span>
+                            </div>
                           </Link>
                         </div>
                       </TableCell>
-                      <TableCell>
+                      <TableCell className="hidden sm:table-cell">
                         <Badge variant="secondary">
                           {CATEGORY_LABEL[p.category] ?? p.category}
                         </Badge>
                       </TableCell>
-                      <TableCell className="text-right tabular-nums text-sm text-muted-foreground">
+                      <TableCell className="hidden text-right tabular-nums text-sm text-muted-foreground md:table-cell">
                         {p.widthCm} × {p.depthCm} × {p.heightCm} cm
                       </TableCell>
-                      <TableCell className="text-right tabular-nums text-muted-foreground">
+                      <TableCell className="hidden text-right tabular-nums text-muted-foreground md:table-cell">
                         {formatLE(p.unitCost)}
                       </TableCell>
                       <TableCell className="text-right tabular-nums font-medium">
@@ -206,7 +221,7 @@ export default async function ProductsPage() {
                       <TableCell className="text-right">
                         <MarginCell unitCost={p.unitCost} retailPrice={p.retailPrice} retailMarginPct={p.retailMarginPct} />
                       </TableCell>
-                      <TableCell className="text-right tabular-nums">
+                      <TableCell className="hidden text-right tabular-nums sm:table-cell">
                         {p.stockQty}
                       </TableCell>
                       <TableCell className="text-right">
@@ -225,22 +240,34 @@ export default async function ProductsPage() {
                         key={v.id}
                         className={`bg-muted/10 ${vi === variants.length - 1 ? "" : "border-b-0"}`}
                       >
-                        <TableCell className="pl-16">
-                          <div className="inline-flex items-center gap-2">
-                            <span className="text-muted-foreground text-xs">└</span>
+                        <TableCell className="pl-8 sm:pl-16">
+                          <div className="inline-flex items-start gap-2">
+                            <span className="text-muted-foreground text-xs mt-0.5">└</span>
                             <Link href={`/products/${v.id}`} className="group">
-                              <span className="text-sm font-medium group-hover:underline">
-                                {v.variantName}
-                              </span>
-                              <span className="ml-2 text-xs text-muted-foreground">{v.sku}</span>
+                              <div>
+                                <span className="text-sm font-medium group-hover:underline">
+                                  {v.variantName}
+                                </span>
+                                <span className="ml-2 text-xs text-muted-foreground">{v.sku}</span>
+                              </div>
+                              {/* Mobile-only secondary line for variants. */}
+                              <div className="mt-0.5 flex flex-wrap gap-x-2 text-[11px] text-muted-foreground sm:hidden">
+                                <span className="tabular-nums">
+                                  {v.widthCm}×{v.depthCm}×{v.heightCm} cm
+                                </span>
+                                <span>·</span>
+                                <span className="tabular-nums">Cost {formatLE(v.unitCost)}</span>
+                                <span>·</span>
+                                <span className="tabular-nums">Stock {v.stockQty}</span>
+                              </div>
                             </Link>
                           </div>
                         </TableCell>
-                        <TableCell />
-                        <TableCell className="text-right tabular-nums text-sm text-muted-foreground">
+                        <TableCell className="hidden sm:table-cell" />
+                        <TableCell className="hidden text-right tabular-nums text-sm text-muted-foreground md:table-cell">
                           {v.widthCm} × {v.depthCm} × {v.heightCm} cm
                         </TableCell>
-                        <TableCell className="text-right tabular-nums text-muted-foreground text-sm">
+                        <TableCell className="hidden text-right tabular-nums text-muted-foreground text-sm md:table-cell">
                           {formatLE(v.unitCost)}
                         </TableCell>
                         <TableCell className="text-right tabular-nums font-medium text-sm">
@@ -249,7 +276,7 @@ export default async function ProductsPage() {
                         <TableCell className="text-right">
                           <MarginCell unitCost={v.unitCost} retailPrice={v.retailPrice} retailMarginPct={v.retailMarginPct} />
                         </TableCell>
-                        <TableCell className="text-right tabular-nums text-sm">
+                        <TableCell className="hidden text-right tabular-nums text-sm sm:table-cell">
                           {v.stockQty}
                         </TableCell>
                         <TableCell className="text-right">
