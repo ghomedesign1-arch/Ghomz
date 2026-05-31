@@ -140,48 +140,55 @@ export default async function ProductDetailPage({ params }: PageProps) {
       })()}
 
       <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-        <div className="flex items-start gap-4">
+        {/* Image + identity block: stacks vertically on mobile so the image
+         *  doesn't claim half the row; image shrinks below sm too. */}
+        <div className="flex flex-col items-start gap-4 sm:flex-row">
           <ProductImageUpload
             productId={product.id}
             imageUrl={product.imageUrl ?? null}
             size={160}
             initial={product.name.slice(0, 1)}
             editable={writeAccess}
-            className="mt-1"
+            // `!h-/!w-` overrides the component's inline `style="width:160px"`
+            // so the image scales down on mobile without touching the shared
+            // ProductImageUpload primitive. Full ~160px on sm+ desktops.
+            className="mt-1 shrink-0 !h-28 !w-28 sm:!h-40 sm:!w-40"
           />
-          <div className="space-y-2">
-          <div className="flex items-center gap-2">
-            <Badge variant="secondary">{product.sku}</Badge>
-            <Badge variant="outline">
-              {product.widthCm} × {product.depthCm} × {product.heightCm} cm
-            </Badge>
-            {product.active && (
-              <Badge variant="success" className="gap-1">
-                <Sparkles className="h-3 w-3" /> Active
+          <div className="min-w-0 flex-1 space-y-2">
+            <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
+              <Badge variant="secondary">{product.sku}</Badge>
+              <Badge variant="outline" className="whitespace-nowrap">
+                {product.widthCm} × {product.depthCm} × {product.heightCm} cm
               </Badge>
+              {product.active && (
+                <Badge variant="success" className="gap-1">
+                  <Sparkles className="h-3 w-3" /> Active
+                </Badge>
+              )}
+              {product.variantName && (
+                <Badge variant="outline" className="gap-1 border-primary/30 text-primary">
+                  <GitBranch className="h-3 w-3" /> {product.variantName}
+                </Badge>
+              )}
+            </div>
+            <h1 className="font-display text-2xl font-semibold tracking-tight sm:text-3xl">
+              {product.name}
+              {product.variantName && (
+                <span className="ml-2 text-base font-normal text-muted-foreground sm:ml-3 sm:text-xl">
+                  {product.variantName}
+                </span>
+              )}
+            </h1>
+            {product.description && (
+              <p className="max-w-2xl text-sm text-muted-foreground">
+                {product.description}
+              </p>
             )}
-            {product.variantName && (
-              <Badge variant="outline" className="gap-1 border-primary/30 text-primary">
-                <GitBranch className="h-3 w-3" /> {product.variantName}
-              </Badge>
-            )}
-          </div>
-          <h1 className="font-display text-3xl font-semibold tracking-tight">
-            {product.name}
-            {product.variantName && (
-              <span className="ml-3 text-xl font-normal text-muted-foreground">
-                {product.variantName}
-              </span>
-            )}
-          </h1>
-          {product.description && (
-            <p className="max-w-2xl text-sm text-muted-foreground">
-              {product.description}
-            </p>
-          )}
           </div>
         </div>
-        <div className="flex items-center gap-2 flex-wrap justify-end">
+        {/* Action buttons: 2-col grid on mobile (clean rows of equal-width
+         *  buttons), then back to flex-wrap on sm+ for the desktop layout. */}
+        <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap sm:items-center sm:justify-end">
           {writeAccess && (
             <AddVariantDialog
               parentId={product.parentId ?? product.id}
