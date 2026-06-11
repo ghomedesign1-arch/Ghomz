@@ -9,15 +9,18 @@ import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
 import { PageHeader } from "@/components/layout/page-header";
 import { BrandLogoUploader } from "@/components/settings/brand-logo-uploader";
+import { ChangePasswordCard } from "@/components/settings/change-password-card";
 import { getBrandLogoUrl } from "@/lib/brand";
 import { isAdmin } from "@/lib/rbac";
+import { auth } from "@/auth";
 
 export const dynamic = "force-dynamic";
 
 export default async function SettingsPage() {
-  const [logoUrl, adminAccess] = await Promise.all([
+  const [logoUrl, adminAccess, session] = await Promise.all([
     getBrandLogoUrl(),
     isAdmin(),
+    auth(),
   ]);
   return (
     <div className="space-y-8">
@@ -37,6 +40,8 @@ export default async function SettingsPage() {
           <BrandLogoUploader initialUrl={logoUrl} editable={adminAccess} />
         </CardContent>
       </Card>
+
+      {session?.user?.id && <ChangePasswordCard />}
 
       <div className="grid gap-4 lg:grid-cols-2">
         <Card>
