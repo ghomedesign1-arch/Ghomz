@@ -10,9 +10,11 @@ import { Badge } from "@/components/ui/badge";
 import { PageHeader } from "@/components/layout/page-header";
 import { BrandLogoUploader } from "@/components/settings/brand-logo-uploader";
 import { ChangePasswordCard } from "@/components/settings/change-password-card";
+import { ProfileCard } from "@/components/settings/profile-card";
 import { getBrandLogoUrl } from "@/lib/brand";
 import { isAdmin } from "@/lib/rbac";
 import { auth } from "@/auth";
+import { prisma } from "@/lib/prisma";
 
 export const dynamic = "force-dynamic";
 
@@ -22,6 +24,15 @@ export default async function SettingsPage() {
     isAdmin(),
     auth(),
   ]);
+
+  // Read the current name from the DB rather than the JWT (which can be
+  // stale if the user just changed it and hasn't re-signed in yet).
+  const profile = session?.user?.id
+    ? await prisma.user.findUnique({
+        where: { id: session.user.id },
+        select: { name: true, email: true, role: true },
+      })
+    : null;
   return (
     <div className="space-y-8">
       <PageHeader
@@ -40,6 +51,14 @@ export default async function SettingsPage() {
           <BrandLogoUploader initialUrl={logoUrl} editable={adminAccess} />
         </CardContent>
       </Card>
+
+      {profile && (
+        <ProfileCard
+          initialName={profile.name ?? ""}
+          email={profile.email}
+          role={profile.role}
+        />
+      )}
 
       {session?.user?.id && <ChangePasswordCard />}
 
