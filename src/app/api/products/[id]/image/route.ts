@@ -1,16 +1,17 @@
 import { NextRequest, NextResponse } from "next/server";
-import { promises as fs } from "fs";
-import path from "path";
-import { randomUUID } from "crypto";
 import { prisma } from "@/lib/prisma";
 import { HttpError, requireRole, withApi } from "@/lib/rbac";
+import { deleteByUrl, uploadBuffer } from "@/lib/cloudinary";
 
 const MAX_BYTES = 5 * 1024 * 1024; // 5 MB
 const ACCEPTED = new Set(["image/jpeg", "image/png", "image/webp", "image/gif"]);
 
 /**
  * POST /api/products/[id]/image — upload / replace the product hero image.
- * File saved to public/uploads/products/{id}/{uuid}.{ext}
+ *
+ * Stored in Cloudinary under `products/<productId>` with a stable publicId
+ * so the Vercel serverless filesystem (read-only outside /tmp) is never
+ * touched. Any previous Cloudinary asset is deleted to avoid orphans.
  */
 export const POST = withApi(async (
   req: NextRequest,
@@ -28,24 +29,25 @@ export const POST = withApi(async (
   if (file.size > MAX_BYTES) throw new HttpError(413, "Image too large (max 5 MB)");
   if (!ACCEPTED.has(file.type)) throw new HttpError(415, "Use JPEG, PNG, WEBP or GIF");
 
-  const dir = path.join(process.cwd(), "public", "uploads", "products", params.id);
-  await fs.mkdir(dir, { recursive: true });
-
-  // Remove old image from disk if present
+  // Remove old asset before re-uploading. Safe to call on legacy
+  // /uploads/... paths — deleteByUrl no-ops when the URL isn't Cloudinary.
   if (product.imageUrl) {
-    try {
-      await fs.unlink(path.join(process.cwd(), "public", product.imageUrl));
-    } catch { /* already gone */ }
+    await deleteByUrl(product.imageUrl);
   }
 
-  const ext = extFromMime(file.type);
-  const fileName = `${randomUUID()}.${ext}`;
-  await fs.writeFile(path.join(dir, fileName), Buffer.from(await file.arrayBuffer()));
+  const uploaded = await uploadBuffer(
+    Buffer.from(await file.arrayBuffer()),
+    {
+      folder: `products/${params.id}`,
+      publicId: `products/${params.id}/hero`,
+      resourceType: "image",
+      overwrite: true,
+    },
+  );
 
-  const imageUrl = `/uploads/products/${params.id}/${fileName}`;
   const updated = await prisma.product.update({
     where: { id: params.id },
-    data: { imageUrl },
+    data: { imageUrl: uploaded.url },
     select: { id: true, imageUrl: true },
   });
 
@@ -65,21 +67,9 @@ export const DELETE = withApi(async (
   if (!product) throw new HttpError(404, "Product not found");
 
   if (product.imageUrl) {
-    try {
-      await fs.unlink(path.join(process.cwd(), "public", product.imageUrl));
-    } catch { /* already gone */ }
+    await deleteByUrl(product.imageUrl);
     await prisma.product.update({ where: { id: params.id }, data: { imageUrl: null } });
   }
 
   return new NextResponse(null, { status: 204 });
 });
-
-function extFromMime(mime: string) {
-  switch (mime) {
-    case "image/jpeg": return "jpg";
-    case "image/png":  return "png";
-    case "image/webp": return "webp";
-    case "image/gif":  return "gif";
-    default:           return "jpg";
-  }
-}
