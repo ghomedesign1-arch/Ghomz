@@ -22,12 +22,14 @@ import { MetadataSection } from "./sections/metadata-section";
 import { SpongeSection } from "./sections/sponge-section";
 import { FabricSection } from "./sections/fabric-section";
 import { BulkSection } from "./sections/bulk-section";
+import { PocketCoilSection } from "./sections/pocket-coil-section";
 import { ManufacturingSection } from "./sections/manufacturing-section";
 import { CompositionSection } from "./sections/composition-section";
 import type {
   BulkRef,
   EditableProduct,
   FabricRef,
+  PocketCoilRef,
   ProductOption,
   SpongeRef,
 } from "./types";
@@ -37,6 +39,7 @@ interface ProductEditorProps {
   sponges: SpongeRef[];
   fabrics: FabricRef[];
   bulkMaterials: BulkRef[];
+  pocketCoils: PocketCoilRef[];
   /** All other products (used in the "Included products" / bundle section). */
   otherProducts: ProductOption[];
   /** Pre-resolved cost-per-unit for each `otherProducts[i].id` — lets us
@@ -49,6 +52,7 @@ export function ProductEditor({
   sponges,
   fabrics,
   bulkMaterials,
+  pocketCoils,
   otherProducts,
   productCosts,
 }: ProductEditorProps) {
@@ -62,8 +66,16 @@ export function ProductEditor({
   );
 
   const breakdown = React.useMemo(
-    () => computeBreakdown(draft, sponges, fabrics, bulkMaterials, productCosts),
-    [draft, sponges, fabrics, bulkMaterials, productCosts],
+    () =>
+      computeBreakdown(
+        draft,
+        sponges,
+        fabrics,
+        bulkMaterials,
+        pocketCoils,
+        productCosts,
+      ),
+    [draft, sponges, fabrics, bulkMaterials, pocketCoils, productCosts],
   );
 
   function patch<K extends keyof EditableProduct>(
@@ -100,6 +112,7 @@ export function ProductEditor({
         })),
         fabrics: draft.fabrics,
         bulkMaterials: draft.bulkMaterials,
+        pocketCoils: draft.pocketCoils,
         manufacturing: draft.manufacturing,
         compositions: draft.compositions,
       });
@@ -154,6 +167,11 @@ export function ProductEditor({
             bulkMaterials={bulkMaterials}
             onChange={(bulks) => patch("bulkMaterials", bulks)}
           />
+          <PocketCoilSection
+            product={draft}
+            pocketCoils={pocketCoils}
+            onChange={(rows) => patch("pocketCoils", rows)}
+          />
           <ManufacturingSection
             product={draft}
             onChange={(manufacturing) => patch("manufacturing", manufacturing)}
@@ -203,6 +221,11 @@ export function ProductEditor({
                     label: "Packaging",
                     amount: breakdown.packagingCost,
                     color: "hsl(var(--chart-4))",
+                  },
+                  {
+                    label: "Pocket coil",
+                    amount: breakdown.pocketCoilCost,
+                    color: "hsl(170 55% 45%)",
                   },
                   {
                     label: "Manufacturing",
@@ -305,11 +328,13 @@ function computeBreakdown(
   sponges: SpongeRef[],
   fabrics: FabricRef[],
   bulkMaterials: BulkRef[],
+  pocketCoils: PocketCoilRef[],
   productCosts: Record<string, number>,
 ) {
   const spongeMap = new Map(sponges.map((s) => [s.id, s]));
   const fabricMap = new Map(fabrics.map((f) => [f.id, f]));
   const bulkMap = new Map(bulkMaterials.map((b) => [b.id, b]));
+  const coilMap = new Map(pocketCoils.map((c) => [c.id, c]));
 
   return calculateProductCost({
     sponges: draft.sponges
@@ -361,6 +386,14 @@ function computeBreakdown(
         grams: b.grams,
         costPerKg: bulkMap.get(b.bulkMaterialId)!.costPerKg,
       })),
+    pocketCoils: draft.pocketCoils
+      .map((pc) => {
+        const coil = coilMap.get(pc.pocketCoilId);
+        return coil
+          ? { quantity: pc.quantity, costPerUnit: coil.costPerUnit }
+          : null;
+      })
+      .filter((x): x is NonNullable<typeof x> => Boolean(x)),
     manufacturing: draft.manufacturing.map((m) => ({
       label: m.label,
       amount: m.amount,

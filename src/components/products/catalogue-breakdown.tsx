@@ -90,6 +90,7 @@ export function CatalogueBreakdown({
   // The PDF labels its 4th bulk column "Susta Cost" — we map it to anything
   // stored as BulkMaterial.kind = EXTRA so the column always renders.
   const susta = breakdown.extrasCost;
+  const pocketCoil = breakdown.pocketCoilCost;
   const totalCost = breakdown.totalCost;
   const hasComposition = (product.compositions ?? []).length > 0;
 
@@ -182,6 +183,7 @@ export function CatalogueBreakdown({
             "Compressed Fiber (EGP)",
             "Packaging (EGP)",
             "Susta Cost (EGP)",
+            "Pocket Coil (EGP)",
             "Total Cost (EGP)",
           ]}
         >
@@ -197,6 +199,9 @@ export function CatalogueBreakdown({
             </td>
             <td className="py-1.5 px-2 sm:py-2 sm:px-3 text-center tabular-nums">
               {formatNumber(susta)}
+            </td>
+            <td className="py-1.5 px-2 sm:py-2 sm:px-3 text-center tabular-nums">
+              {formatNumber(pocketCoil)}
             </td>
             <td className="py-1.5 px-2 sm:py-2 sm:px-3 text-center tabular-nums font-display text-lg font-bold text-[#a8331a] dark:text-rose-300">
               {formatNumber(totalCost)}

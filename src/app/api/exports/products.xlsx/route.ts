@@ -22,6 +22,7 @@ export async function GET() {
         "Fabric cost (LE)": breakdown.fabricCost,
         "Fiber cost (LE)": breakdown.fiberCost,
         "Packaging cost (LE)": breakdown.packagingCost,
+        "Pocket coil cost (LE)": breakdown.pocketCoilCost,
         "Manufacturing (LE)": breakdown.manufacturingCost,
         "Total cost (LE)": breakdown.totalCost,
         "Retail price (LE)": breakdown.retailPrice,

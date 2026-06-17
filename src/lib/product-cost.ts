@@ -159,6 +159,10 @@ export async function resolveProductCost(
     extras: product.bulkMaterials
       .filter((b) => b.bulkMaterial.kind === "EXTRA")
       .map((b) => ({ grams: b.grams, costPerKg: b.bulkMaterial.costPerKg })),
+    pocketCoils: (product.pocketCoils ?? []).map((pc) => ({
+      quantity: pc.quantity,
+      costPerUnit: pc.pocketCoil.costPerUnit,
+    })),
     manufacturing: product.manufacturing.map((m) => ({
       label: m.label,
       amount: m.amount,
@@ -219,6 +223,7 @@ function loadProduct(productId: string) {
       },
       fabrics: { include: { fabric: true } },
       bulkMaterials: { include: { bulkMaterial: true } },
+      pocketCoils: { include: { pocketCoil: true } },
       manufacturing: true,
       compositions: { include: { child: true } },
       // Variant system

@@ -1,6 +1,7 @@
 import {
   BarChart3,
   Boxes,
+  Circle,
   ClipboardList,
   Factory,
   FileText,
@@ -44,6 +45,7 @@ export const NAV: NavGroup[] = [
       { href: "/cutting-lists",  label: "Cutting lists",  icon: FileText },
       { href: "/fabrics",        label: "Fabrics",        icon: Scissors },
       { href: "/materials",      label: "Bulk materials", icon: Boxes },
+      { href: "/pocket-coils",   label: "Pocket coils",   icon: Circle },
     ],
   },
   {

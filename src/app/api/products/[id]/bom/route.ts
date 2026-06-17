@@ -26,6 +26,7 @@ export const PUT = withApi(async (
     sponges,
     fabrics,
     bulkMaterials,
+    pocketCoils = [],
     manufacturing,
     compositions = [],
   } = parsed.data;
@@ -53,6 +54,7 @@ export const PUT = withApi(async (
     prisma.productSponge.deleteMany({ where: { productId } }),
     prisma.productFabric.deleteMany({ where: { productId } }),
     prisma.productBulkMaterial.deleteMany({ where: { productId } }),
+    prisma.productPocketCoil.deleteMany({ where: { productId } }),
     prisma.manufacturingCost.deleteMany({ where: { productId } }),
     prisma.productComposition.deleteMany({ where: { parentProductId: productId } }),
     prisma.productSponge.createMany({
@@ -63,6 +65,13 @@ export const PUT = withApi(async (
     }),
     prisma.productBulkMaterial.createMany({
       data: bulkMaterials.map((b) => ({ ...b, productId })),
+    }),
+    prisma.productPocketCoil.createMany({
+      data: pocketCoils.map((pc) => ({
+        productId,
+        pocketCoilId: pc.pocketCoilId,
+        quantity: pc.quantity,
+      })),
     }),
     prisma.manufacturingCost.createMany({
       data: manufacturing.map((m) => ({ ...m, productId })),

@@ -47,6 +47,15 @@ export const bulkInput = z.object({
   reorderLevel: z.number().nonnegative().default(0),
 });
 
+export const pocketCoilInput = z.object({
+  name: z.string().min(1),
+  costPerUnit: z.number().positive(),
+  stockUnits: z.number().int().nonnegative().default(0),
+  reorderLevel: z.number().int().nonnegative().default(0),
+  supplierId: z.string().optional(),
+  notes: z.string().optional(),
+});
+
 export const supplierInput = z.object({
   name: z.string().min(1),
   contact: z.string().optional(),
@@ -116,6 +125,15 @@ export const bomInput = z
         grams: z.number().positive(),
       }),
     ),
+    pocketCoils: z
+      .array(
+        z.object({
+          pocketCoilId: z.string().min(1),
+          quantity: z.number().int().positive(),
+        }),
+      )
+      .optional()
+      .default([]),
     manufacturing: z.array(
       z.object({
         kind: z.enum(manufacturingKinds),
@@ -160,6 +178,17 @@ export const bomInput = z
         });
       }
       seenBulk.add(b.bulkMaterialId);
+    }
+    const seenCoils = new Set<string>();
+    for (const pc of data.pocketCoils ?? []) {
+      if (seenCoils.has(pc.pocketCoilId)) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "Each pocket coil can only appear once per product",
+          path: ["pocketCoils"],
+        });
+      }
+      seenCoils.add(pc.pocketCoilId);
     }
     const seenCuts = new Set<string>();
     for (const s of data.sponges) {

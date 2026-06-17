@@ -195,6 +195,7 @@ export function InvoiceDocument({ product, breakdown, lines }: InvoicePdfInput) 
           <Total label="Fabric" value={breakdown.fabricCost} />
           <Total label="Fiber" value={breakdown.fiberCost} />
           <Total label="Packaging" value={breakdown.packagingCost} />
+          <Total label="Pocket coil" value={breakdown.pocketCoilCost} />
           <Total label="Manufacturing" value={breakdown.manufacturingCost} />
           <View style={styles.grandTotal}>
             <Text style={styles.grandLabel}>Total unit cost</Text>

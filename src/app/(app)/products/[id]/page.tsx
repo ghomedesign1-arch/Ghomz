@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import {
   ArrowLeft,
   Boxes,
+  Circle,
   Factory,
   GitBranch,
   Layers,
@@ -93,6 +94,11 @@ export default async function ProductDetailPage({ params }: PageProps) {
     { label: "Fabric", amount: breakdown.fabricCost, color: "hsl(var(--chart-2))" },
     { label: "Fiber", amount: breakdown.fiberCost, color: "hsl(var(--chart-3))" },
     { label: "Packaging", amount: breakdown.packagingCost, color: "hsl(var(--chart-4))" },
+    {
+      label: "Pocket coil",
+      amount: breakdown.pocketCoilCost,
+      color: "hsl(170 55% 45%)",
+    },
     {
       label: "Manufacturing",
       amount: breakdown.manufacturingCost,
@@ -249,7 +255,7 @@ export default async function ProductDetailPage({ params }: PageProps) {
           <CardHeader>
             <CardTitle>Cost breakdown · per unit</CardTitle>
             <CardDescription>
-              Total =&nbsp;sponge + fabric + fiber + packaging + manufacturing.
+              Total =&nbsp;sponge + fabric + fiber + packaging + pocket coil + manufacturing.
               Allocations follow material volume share of each sponge block.
             </CardDescription>
           </CardHeader>
@@ -275,6 +281,11 @@ export default async function ProductDetailPage({ params }: PageProps) {
                 icon={PackageOpen}
                 label="Packaging"
                 value={formatLE(breakdown.packagingCost)}
+              />
+              <Line
+                icon={Circle}
+                label="Pocket coil"
+                value={formatLE(breakdown.pocketCoilCost)}
               />
               <Line
                 icon={Factory}

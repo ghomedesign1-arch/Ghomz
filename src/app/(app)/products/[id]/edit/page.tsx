@@ -10,6 +10,7 @@ const productInclude = {
   sponges: { include: { sponge: true } },
   fabrics: { include: { fabric: true } },
   bulkMaterials: { include: { bulkMaterial: true } },
+  pocketCoils: { include: { pocketCoil: true } },
   manufacturing: true,
   compositions: true,
 } as const;
@@ -31,12 +32,13 @@ export default async function ProductEditPage({ params }: PageProps) {
   const writeAccess = await canWrite();
   if (!writeAccess) redirect(`/products/${params.id}`);
 
-  const [product, sponges, fabrics, bulkMaterials, allProducts] =
+  const [product, sponges, fabrics, bulkMaterials, pocketCoils, allProducts] =
     await Promise.all([
       loadProductForEdit(params.id),
       prisma.sponge.findMany({ orderBy: { name: "asc" } }),
       prisma.fabric.findMany({ orderBy: { name: "asc" } }),
       prisma.bulkMaterial.findMany({ orderBy: { name: "asc" } }),
+      prisma.pocketCoil.findMany({ orderBy: { name: "asc" } }),
       prisma.product.findMany({
         select: { id: true, name: true, sku: true },
         orderBy: { name: "asc" },
@@ -85,6 +87,11 @@ export default async function ProductEditPage({ params }: PageProps) {
         kind: b.kind,
         costPerKg: b.costPerKg,
       }))}
+      pocketCoils={pocketCoils.map((c) => ({
+        id: c.id,
+        name: c.name,
+        costPerUnit: c.costPerUnit,
+      }))}
       otherProducts={otherProducts}
       productCosts={productCosts}
     />
@@ -122,6 +129,10 @@ function serializeProduct(p: LoadedProduct) {
     bulkMaterials: p.bulkMaterials.map((pb) => ({
       bulkMaterialId: pb.bulkMaterialId,
       grams: pb.grams,
+    })),
+    pocketCoils: p.pocketCoils.map((pc) => ({
+      pocketCoilId: pc.pocketCoilId,
+      quantity: pc.quantity,
     })),
     manufacturing: p.manufacturing.map((m) => ({
       kind: m.kind,

@@ -24,6 +24,12 @@ export interface BulkRef {
   costPerKg: number;
 }
 
+export interface PocketCoilRef {
+  id: string;
+  name: string;
+  costPerUnit: number;
+}
+
 export interface EditableProduct {
   id: string;
   sku: string;
@@ -50,6 +56,7 @@ export interface EditableProduct {
   }[];
   fabrics: { fabricId: string; meters: number }[];
   bulkMaterials: { bulkMaterialId: string; grams: number }[];
+  pocketCoils: { pocketCoilId: string; quantity: number }[];
   manufacturing: {
     kind:
       | "LABOR"

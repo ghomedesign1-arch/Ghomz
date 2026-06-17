@@ -29,6 +29,7 @@ import {
 } from "@/components/dialogs/sponge-form-dialog";
 import { FabricFormDialog } from "@/components/dialogs/fabric-form-dialog";
 import { BulkFormDialog } from "@/components/dialogs/bulk-form-dialog";
+import { PocketCoilFormDialog } from "@/components/dialogs/pocket-coil-form-dialog";
 import { SupplierFormDialog } from "@/components/dialogs/supplier-form-dialog";
 
 interface Supplier {
@@ -84,6 +85,26 @@ export function AddBulkButton() {
         <Plus className="h-4 w-4" /> Add material
       </Button>
       <BulkFormDialog open={open} onOpenChange={setOpen} />
+    </>
+  );
+}
+
+export function AddPocketCoilButton({
+  suppliers,
+}: {
+  suppliers: Supplier[];
+}) {
+  const [open, setOpen] = React.useState(false);
+  return (
+    <>
+      <Button onClick={() => setOpen(true)}>
+        <Plus className="h-4 w-4" /> Add pocket coil
+      </Button>
+      <PocketCoilFormDialog
+        open={open}
+        onOpenChange={setOpen}
+        suppliers={suppliers}
+      />
     </>
   );
 }

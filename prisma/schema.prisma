@@ -96,9 +96,10 @@ model Supplier {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  sponges   Sponge[]
-  fabrics   Fabric[]
-  purchases Purchase[]
+  sponges     Sponge[]
+  fabrics     Fabric[]
+  pocketCoils PocketCoil[]
+  purchases   Purchase[]
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -230,6 +231,42 @@ model BulkMaterial {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+//  Pocket coils
+// ─────────────────────────────────────────────────────────────────────────────
+//
+//  Springs used inside sofa seats / kids beds. Priced per individual coil
+//  and counted in pieces (not grams), so they don't fit the BulkMaterial
+//  model — they get their own table.
+
+model PocketCoil {
+  id           String  @id @default(cuid())
+  name         String  // e.g. "Standard 14cm coil", "Premium 18cm coil"
+  costPerUnit  Float   // LE per coil
+  stockUnits   Int     @default(0)
+  reorderLevel Int     @default(0)
+  supplierId   String?
+  supplier     Supplier? @relation(fields: [supplierId], references: [id])
+  notes        String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  productUsages ProductPocketCoil[]
+}
+
+model ProductPocketCoil {
+  id           String   @id @default(cuid())
+  productId    String
+  pocketCoilId String
+  /// How many coils go into one finished product unit.
+  quantity     Int
+
+  product    Product    @relation(fields: [productId], references: [id], onDelete: Cascade)
+  pocketCoil PocketCoil @relation(fields: [pocketCoilId], references: [id])
+
+  @@unique([productId, pocketCoilId])
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 //  Products & their bill-of-materials
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -276,6 +313,7 @@ model Product {
   sponges         ProductSponge[]
   fabrics         ProductFabric[]
   bulkMaterials   ProductBulkMaterial[]
+  pocketCoils     ProductPocketCoil[]
   manufacturing   ManufacturingCost[]
   productionLogs  ProductionLog[]
   spongeYields    SpongeYield[]

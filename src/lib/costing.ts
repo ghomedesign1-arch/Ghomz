@@ -42,12 +42,20 @@ export type ManufacturingLine = {
   amount: number;
 };
 
+export type ProductPocketCoilUsage = {
+  /** Number of coils per finished product unit. */
+  quantity: number;
+  /** EGP per individual coil. */
+  costPerUnit: number;
+};
+
 export type ProductCostInput = {
   sponges: ProductSpongeUsage[];
   fabrics: ProductFabricUsage[];
   fibers: ProductBulkUsage[];
   packaging: ProductBulkUsage[];
   extras?: ProductBulkUsage[];
+  pocketCoils?: ProductPocketCoilUsage[];
   manufacturing: ManufacturingLine[];
   retailPrice?: number;
   wholesalePrice?: number;
@@ -59,6 +67,7 @@ export type ProductCostBreakdown = {
   fiberCost: number;
   packagingCost: number;
   extrasCost: number;
+  pocketCoilCost: number;
   manufacturingCost: number;
   /// Cost contributed by sub-products this product is composed of.
   compositionCost: number;
@@ -240,6 +249,9 @@ export function calculateProductCost(
   const fiberCost = sum(input.fibers.map(bulkLineCost));
   const packagingCost = sum(input.packaging.map(bulkLineCost));
   const extrasCost = sum((input.extras ?? []).map(bulkLineCost));
+  const pocketCoilCost = sum(
+    (input.pocketCoils ?? []).map((p) => p.quantity * p.costPerUnit),
+  );
   const manufacturingCost = sum(input.manufacturing.map((m) => m.amount));
   const compositionCost = input.compositionCost ?? 0;
 
@@ -249,6 +261,7 @@ export function calculateProductCost(
     fiberCost +
     packagingCost +
     extrasCost +
+    pocketCoilCost +
     manufacturingCost +
     compositionCost;
 
@@ -264,6 +277,7 @@ export function calculateProductCost(
     fiberCost: round(fiberCost),
     packagingCost: round(packagingCost),
     extrasCost: round(extrasCost),
+    pocketCoilCost: round(pocketCoilCost),
     manufacturingCost: round(manufacturingCost),
     compositionCost: round(compositionCost),
     totalCost: round(totalCost),
