@@ -3,7 +3,7 @@ import { z } from "zod";
 export const spongeInput = z.object({
   name: z.string().min(1),
   density: z.number().int().positive(),
-  hardness: z.enum(["SUPER_SOFT", "SOFT", "MEDIUM", "HARD"]),
+  hardness: z.enum(["SUPER_SOFT", "SOFT", "MEDIUM", "HARD", "MEMORY_FOAM"]),
   color: z.string().min(1),
   widthCm: z.number().positive(),
   depthCm: z.number().positive(),

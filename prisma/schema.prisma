@@ -115,6 +115,7 @@ enum SpongeHardness {
   SOFT
   MEDIUM
   HARD
+  MEMORY_FOAM
 }
 
 model Sponge {

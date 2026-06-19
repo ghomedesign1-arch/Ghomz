@@ -31,6 +31,7 @@ const HARDNESS = [
   { value: "SOFT", label: "Soft" },
   { value: "MEDIUM", label: "Medium" },
   { value: "HARD", label: "Hard" },
+  { value: "MEMORY_FOAM", label: "Memory foam" },
 ];
 
 export interface SpongeFormValues {

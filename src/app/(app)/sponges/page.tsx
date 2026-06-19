@@ -114,11 +114,13 @@ async function getProducts() {
   }
 }
 
-const HARDNESS_VARIANT: Record<string, "secondary" | "info" | "warning" | "destructive"> = {
+const HARDNESS_VARIANT: Record<string, "secondary" | "info" | "warning" | "destructive" | "success"> = {
+  SUPER_SOFT: "info",
   SOFT: "info",
   MEDIUM: "secondary",
   HARD: "warning",
   EXTRA_HARD: "destructive",
+  MEMORY_FOAM: "success",
 };
 
 export default async function SpongesPage() {
