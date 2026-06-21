@@ -33,7 +33,7 @@ interface EditCuttingListDialogProps {
   trigger?: React.ReactNode;
 }
 
-const MAX_BYTES = 10 * 1024 * 1024;
+const MAX_BYTES = 20 * 1024 * 1024;
 
 /**
  * Edit dialog for an existing cutting-list row. Lets you rename / re-note
@@ -164,7 +164,7 @@ export function EditCuttingListDialog({
                   <>
                     <div className="font-medium">Pick a new file to replace it</div>
                     <div className="text-xs text-muted-foreground">
-                      PDF, DWG, DXF, PNG, JPG, WEBP or GIF · up to 10 MB
+                      PDF, DWG, DXF, PNG, JPG, WEBP or GIF · up to 20 MB
                     </div>
                   </>
                 )}

@@ -10,7 +10,7 @@ import {
   uploadBuffer,
 } from "@/lib/cloudinary";
 
-const MAX_BYTES = 10 * 1024 * 1024; // 10 MB
+const MAX_BYTES = 20 * 1024 * 1024; // 20 MB
 
 const ACCEPTED_TYPES = new Set([
   "application/pdf",

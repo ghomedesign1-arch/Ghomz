@@ -35,7 +35,7 @@ interface UploadCuttingListDialogProps {
   triggerVariant?: "default" | "outline";
 }
 
-const MAX_BYTES = 10 * 1024 * 1024;
+const MAX_BYTES = 20 * 1024 * 1024;
 
 export function UploadCuttingListDialog({
   products,
@@ -127,7 +127,7 @@ export function UploadCuttingListDialog({
           <DialogTitle>Upload cutting list</DialogTitle>
           <DialogDescription>
             Attach a PDF, image, or AutoCAD <strong>DWG / DXF</strong> file the
-            factory uses to cut sponge for this product. Max 10 MB.
+            factory uses to cut sponge for this product. Max 20 MB.
           </DialogDescription>
         </DialogHeader>
 
@@ -169,7 +169,7 @@ export function UploadCuttingListDialog({
 
           <Field
             label="File"
-            hint="PDF, DWG, DXF, PNG, JPG, WEBP or GIF · up to 10 MB"
+            hint="PDF, DWG, DXF, PNG, JPG, WEBP or GIF · up to 20 MB"
           >
             <label
               htmlFor="cutting-list-file"
