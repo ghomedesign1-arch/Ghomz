@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/dialog";
 
 interface PreviewDialogProps {
+  cuttingListId: string;
   filePath: string;
   fileName: string;
   fileType: string;
@@ -28,6 +29,7 @@ interface PreviewDialogProps {
  * scanned diagrams fit on screen.
  */
 export function CuttingListPreviewDialog({
+  cuttingListId,
   filePath,
   fileName,
   fileType,
@@ -35,6 +37,7 @@ export function CuttingListPreviewDialog({
   triggerLabel = "View",
   trigger,
 }: PreviewDialogProps) {
+  const downloadHref = `/api/cutting-lists/${cuttingListId}/download`;
   const [open, setOpen] = React.useState(false);
   const isImage = fileType.startsWith("image/") && !/dwg|dxf/i.test(fileType);
   const isPdf = fileType === "application/pdf";
@@ -75,7 +78,7 @@ export function CuttingListPreviewDialog({
               </a>
             </Button>
             <Button asChild variant="outline" size="sm">
-              <a href={filePath} download={fileName}>
+              <a href={downloadHref}>
                 <Download className="h-4 w-4" /> Download
               </a>
             </Button>

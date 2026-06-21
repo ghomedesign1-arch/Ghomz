@@ -199,6 +199,7 @@ function FileCard({
   return (
     <div className="overflow-hidden rounded-xl border bg-card">
       <CuttingListPreviewDialog
+        cuttingListId={file.id}
         filePath={file.filePath}
         fileName={file.fileName}
         fileType={file.fileType}
@@ -273,13 +274,14 @@ function FileCard({
           </span>
           <div className="flex items-center gap-1">
             <CuttingListPreviewDialog
+              cuttingListId={file.id}
               filePath={file.filePath}
               fileName={file.fileName}
               fileType={file.fileType}
               title={file.title}
             />
             <Button asChild variant="ghost" size="sm" className="h-7 px-2">
-              <a href={file.filePath} download={file.fileName}>
+              <a href={`/api/cutting-lists/${file.id}/download`}>
                 Download
               </a>
             </Button>
