@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { FileText, Image as ImageIcon, Scissors } from "lucide-react";
+import { Check, FileText, Image as ImageIcon, Scissors } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -16,6 +16,8 @@ import { UploadCuttingListDialog } from "@/components/dialogs/upload-cutting-lis
 import { DeleteCuttingListButton } from "@/components/dialogs/delete-cutting-list-button";
 import { CuttingListPreviewDialog } from "@/components/dialogs/cutting-list-preview-dialog";
 import { EditCuttingListDialog } from "@/components/dialogs/edit-cutting-list-dialog";
+import { MarkDoneToggle } from "@/components/cutting-lists/mark-done-toggle";
+import { cn } from "@/lib/utils";
 
 export const dynamic = "force-dynamic";
 
@@ -27,7 +29,10 @@ async function load() {
       where: { parentId: null },
       include: {
         cuttingLists: {
-          include: { uploadedBy: { select: { name: true } } },
+          include: {
+            uploadedBy: { select: { name: true } },
+            doneBy: { select: { name: true } },
+          },
           orderBy: { createdAt: "desc" },
         },
       },
@@ -111,6 +116,8 @@ export default async function CuttingListsPage() {
           {products.map((p) => {
             const files =
               (p as { cuttingLists?: CuttingListFile[] }).cuttingLists ?? [];
+            const doneCount = files.filter((f) => f.done).length;
+            const allDone = files.length > 0 && doneCount === files.length;
             return (
               <Card key={p.id}>
                 <CardHeader className="flex flex-row items-start justify-between space-y-0">
@@ -125,6 +132,15 @@ export default async function CuttingListsPage() {
                       <Badge variant="secondary" className="text-[10px]">
                         {p.sku}
                       </Badge>
+                      {files.length > 0 && (
+                        <Badge
+                          variant={allDone ? "success" : "outline"}
+                          className="gap-1 text-[10px]"
+                        >
+                          {allDone && <Check className="h-3 w-3" />}
+                          {doneCount}/{files.length} done
+                        </Badge>
+                      )}
                     </CardTitle>
                     <CardDescription>
                       {files.length === 0
@@ -175,6 +191,9 @@ type CuttingListFile = {
   notes: string | null;
   createdAt: Date;
   uploadedBy?: { name: string } | null;
+  done: boolean;
+  doneAt: Date | null;
+  doneBy?: { name: string } | null;
 };
 
 function FileCard({
@@ -197,7 +216,17 @@ function FileCard({
       ? ext.toUpperCase()
       : (file.fileType.split("/")[1] ?? "FILE").toUpperCase();
   return (
-    <div className="overflow-hidden rounded-xl border bg-card">
+    <div
+      className={cn(
+        "relative overflow-hidden rounded-xl border bg-card transition-colors",
+        file.done && "border-emerald-300/70 bg-emerald-50/40 dark:border-emerald-700/60 dark:bg-emerald-950/20",
+      )}
+    >
+      {file.done && (
+        <div className="absolute right-2 top-2 z-10 inline-flex items-center gap-1 rounded-full bg-emerald-600 px-2 py-0.5 text-[10px] font-semibold text-white shadow-sm">
+          <Check className="h-3 w-3" /> Done
+        </div>
+      )}
       <CuttingListPreviewDialog
         cuttingListId={file.id}
         filePath={file.filePath}
@@ -263,16 +292,35 @@ function FileCard({
             {file.notes}
           </p>
         )}
-        <div className="mt-2 flex items-center justify-between text-[11px] text-muted-foreground">
-          <span>
-            {file.uploadedBy?.name ? `by ${file.uploadedBy.name} · ` : ""}
-            {file.createdAt.toLocaleDateString("en-GB", {
-              day: "2-digit",
-              month: "short",
-              year: "numeric",
-            })}
+        <div className="mt-2 flex items-center justify-between gap-2 text-[11px] text-muted-foreground">
+          <span className="truncate">
+            {file.done && file.doneAt ? (
+              <>
+                <span className="font-medium text-emerald-700 dark:text-emerald-400">
+                  Done{file.doneBy?.name ? ` by ${file.doneBy.name}` : ""}
+                </span>{" "}
+                ·{" "}
+                {file.doneAt.toLocaleDateString("en-GB", {
+                  day: "2-digit",
+                  month: "short",
+                  year: "numeric",
+                })}
+              </>
+            ) : (
+              <>
+                {file.uploadedBy?.name ? `by ${file.uploadedBy.name} · ` : ""}
+                {file.createdAt.toLocaleDateString("en-GB", {
+                  day: "2-digit",
+                  month: "short",
+                  year: "numeric",
+                })}
+              </>
+            )}
           </span>
           <div className="flex items-center gap-1">
+            {writeAccess && (
+              <MarkDoneToggle cuttingListId={file.id} done={file.done} />
+            )}
             <CuttingListPreviewDialog
               cuttingListId={file.id}
               filePath={file.filePath}

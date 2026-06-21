@@ -39,6 +39,7 @@ model User {
   productionLogs ProductionLog[]
   purchases      Purchase[]
   cuttingLists   CuttingList[]
+  cuttingListsDone CuttingList[] @relation("CuttingListDoneBy")
   customOrders   CustomOrder[]
 }
 
@@ -574,9 +575,15 @@ model CuttingList {
   notes        String?
   createdAt    DateTime @default(now())
   uploadedById String?
+  /// Production marks the cutting list "done" once the sponge for this product
+  /// has been cut. Lets the team see at a glance what's outstanding.
+  done         Boolean  @default(false)
+  doneAt       DateTime?
+  doneById     String?
 
   product    Product @relation(fields: [productId], references: [id], onDelete: Cascade)
   uploadedBy User?   @relation(fields: [uploadedById], references: [id])
+  doneBy     User?   @relation("CuttingListDoneBy", fields: [doneById], references: [id])
 
   @@index([productId])
 }
