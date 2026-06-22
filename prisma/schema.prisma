@@ -299,6 +299,10 @@ model Product {
   wholesalePrice  Float           @default(0)
   stockQty        Int             @default(0)
   active          Boolean         @default(true)
+  /// Free-form note about this product's sponge cutting work — shown on the
+  /// cutting-lists page so production can capture details like "use 7cm
+  /// blade" or "cut Couch Arm at 45°" alongside the uploaded PDFs/DWGs.
+  cuttingNote     String?
   createdAt       DateTime        @default(now())
   updatedAt       DateTime        @updatedAt
 

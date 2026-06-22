@@ -16,6 +16,7 @@ import {
   ProductFilesSection,
   type CuttingListFile,
 } from "@/components/cutting-lists/product-files-section";
+import { CuttingNoteEditor } from "@/components/cutting-lists/cutting-note-editor";
 
 export const dynamic = "force-dynamic";
 
@@ -155,15 +156,20 @@ export default async function CuttingListsPage() {
                     />
                   )}
                 </CardHeader>
-                {files.length > 0 && (
-                  <CardContent>
+                <CardContent className="space-y-4">
+                  <CuttingNoteEditor
+                    productId={p.id}
+                    initialNote={p.cuttingNote ?? null}
+                    canEdit={writeAccess}
+                  />
+                  {files.length > 0 && (
                     <ProductFilesSection
                       productId={p.id}
                       files={files}
                       writeAccess={writeAccess}
                     />
-                  </CardContent>
-                )}
+                  )}
+                </CardContent>
               </Card>
             );
           })}
