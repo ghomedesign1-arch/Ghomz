@@ -1,0 +1,1010 @@
+[
+  {
+    "id": "gid://shopify/Product/8455185531051",
+    "name": "Suger Snap",
+    "status": "ACTIVE",
+    "imageUrl": "https://cdn.shopify.com/s/files/1/0659/0821/1883/files/Mint-green-without.jpg?v=1785344950",
+    "description": "The Sugar Snap Bed is designed for little sleepers who need softness, safety, and a space to grow. Fully made from high-quality sponge, it features smooth curves, cushioned edges, and a low height 🍬 Why Parents Love It: 100% sponge structure for safe, impact-free design Rounded, child-friendly edges Low to the ground for easy, independent access Product Care: How to Clean: Spot Clean Gently Use a soft cloth or sponge with mild soap and cold water. Dab, don’t rub. Avoid Harsh Chemicals Do not use bleach, solvents, or strong detergents — they may damage the fabric and sponge. Product Warranty: 7 years against manufacturing defect Product Specifications: Dimensions Bed Dimension: W 120 - D 230 - H:90 cm Mattress dimension: W 84 - D 194 - H 12 cm W140 D230 H:90 cm Mattress dimension: W 104 - D 194 - H 12 cm Structure Crafted entirely from high-density sponge for a soft yet supportive feel — no internal wood or metal frames. Fabric Linen Filling Designed with comfort and support in balance: a soft sponge base for a cozy, sink-in seat, and a firmer sponge in the backrest to maintain shape and provide long-lasting support.",
+    "variants": [
+      {
+        "id": "gid://shopify/ProductVariant/45331344457899",
+        "title": "W120 x D230 cm / Mint Green / without",
+        "sku": "GH-BED-SUGER-120-MG-NM",
+        "price": 8500,
+        "widthCm": 120,
+        "depthCm": 230,
+        "heightCm": 90
+      },
+      {
+        "id": "gid://shopify/ProductVariant/47374963212459",
+        "title": "W120 x D230 cm / Mint Green / with",
+        "sku": "GH-BED-SUGER-120-MG-WM",
+        "price": 11500,
+        "widthCm": 120,
+        "depthCm": 230,
+        "heightCm": 90
+      },
+      {
+        "id": "gid://shopify/ProductVariant/47430158123179",
+        "title": "W120 x D230 cm / Baby Blue / without",
+        "sku": "GH-BED-SUGER-120-BB-NM",
+        "price": 8500,
+        "widthCm": 120,
+        "depthCm": 230,
+        "heightCm": 90
+      },
+      {
+        "id": "gid://shopify/ProductVariant/47430158221483",
+        "title": "W120 x D230 cm / Baby Blue / with",
+        "sku": "GH-BED-SUGER-120-BB-WM",
+        "price": 11500,
+        "widthCm": 120,
+        "depthCm": 230,
+        "heightCm": 90
+      },
+      {
+        "id": "gid://shopify/ProductVariant/47518124441771",
+        "title": "W120 x D230 cm / Light Beige / without",
+        "sku": "GH-BED-SUGER-120-LB-NM",
+        "price": 8500,
+        "widthCm": 120,
+        "depthCm": 230,
+        "heightCm": 90
+      },
+      {
+        "id": "gid://shopify/ProductVariant/47518124572843",
+        "title": "W120 x D230 cm / Light Beige / with",
+        "sku": "GH-BED-SUGER-120-LB-WM",
+        "price": 11500,
+        "widthCm": 120,
+        "depthCm": 230,
+        "heightCm": 90
+      },
+      {
+        "id": "gid://shopify/ProductVariant/47518124409003",
+        "title": "W120 x D230 cm / Beige / without",
+        "sku": "GH-BED-SUGER-120-BE-NM",
+        "price": 8500,
+        "widthCm": 120,
+        "depthCm": 230,
+        "heightCm": 90
+      },
+      {
+        "id": "gid://shopify/ProductVariant/47518124540075",
+        "title": "W120 x D230 cm / Beige / with",
+        "sku": "GH-BED-SUGER-120-BE-WM",
+        "price": 11500,
+        "widthCm": 120,
+        "depthCm": 230,
+        "heightCm": 90
+      },
+      {
+        "id": "gid://shopify/ProductVariant/47518124474539",
+        "title": "W120 x D230 cm / Brwon / without",
+        "sku": "GH-BED-SUGER-120-BR-NM",
+        "price": 8500,
+        "widthCm": 120,
+        "depthCm": 230,
+        "heightCm": 90
+      },
+      {
+        "id": "gid://shopify/ProductVariant/47518124605611",
+        "title": "W120 x D230 cm / Brwon / with",
+        "sku": "GH-BED-SUGER-120-BR-WM",
+        "price": 11500,
+        "widthCm": 120,
+        "depthCm": 230,
+        "heightCm": 90
+      },
+      {
+        "id": "gid://shopify/ProductVariant/47430158155947",
+        "title": "W120 x D230 cm / Grey / without",
+        "sku": "GH-BED-SUGER-120-GY-NM",
+        "price": 8500,
+        "widthCm": 120,
+        "depthCm": 230,
+        "heightCm": 90
+      },
+      {
+        "id": "gid://shopify/ProductVariant/47430158254251",
+        "title": "W120 x D230 cm / Grey / with",
+        "sku": "GH-BED-SUGER-120-GY-WM",
+        "price": 11500,
+        "widthCm": 120,
+        "depthCm": 230,
+        "heightCm": 90
+      },
+      {
+        "id": "gid://shopify/ProductVariant/47374963245227",
+        "title": "W140 x D230 cm / Mint Green / without",
+        "sku": "GH-BED-SUGER-140-MG-NM",
+        "price": 9500,
+        "widthCm": 140,
+        "depthCm": 230,
+        "heightCm": 90
+      },
+      {
+        "id": "gid://shopify/ProductVariant/47374963277995",
+        "title": "W140 x D230 cm / Mint Green / with",
+        "sku": "GH-BED-SUGER-140-MG-WM",
+        "price": 12500,
+        "widthCm": 140,
+        "depthCm": 230,
+        "heightCm": 90
+      },
+      {
+        "id": "gid://shopify/ProductVariant/47430158319787",
+        "title": "W140 x D230 cm / Baby Blue / without",
+        "sku": "GH-BED-SUGER-140-BB-NM",
+        "price": 9500,
+        "widthCm": 140,
+        "depthCm": 230,
+        "heightCm": 90
+      },
+      {
+        "id": "gid://shopify/ProductVariant/47430158418091",
+        "title": "W140 x D230 cm / Baby Blue / with",
+        "sku": "GH-BED-SUGER-140-BB-WM",
+        "price": 12500,
+        "widthCm": 140,
+        "depthCm": 230,
+        "heightCm": 90
+      },
+      {
+        "id": "gid://shopify/ProductVariant/47518124703915",
+        "title": "W140 x D230 cm / Light Beige / without",
+        "sku": "GH-BED-SUGER-140-LB-NM",
+        "price": 9500,
+        "widthCm": 140,
+        "depthCm": 230,
+        "heightCm": 90
+      },
+      {
+        "id": "gid://shopify/ProductVariant/47518124834987",
+        "title": "W140 x D230 cm / Light Beige / with",
+        "sku": "GH-BED-SUGER-140-LB-WM",
+        "price": 12500,
+        "widthCm": 140,
+        "depthCm": 230,
+        "heightCm": 90
+      },
+      {
+        "id": "gid://shopify/ProductVariant/47518124671147",
+        "title": "W140 x D230 cm / Beige / without",
+        "sku": "GH-BED-SUGER-140-BE-NM",
+        "price": 9500,
+        "widthCm": 140,
+        "depthCm": 230,
+        "heightCm": 90
+      },
+      {
+        "id": "gid://shopify/ProductVariant/47518124802219",
+        "title": "W140 x D230 cm / Beige / with",
+        "sku": "GH-BED-SUGER-140-BE-WM",
+        "price": 12500,
+        "widthCm": 140,
+        "depthCm": 230,
+        "heightCm": 90
+      },
+      {
+        "id": "gid://shopify/ProductVariant/47518124736683",
+        "title": "W140 x D230 cm / Brwon / without",
+        "sku": "GH-BED-SUGER-140-BR-NM",
+        "price": 9500,
+        "widthCm": 140,
+        "depthCm": 230,
+        "heightCm": 90
+      },
+      {
+        "id": "gid://shopify/ProductVariant/47518124867755",
+        "title": "W140 x D230 cm / Brwon / with",
+        "sku": "GH-BED-SUGER-140-BR-WM",
+        "price": 12500,
+        "widthCm": 140,
+        "depthCm": 230,
+        "heightCm": 90
+      },
+      {
+        "id": "gid://shopify/ProductVariant/47430158352555",
+        "title": "W140 x D230 cm / Grey / without",
+        "sku": "GH-BED-SUGER-140-GY-NM",
+        "price": 9500,
+        "widthCm": 140,
+        "depthCm": 230,
+        "heightCm": 90
+      },
+      {
+        "id": "gid://shopify/ProductVariant/47430158450859",
+        "title": "W140 x D230 cm / Grey / with",
+        "sku": "GH-BED-SUGER-140-GY-WM",
+        "price": 12500,
+        "widthCm": 140,
+        "depthCm": 230,
+        "heightCm": 90
+      }
+    ]
+  },
+  {
+    "id": "gid://shopify/Product/8455213351083",
+    "name": "Tiny Cloud",
+    "status": "ACTIVE",
+    "imageUrl": "https://cdn.shopify.com/s/files/1/0659/0821/1883/files/05-Dusty-Blue-without_ed0521ed-e467-45a1-a41d-be91524f7fba.jpg?v=1790772132",
+    "description": "Soft as a cloud. Safe as a hug. Tiny Cloud is more than just a bed — it’s a cozy, cushioned world made just for kids. Fully crafted from soft sponge, it’s designed to keep your little ones safe and snug while they sleep, play, or roll around. ☁️ Why Families Love It: Made entirely from soft sponge No hard edges or sharp corners Extra-safe for babies and toddlers Low to the ground for easy, independent access Lightweight & easy to move Product Care: How to Clean: Spot Clean Gently Use a soft cloth or sponge with mild soap and cold water. Dab, don’t rub. Avoid Harsh Chemicals Do not use bleach, solvents, or strong detergents — they may damage the fabric and sponge. Product Warranty: 3 years against manufacturing defect Product Specifications: Dimensions 230 x 120 H:90 cm Structure Crafted entirely from high-density sponge for a soft yet supportive feel — no internal wood or metal frames. Fabric Linen Filling Designed with comfort and support in balance: a soft sponge base for a cozy, sink-in seat, and a firmer sponge in the backrest to maintain shape and provide long-lasting support.",
+    "variants": [
+      {
+        "id": "gid://shopify/ProductVariant/47529045622955",
+        "title": "W120 x D230 cm / Dusty Blue / Without",
+        "sku": "GH-BED-TINY-120-DB-NM",
+        "price": 8500,
+        "widthCm": 120,
+        "depthCm": 230,
+        "heightCm": 90
+      },
+      {
+        "id": "gid://shopify/ProductVariant/47529045459115",
+        "title": "W120 x D230 cm / Dusty Blue / With",
+        "sku": "GH-BED-TINY-120-DB-WM",
+        "price": 11500,
+        "widthCm": 120,
+        "depthCm": 230,
+        "heightCm": 90
+      },
+      {
+        "id": "gid://shopify/ProductVariant/47529045655723",
+        "title": "W120 x D230 cm / Ivory / Without",
+        "sku": "GH-BED-TINY-120-IV-NM",
+        "price": 8500,
+        "widthCm": 120,
+        "depthCm": 230,
+        "heightCm": 90
+      },
+      {
+        "id": "gid://shopify/ProductVariant/47529045491883",
+        "title": "W120 x D230 cm / Ivory / With",
+        "sku": "GH-BED-TINY-120-IV-WM",
+        "price": 11500,
+        "widthCm": 120,
+        "depthCm": 230,
+        "heightCm": 90
+      },
+      {
+        "id": "gid://shopify/ProductVariant/47529045688491",
+        "title": "W120 x D230 cm / Light Beige / Without",
+        "sku": "GH-BED-TINY-120-LB-NM",
+        "price": 8500,
+        "widthCm": 120,
+        "depthCm": 230,
+        "heightCm": 90
+      },
+      {
+        "id": "gid://shopify/ProductVariant/47529045524651",
+        "title": "W120 x D230 cm / Light Beige / With",
+        "sku": "GH-BED-TINY-120-LB-WM",
+        "price": 11500,
+        "widthCm": 120,
+        "depthCm": 230,
+        "heightCm": 90
+      },
+      {
+        "id": "gid://shopify/ProductVariant/47529045721259",
+        "title": "W120 x D230 cm / Taupe / Without",
+        "sku": "GH-BED-TINY-120-TP-NM",
+        "price": 8500,
+        "widthCm": 120,
+        "depthCm": 230,
+        "heightCm": 90
+      },
+      {
+        "id": "gid://shopify/ProductVariant/47529045557419",
+        "title": "W120 x D230 cm / Taupe / With",
+        "sku": "GH-BED-TINY-120-TP-WM",
+        "price": 11500,
+        "widthCm": 120,
+        "depthCm": 230,
+        "heightCm": 90
+      },
+      {
+        "id": "gid://shopify/ProductVariant/47529049456811",
+        "title": "W120 x D230 cm / Dark Coffee / Without",
+        "sku": "GH-BED-TINY-120-DC-NM",
+        "price": 8500,
+        "widthCm": 120,
+        "depthCm": 230,
+        "heightCm": 90
+      },
+      {
+        "id": "gid://shopify/ProductVariant/47529049424043",
+        "title": "W120 x D230 cm / Dark Coffee / With",
+        "sku": "GH-BED-TINY-120-DC-WM",
+        "price": 11500,
+        "widthCm": 120,
+        "depthCm": 230,
+        "heightCm": 90
+      },
+      {
+        "id": "gid://shopify/ProductVariant/47967314673835",
+        "title": "W120 x D230 cm / Navy Blue / Without",
+        "sku": "GH-BED-TINY-120-NB-NM",
+        "price": 8500,
+        "widthCm": 120,
+        "depthCm": 230,
+        "heightCm": 90
+      },
+      {
+        "id": "gid://shopify/ProductVariant/47967314739371",
+        "title": "W120 x D230 cm / Navy Blue / With",
+        "sku": "GH-BED-TINY-120-NB-WM",
+        "price": 11500,
+        "widthCm": 120,
+        "depthCm": 230,
+        "heightCm": 90
+      },
+      {
+        "id": "gid://shopify/ProductVariant/47967314706603",
+        "title": "W120 x D230 cm / Sage / Without",
+        "sku": "GH-BED-TINY-120-SG-NM",
+        "price": 8500,
+        "widthCm": 120,
+        "depthCm": 230,
+        "heightCm": 90
+      },
+      {
+        "id": "gid://shopify/ProductVariant/47967314772139",
+        "title": "W120 x D230 cm / Sage / With",
+        "sku": "GH-BED-TINY-120-SG-WM",
+        "price": 11500,
+        "widthCm": 120,
+        "depthCm": 230,
+        "heightCm": 90
+      },
+      {
+        "id": "gid://shopify/ProductVariant/47529045754027",
+        "title": "W120 x D230 cm / Grey / Without",
+        "sku": "GH-BED-TINY-120-GY-NM",
+        "price": 8500,
+        "widthCm": 120,
+        "depthCm": 230,
+        "heightCm": 90
+      },
+      {
+        "id": "gid://shopify/ProductVariant/47529045590187",
+        "title": "W120 x D230 cm / Grey / With",
+        "sku": "GH-BED-TINY-120-GY-WM",
+        "price": 11500,
+        "widthCm": 120,
+        "depthCm": 230,
+        "heightCm": 90
+      },
+      {
+        "id": "gid://shopify/ProductVariant/47529045950635",
+        "title": "W140 x D230 cm / Dusty Blue / Without",
+        "sku": "GH-BED-TINY-140-DB-NM",
+        "price": 9500,
+        "widthCm": 140,
+        "depthCm": 230,
+        "heightCm": 90
+      },
+      {
+        "id": "gid://shopify/ProductVariant/47529045786795",
+        "title": "W140 x D230 cm / Dusty Blue / With",
+        "sku": "GH-BED-TINY-140-DB-WM",
+        "price": 12500,
+        "widthCm": 140,
+        "depthCm": 230,
+        "heightCm": 90
+      },
+      {
+        "id": "gid://shopify/ProductVariant/47529045983403",
+        "title": "W140 x D230 cm / Ivory / Without",
+        "sku": "GH-BED-TINY-140-IV-NM",
+        "price": 9500,
+        "widthCm": 140,
+        "depthCm": 230,
+        "heightCm": 90
+      },
+      {
+        "id": "gid://shopify/ProductVariant/47529045819563",
+        "title": "W140 x D230 cm / Ivory / With",
+        "sku": "GH-BED-TINY-140-IV-WM",
+        "price": 12500,
+        "widthCm": 140,
+        "depthCm": 230,
+        "heightCm": 90
+      },
+      {
+        "id": "gid://shopify/ProductVariant/47529046016171",
+        "title": "W140 x D230 cm / Light Beige / Without",
+        "sku": "GH-BED-TINY-140-LB-NM",
+        "price": 9500,
+        "widthCm": 140,
+        "depthCm": 230,
+        "heightCm": 90
+      },
+      {
+        "id": "gid://shopify/ProductVariant/47529045852331",
+        "title": "W140 x D230 cm / Light Beige / With",
+        "sku": "GH-BED-TINY-140-LB-WM",
+        "price": 12500,
+        "widthCm": 140,
+        "depthCm": 230,
+        "heightCm": 90
+      },
+      {
+        "id": "gid://shopify/ProductVariant/47529046048939",
+        "title": "W140 x D230 cm / Taupe / Without",
+        "sku": "GH-BED-TINY-140-TP-NM",
+        "price": 9500,
+        "widthCm": 140,
+        "depthCm": 230,
+        "heightCm": 90
+      },
+      {
+        "id": "gid://shopify/ProductVariant/47529045885099",
+        "title": "W140 x D230 cm / Taupe / With",
+        "sku": "GH-BED-TINY-140-TP-WM",
+        "price": 12500,
+        "widthCm": 140,
+        "depthCm": 230,
+        "heightCm": 90
+      },
+      {
+        "id": "gid://shopify/ProductVariant/47529049522347",
+        "title": "W140 x D230 cm / Dark Coffee / Without",
+        "sku": "GH-BED-TINY-140-DC-NM",
+        "price": 9500,
+        "widthCm": 140,
+        "depthCm": 230,
+        "heightCm": 90
+      },
+      {
+        "id": "gid://shopify/ProductVariant/47529049489579",
+        "title": "W140 x D230 cm / Dark Coffee / With",
+        "sku": "GH-BED-TINY-140-DC-WM",
+        "price": 12500,
+        "widthCm": 140,
+        "depthCm": 230,
+        "heightCm": 90
+      },
+      {
+        "id": "gid://shopify/ProductVariant/47967314804907",
+        "title": "W140 x D230 cm / Navy Blue / Without",
+        "sku": "GH-BED-TINY-140-NB-NM",
+        "price": 9500,
+        "widthCm": 140,
+        "depthCm": 230,
+        "heightCm": 90
+      },
+      {
+        "id": "gid://shopify/ProductVariant/47967314870443",
+        "title": "W140 x D230 cm / Navy Blue / With",
+        "sku": "GH-BED-TINY-140-NB-WM",
+        "price": 12500,
+        "widthCm": 140,
+        "depthCm": 230,
+        "heightCm": 90
+      },
+      {
+        "id": "gid://shopify/ProductVariant/47967314837675",
+        "title": "W140 x D230 cm / Sage / Without",
+        "sku": "GH-BED-TINY-140-SG-NM",
+        "price": 9500,
+        "widthCm": 140,
+        "depthCm": 230,
+        "heightCm": 90
+      },
+      {
+        "id": "gid://shopify/ProductVariant/47967314903211",
+        "title": "W140 x D230 cm / Sage / With",
+        "sku": "GH-BED-TINY-140-SG-WM",
+        "price": 12500,
+        "widthCm": 140,
+        "depthCm": 230,
+        "heightCm": 90
+      },
+      {
+        "id": "gid://shopify/ProductVariant/47529046081707",
+        "title": "W140 x D230 cm / Grey / Without",
+        "sku": "GH-BED-TINY-140-GY-NM",
+        "price": 9500,
+        "widthCm": 140,
+        "depthCm": 230,
+        "heightCm": 90
+      },
+      {
+        "id": "gid://shopify/ProductVariant/47529045917867",
+        "title": "W140 x D230 cm / Grey / With",
+        "sku": "GH-BED-TINY-140-GY-WM",
+        "price": 12500,
+        "widthCm": 140,
+        "depthCm": 230,
+        "heightCm": 90
+      }
+    ]
+  },
+  {
+    "id": "gid://shopify/Product/8456048902315",
+    "name": "Tot bed",
+    "status": "DRAFT",
+    "imageUrl": "https://cdn.shopify.com/s/files/1/0659/0821/1883/files/kids-bed-website23.jpg?v=1750698947",
+    "description": "Small in size. Big on comfort. The Tot Bed is specially made for your tiniest dreamers. With a full sponge structure and rounded, cushioned edges, it creates a safe and cozy sleep space for babies and toddlers. Its low-to-the-ground design makes it easy to climb into — and nearly impossible to fall from. Gentle on the body and kind to the eyes, Tot Bed is the perfect first bed for your little one’s growing world. 👶 Why Parents Love It: Fully made from soft sponge for maximum safety No sharp edges or hard corners Low design that encourages independence Lightweight and easy to move Product Care: How to Clean: Spot Clean Gently Use a soft cloth or sponge with mild soap and cold water. Dab, don’t rub. Avoid Harsh Chemicals Do not use bleach, solvents, or strong detergents — they may damage the fabric and sponge. Product Warranty: 3 years against manufacturing defect Product Specifications: Dimensions 230 x 120 H:90 cm Structure Crafted entirely from high-density sponge for a soft yet supportive feel — no internal wood or metal frames. Fabric Linen Filling Designed with comfort and support in balance: a soft sponge base for a cozy, sink-in seat, and a firmer sponge in the backrest to maintain shape and provide long-lasting support.",
+    "variants": [
+      {
+        "id": "gid://shopify/ProductVariant/45334139895979",
+        "title": "230x120x90",
+        "sku": "GH-BED-TOT-120",
+        "price": 8500,
+        "widthCm": 120,
+        "depthCm": 230,
+        "heightCm": 90
+      }
+    ]
+  },
+  {
+    "id": "gid://shopify/Product/8456168833195",
+    "name": "Mallow bed",
+    "status": "ACTIVE",
+    "imageUrl": "https://cdn.shopify.com/s/files/1/0659/0821/1883/files/brwon-without_e922dc90-d184-46d1-9463-f7003f74c910.jpg?v=1790483948",
+    "description": "Light, fluffy, and full of comfort. Inspired by the softness of marshmallows, the Mallow Bed is a dreamy sleep space made entirely from sponge to keep your child safe and sound. With smooth, cushioned edges and a low, ground-hugging design, Mallow Bed is perfect for little ones who are just learning to sleep on their own. No hard edges, no worries — just a soft, secure hug all night long. ☁️ Why Parents Love It: Made entirely from sponge for maximum safety No hard corners or sharp edges Low-to-the-ground design for toddlers and babies Lightweight and easy to move or reposition Product Care: How to Clean: Spot Clean Gently Use a soft cloth or sponge with mild soap and cold water. Dab, don’t rub. Avoid Harsh Chemicals Do not use bleach, solvents, or strong detergents — they may damage the fabric and sponge. Product Warranty: 3 years against manufacturing defect Product Specifications: Dimensions 230 x 120 H:90 cm Structure Crafted entirely from high-density sponge for a soft yet supportive feel — no internal wood or metal frames. Fabric Linen Filling Designed with comfort and support in balance: a soft sponge base for a cozy, sink-in seat, and a firmer sponge in the backrest to maintain shape and provide long-lasting support.",
+    "variants": [
+      {
+        "id": "gid://shopify/ProductVariant/47527426097323",
+        "title": "W120 x D230 cm / Brwon / Without",
+        "sku": "GH-BED-MALLOW-120-BR-NM",
+        "price": 8500,
+        "widthCm": 120,
+        "depthCm": 230,
+        "heightCm": 90
+      },
+      {
+        "id": "gid://shopify/ProductVariant/47527425933483",
+        "title": "W120 x D230 cm / Brwon / With",
+        "sku": "GH-BED-MALLOW-120-BR-WM",
+        "price": 11500,
+        "widthCm": 120,
+        "depthCm": 230,
+        "heightCm": 90
+      },
+      {
+        "id": "gid://shopify/ProductVariant/47527426031787",
+        "title": "W120 x D230 cm / Light Beige / Without",
+        "sku": "GH-BED-MALLOW-120-LB-NM",
+        "price": 8500,
+        "widthCm": 120,
+        "depthCm": 230,
+        "heightCm": 90
+      },
+      {
+        "id": "gid://shopify/ProductVariant/47527425867947",
+        "title": "W120 x D230 cm / Light Beige / With",
+        "sku": "GH-BED-MALLOW-120-LB-WM",
+        "price": 11500,
+        "widthCm": 120,
+        "depthCm": 230,
+        "heightCm": 90
+      },
+      {
+        "id": "gid://shopify/ProductVariant/47527425999019",
+        "title": "W120 x D230 cm / Baby Blue / Without",
+        "sku": "GH-BED-MALLOW-120-BB-NM",
+        "price": 8500,
+        "widthCm": 120,
+        "depthCm": 230,
+        "heightCm": 90
+      },
+      {
+        "id": "gid://shopify/ProductVariant/47527425835179",
+        "title": "W120 x D230 cm / Baby Blue / With",
+        "sku": "GH-BED-MALLOW-120-BB-WM",
+        "price": 11500,
+        "widthCm": 120,
+        "depthCm": 230,
+        "heightCm": 90
+      },
+      {
+        "id": "gid://shopify/ProductVariant/47527425966251",
+        "title": "W120 x D230 cm / Mint Green / Without",
+        "sku": "GH-BED-MALLOW-120-MG-NM",
+        "price": 8500,
+        "widthCm": 120,
+        "depthCm": 230,
+        "heightCm": 90
+      },
+      {
+        "id": "gid://shopify/ProductVariant/45334640132267",
+        "title": "W120 x D230 cm / Mint Green / With",
+        "sku": "GH-BED-MALLOW-120-MG-WM",
+        "price": 11500,
+        "widthCm": 120,
+        "depthCm": 230,
+        "heightCm": 90
+      },
+      {
+        "id": "gid://shopify/ProductVariant/47527426064555",
+        "title": "W120 x D230 cm / Beige / Without",
+        "sku": "GH-BED-MALLOW-120-BE-NM",
+        "price": 8500,
+        "widthCm": 120,
+        "depthCm": 230,
+        "heightCm": 90
+      },
+      {
+        "id": "gid://shopify/ProductVariant/47527425900715",
+        "title": "W120 x D230 cm / Beige / With",
+        "sku": "GH-BED-MALLOW-120-BE-WM",
+        "price": 11500,
+        "widthCm": 120,
+        "depthCm": 230,
+        "heightCm": 90
+      },
+      {
+        "id": "gid://shopify/ProductVariant/47527607632043",
+        "title": "W120 x D230 cm / Grey / Without",
+        "sku": "GH-BED-MALLOW-120-GY-NM",
+        "price": 8500,
+        "widthCm": 120,
+        "depthCm": 230,
+        "heightCm": 90
+      },
+      {
+        "id": "gid://shopify/ProductVariant/47527607664811",
+        "title": "W120 x D230 cm / Grey / With",
+        "sku": "GH-BED-MALLOW-120-GY-WM",
+        "price": 11500,
+        "widthCm": 120,
+        "depthCm": 230,
+        "heightCm": 90
+      },
+      {
+        "id": "gid://shopify/ProductVariant/47527426425003",
+        "title": "W140 x D230 cm / Brwon / Without",
+        "sku": "GH-BED-MALLOW-140-BR-NM",
+        "price": 9500,
+        "widthCm": 140,
+        "depthCm": 230,
+        "heightCm": 90
+      },
+      {
+        "id": "gid://shopify/ProductVariant/47527426261163",
+        "title": "W140 x D230 cm / Brwon / With",
+        "sku": "GH-BED-MALLOW-140-BR-WM",
+        "price": 12500,
+        "widthCm": 140,
+        "depthCm": 230,
+        "heightCm": 90
+      },
+      {
+        "id": "gid://shopify/ProductVariant/47527426359467",
+        "title": "W140 x D230 cm / Light Beige / Without",
+        "sku": "GH-BED-MALLOW-140-LB-NM",
+        "price": 9500,
+        "widthCm": 140,
+        "depthCm": 230,
+        "heightCm": 90
+      },
+      {
+        "id": "gid://shopify/ProductVariant/47527426195627",
+        "title": "W140 x D230 cm / Light Beige / With",
+        "sku": "GH-BED-MALLOW-140-LB-WM",
+        "price": 12500,
+        "widthCm": 140,
+        "depthCm": 230,
+        "heightCm": 90
+      },
+      {
+        "id": "gid://shopify/ProductVariant/47527426326699",
+        "title": "W140 x D230 cm / Baby Blue / Without",
+        "sku": "GH-BED-MALLOW-140-BB-NM",
+        "price": 9500,
+        "widthCm": 140,
+        "depthCm": 230,
+        "heightCm": 90
+      },
+      {
+        "id": "gid://shopify/ProductVariant/47527426162859",
+        "title": "W140 x D230 cm / Baby Blue / With",
+        "sku": "GH-BED-MALLOW-140-BB-WM",
+        "price": 12500,
+        "widthCm": 140,
+        "depthCm": 230,
+        "heightCm": 90
+      },
+      {
+        "id": "gid://shopify/ProductVariant/47527426293931",
+        "title": "W140 x D230 cm / Mint Green / Without",
+        "sku": "GH-BED-MALLOW-140-MG-NM",
+        "price": 9500,
+        "widthCm": 140,
+        "depthCm": 230,
+        "heightCm": 90
+      },
+      {
+        "id": "gid://shopify/ProductVariant/47527426130091",
+        "title": "W140 x D230 cm / Mint Green / With",
+        "sku": "GH-BED-MALLOW-140-MG-WM",
+        "price": 12500,
+        "widthCm": 140,
+        "depthCm": 230,
+        "heightCm": 90
+      },
+      {
+        "id": "gid://shopify/ProductVariant/47527426392235",
+        "title": "W140 x D230 cm / Beige / Without",
+        "sku": "GH-BED-MALLOW-140-BE-NM",
+        "price": 9500,
+        "widthCm": 140,
+        "depthCm": 230,
+        "heightCm": 90
+      },
+      {
+        "id": "gid://shopify/ProductVariant/47527426228395",
+        "title": "W140 x D230 cm / Beige / With",
+        "sku": "GH-BED-MALLOW-140-BE-WM",
+        "price": 12500,
+        "widthCm": 140,
+        "depthCm": 230,
+        "heightCm": 90
+      },
+      {
+        "id": "gid://shopify/ProductVariant/47527607697579",
+        "title": "W140 x D230 cm / Grey / Without",
+        "sku": "GH-BED-MALLOW-140-GY-NM",
+        "price": 9500,
+        "widthCm": 140,
+        "depthCm": 230,
+        "heightCm": 90
+      },
+      {
+        "id": "gid://shopify/ProductVariant/47527607730347",
+        "title": "W140 x D230 cm / Grey / With",
+        "sku": "GH-BED-MALLOW-140-GY-WM",
+        "price": 12500,
+        "widthCm": 140,
+        "depthCm": 230,
+        "heightCm": 90
+      }
+    ]
+  },
+  {
+    "id": "gid://shopify/Product/8456492974251",
+    "name": "Honey Hug",
+    "status": "DRAFT",
+    "imageUrl": "https://cdn.shopify.com/s/files/1/0659/0821/1883/files/hony-kids-bed-website.jpg?v=1750713530",
+    "description": "A bed that hugs back. Just like its name, Honey Hug wraps your little one in warmth and safety. Made entirely from soft sponge and designed with rounded, cushioned edges, it creates a gentle and secure sleeping space for babies and toddlers. Low to the ground and completely free of hard surfaces, Honey Hug is the perfect bed for peaceful nights and playful mornings. Whether it’s nap time, bedtime, or story time — Honey Hug is always there with a soft embrace. 🍯 Why Parents Love It: Fully made from soft sponge Safe, impact-free design with no sharp edges Low height for easy access and extra safety Lightweight and easy to move Product Care: How to Clean: Spot Clean Gently Use a soft cloth or sponge with mild soap and cold water. Dab, don’t rub. Avoid Harsh Chemicals Do not use bleach, solvents, or strong detergents — they may damage the fabric and sponge. Product Warranty: 3 years against manufacturing defect Product Specifications: Dimensions 230 x 120 H:90 cm Structure Crafted entirely from high-density sponge for a soft yet supportive feel — no internal wood or metal frames. Fabric Linen Filling Designed with comfort and support in balance: a soft sponge base for a cozy, sink-in seat, and a firmer sponge in the backrest to maintain shape and provide long-lasting support.",
+    "variants": [
+      {
+        "id": "gid://shopify/ProductVariant/45335997022379",
+        "title": "230x120x90",
+        "sku": "GH-BED-HONEY-120",
+        "price": 8000,
+        "widthCm": 120,
+        "depthCm": 230,
+        "heightCm": 90
+      }
+    ]
+  },
+  {
+    "id": "gid://shopify/Product/8456526266539",
+    "name": "sleepy bite",
+    "status": "ACTIVE",
+    "imageUrl": "https://cdn.shopify.com/s/files/1/0659/0821/1883/files/Grey-without_e45b0d83-e846-419f-b776-05da22faf594.jpg?v=1785359639",
+    "description": "Soft, snug, and made to nibble on naps. Just like a comforting bedtime treat, the Sleepy Bite Bed is designed to make every snooze sweeter. Crafted entirely from soft sponge with rounded edges and a low, floor-hugging form, it creates a safe and cozy sleep zone for babies and toddlers. Whether it’s nap time, quiet time, or dream time, Sleepy Bite is always ready to gently catch your little one. 🍪 Why Parents Love It: Made 100% from soft sponge for total safety Cushioned, rounded edges — no sharp corners Low to the ground for easy access and extra protection Lightweight and easy to move Product Care: How to Clean: Spot Clean Gently Use a soft cloth or sponge with mild soap and cold water. Dab, don’t rub. Avoid Harsh Chemicals Do not use bleach, solvents, or strong detergents — they may damage the fabric and sponge. Product Warranty: 3 years against manufacturing defect Product Specifications: Dimensions 230 x 120 H:90 cm Structure Crafted entirely from high-density sponge for a soft yet supportive feel — no internal wood or metal frames. Fabric Linen Filling Designed with comfort and support in balance: a soft sponge base for a cozy, sink-in seat, and a firmer sponge in the backrest to maintain shape and provide long-lasting support.",
+    "variants": [
+      {
+        "id": "gid://shopify/ProductVariant/45336114856107",
+        "title": "W120 x D230 cm / Grey / Without",
+        "sku": "GH-BED-SLEEPY-120-GY-NM",
+        "price": 8500,
+        "widthCm": 120,
+        "depthCm": 230,
+        "heightCm": 90
+      },
+      {
+        "id": "gid://shopify/ProductVariant/47529795715243",
+        "title": "W120 x D230 cm / Grey / With",
+        "sku": "GH-BED-SLEEPY-120-GY-WM",
+        "price": 11500,
+        "widthCm": 120,
+        "depthCm": 230,
+        "heightCm": 90
+      },
+      {
+        "id": "gid://shopify/ProductVariant/47529795748011",
+        "title": "W120 x D230 cm / Beige / Without",
+        "sku": "GH-BED-SLEEPY-120-BE-NM",
+        "price": 8500,
+        "widthCm": 120,
+        "depthCm": 230,
+        "heightCm": 90
+      },
+      {
+        "id": "gid://shopify/ProductVariant/47529795780779",
+        "title": "W120 x D230 cm / Beige / With",
+        "sku": "GH-BED-SLEEPY-120-BE-WM",
+        "price": 11500,
+        "widthCm": 120,
+        "depthCm": 230,
+        "heightCm": 90
+      },
+      {
+        "id": "gid://shopify/ProductVariant/47529795813547",
+        "title": "W120 x D230 cm / Brwon / Without",
+        "sku": "GH-BED-SLEEPY-120-BR-NM",
+        "price": 8500,
+        "widthCm": 120,
+        "depthCm": 230,
+        "heightCm": 90
+      },
+      {
+        "id": "gid://shopify/ProductVariant/47529795846315",
+        "title": "W120 x D230 cm / Brwon / With",
+        "sku": "GH-BED-SLEEPY-120-BR-WM",
+        "price": 11500,
+        "widthCm": 120,
+        "depthCm": 230,
+        "heightCm": 90
+      },
+      {
+        "id": "gid://shopify/ProductVariant/47529795879083",
+        "title": "W120 x D230 cm / Light Beige / Without",
+        "sku": "GH-BED-SLEEPY-120-LB-NM",
+        "price": 8500,
+        "widthCm": 120,
+        "depthCm": 230,
+        "heightCm": 90
+      },
+      {
+        "id": "gid://shopify/ProductVariant/47529795911851",
+        "title": "W120 x D230 cm / Light Beige / With",
+        "sku": "GH-BED-SLEEPY-120-LB-WM",
+        "price": 11500,
+        "widthCm": 120,
+        "depthCm": 230,
+        "heightCm": 90
+      },
+      {
+        "id": "gid://shopify/ProductVariant/47529795944619",
+        "title": "W120 x D230 cm / Mint Green / Without",
+        "sku": "GH-BED-SLEEPY-120-MG-NM",
+        "price": 8500,
+        "widthCm": 120,
+        "depthCm": 230,
+        "heightCm": 90
+      },
+      {
+        "id": "gid://shopify/ProductVariant/47529795977387",
+        "title": "W120 x D230 cm / Mint Green / With",
+        "sku": "GH-BED-SLEEPY-120-MG-WM",
+        "price": 11500,
+        "widthCm": 120,
+        "depthCm": 230,
+        "heightCm": 90
+      },
+      {
+        "id": "gid://shopify/ProductVariant/47529796010155",
+        "title": "W120 x D230 cm / Baby blue / Without",
+        "sku": "GH-BED-SLEEPY-120-BB-NM",
+        "price": 8500,
+        "widthCm": 120,
+        "depthCm": 230,
+        "heightCm": 90
+      },
+      {
+        "id": "gid://shopify/ProductVariant/47529796042923",
+        "title": "W120 x D230 cm / Baby blue / With",
+        "sku": "GH-BED-SLEEPY-120-BB-WM",
+        "price": 11500,
+        "widthCm": 120,
+        "depthCm": 230,
+        "heightCm": 90
+      },
+      {
+        "id": "gid://shopify/ProductVariant/47529796075691",
+        "title": "W140 x D230 cm / Grey / Without",
+        "sku": "GH-BED-SLEEPY-140-GY-NM",
+        "price": 9500,
+        "widthCm": 140,
+        "depthCm": 230,
+        "heightCm": 90
+      },
+      {
+        "id": "gid://shopify/ProductVariant/47529796108459",
+        "title": "W140 x D230 cm / Grey / With",
+        "sku": "GH-BED-SLEEPY-140-GY-WM",
+        "price": 12500,
+        "widthCm": 140,
+        "depthCm": 230,
+        "heightCm": 90
+      },
+      {
+        "id": "gid://shopify/ProductVariant/47529796141227",
+        "title": "W140 x D230 cm / Beige / Without",
+        "sku": "GH-BED-SLEEPY-140-BE-NM",
+        "price": 9500,
+        "widthCm": 140,
+        "depthCm": 230,
+        "heightCm": 90
+      },
+      {
+        "id": "gid://shopify/ProductVariant/47529796173995",
+        "title": "W140 x D230 cm / Beige / With",
+        "sku": "GH-BED-SLEEPY-140-BE-WM",
+        "price": 12500,
+        "widthCm": 140,
+        "depthCm": 230,
+        "heightCm": 90
+      },
+      {
+        "id": "gid://shopify/ProductVariant/47529796206763",
+        "title": "W140 x D230 cm / Brwon / Without",
+        "sku": "GH-BED-SLEEPY-140-BR-NM",
+        "price": 9500,
+        "widthCm": 140,
+        "depthCm": 230,
+        "heightCm": 90
+      },
+      {
+        "id": "gid://shopify/ProductVariant/47529796239531",
+        "title": "W140 x D230 cm / Brwon / With",
+        "sku": "GH-BED-SLEEPY-140-BR-WM",
+        "price": 12500,
+        "widthCm": 140,
+        "depthCm": 230,
+        "heightCm": 90
+      },
+      {
+        "id": "gid://shopify/ProductVariant/47529796272299",
+        "title": "W140 x D230 cm / Light Beige / Without",
+        "sku": "GH-BED-SLEEPY-140-LB-NM",
+        "price": 9500,
+        "widthCm": 140,
+        "depthCm": 230,
+        "heightCm": 90
+      },
+      {
+        "id": "gid://shopify/ProductVariant/47529796305067",
+        "title": "W140 x D230 cm / Light Beige / With",
+        "sku": "GH-BED-SLEEPY-140-LB-WM",
+        "price": 12500,
+        "widthCm": 140,
+        "depthCm": 230,
+        "heightCm": 90
+      },
+      {
+        "id": "gid://shopify/ProductVariant/47529796337835",
+        "title": "W140 x D230 cm / Mint Green / Without",
+        "sku": "GH-BED-SLEEPY-140-MG-NM",
+        "price": 9500,
+        "widthCm": 140,
+        "depthCm": 230,
+        "heightCm": 90
+      },
+      {
+        "id": "gid://shopify/ProductVariant/47529796370603",
+        "title": "W140 x D230 cm / Mint Green / With",
+        "sku": "GH-BED-SLEEPY-140-MG-WM",
+        "price": 12500,
+        "widthCm": 140,
+        "depthCm": 230,
+        "heightCm": 90
+      },
+      {
+        "id": "gid://shopify/ProductVariant/47529796403371",
+        "title": "W140 x D230 cm / Baby blue / Without",
+        "sku": "GH-BED-SLEEPY-140-BB-NM",
+        "price": 9500,
+        "widthCm": 140,
+        "depthCm": 230,
+        "heightCm": 90
+      },
+      {
+        "id": "gid://shopify/ProductVariant/47529796436139",
+        "title": "W140 x D230 cm / Baby blue / With",
+        "sku": "GH-BED-SLEEPY-140-BB-WM",
+        "price": 12500,
+        "widthCm": 140,
+        "depthCm": 230,
+        "heightCm": 90
+      }
+    ]
+  }
+]
