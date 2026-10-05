@@ -1,3 +1,5 @@
+import { ShopifyPriceSync } from "@/components/products/shopify-price-sync";
+import { MUFFIN_ERP_ID } from "@/lib/shopify-price";
 import { notFound } from "next/navigation";
 import {
   ArrowLeft,
@@ -49,7 +51,7 @@ import {
 import { pct } from "@/lib/utils";
 import { ProductionRunDialog } from "@/components/dialogs/production-run-dialog";
 import { getProductionRunOptions } from "@/lib/production-options";
-import { canWrite, isAdmin } from "@/lib/rbac";
+import { currentRole, canWrite, isAdmin } from "@/lib/rbac";
 import { prisma } from "@/lib/prisma";
 import { ProductRowActions } from "@/components/row-actions/product-row-actions";
 import { ProductImageUpload } from "@/components/products/product-image-upload";
@@ -76,6 +78,8 @@ export default async function ProductDetailPage({ params }: PageProps) {
     canWrite(),
     isAdmin(),
   ]);
+
+  const priceSyncAccess = product.id === MUFFIN_ERP_ID && await currentRole() === "ADMIN";
 
   // Resolve unit cost of every sub-product included in this one. Used by the
   // catalogue's "Included products" table to show per-row subtotals.
@@ -113,6 +117,8 @@ export default async function ProductDetailPage({ params }: PageProps) {
           <ArrowLeft className="h-4 w-4" /> All products
         </Link>
       </Button>
+
+      {priceSyncAccess && <ShopifyPriceSync productId={product.id} />}
 
       {/* ── Variant switcher ── */}
       {(product.variants.length > 0 || product.parentId) && (() => {
