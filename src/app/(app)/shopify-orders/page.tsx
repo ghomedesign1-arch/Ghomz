@@ -85,6 +85,8 @@ export default async function ShopifyOrdersPage({
       deliveryDate: null,
       notes: null,
       productionLogId: null,
+      paymentMode: "AUTO",
+      depositAmount: null,
     };
 
   const tileCounts: Record<string, number> = {

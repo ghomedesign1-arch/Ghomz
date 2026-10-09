@@ -193,6 +193,8 @@ export type ShopifyOrderStatus =
 
 export type ShopifyOrderPriority = "LOW" | "NORMAL" | "URGENT";
 
+export type ShopifyPaymentMode = "AUTO" | "FULL" | "DEPOSIT";
+
 export interface ShopifyOrderMeta {
   status: ShopifyOrderStatus;
   priority: ShopifyOrderPriority;
@@ -200,6 +202,8 @@ export interface ShopifyOrderMeta {
   deliveryDate: string | null;
   notes: string | null;
   productionLogId: string | null;
+  paymentMode: ShopifyPaymentMode;
+  depositAmount: number | null;
 }
 
 export const DEFAULT_ORDER_META: ShopifyOrderMeta = {
@@ -209,6 +213,8 @@ export const DEFAULT_ORDER_META: ShopifyOrderMeta = {
   deliveryDate: null,
   notes: null,
   productionLogId: null,
+  paymentMode: "AUTO",
+  depositAmount: null,
 };
 
 const metaKey = (id: number) => `${META_KEY_PREFIX}${id}`;

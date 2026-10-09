@@ -10,6 +10,7 @@ import {
   type ShopifyOrderPriority,
   type ShopifyOrderStatus,
   type ShopifyOrderSummary,
+  type ShopifyPaymentMode,
 } from "@/lib/shopify";
 
 const VALID_STATUS: ShopifyOrderStatus[] = [
@@ -21,6 +22,7 @@ const VALID_STATUS: ShopifyOrderStatus[] = [
   "CANCELLED",
 ];
 const VALID_PRIORITY: ShopifyOrderPriority[] = ["LOW", "NORMAL", "URGENT"];
+const VALID_PAYMENT_MODE: ShopifyPaymentMode[] = ["AUTO", "FULL", "DEPOSIT"];
 
 export const PATCH = withApi(async (
   req: NextRequest,
@@ -60,6 +62,23 @@ export const PATCH = withApi(async (
   if ("notes" in body) {
     const v = body.notes;
     patch.notes = v === null || v === "" ? null : String(v);
+  }
+  if (typeof body.paymentMode === "string") {
+    if (!VALID_PAYMENT_MODE.includes(body.paymentMode as ShopifyPaymentMode))
+      throw new HttpError(422, "Bad payment mode");
+    patch.paymentMode = body.paymentMode as ShopifyPaymentMode;
+    if (patch.paymentMode === "FULL") patch.depositAmount = null;
+  }
+  if ("depositAmount" in body) {
+    const v = body.depositAmount;
+    if (v === null || v === "") {
+      patch.depositAmount = null;
+    } else {
+      const num = Number(v);
+      if (!Number.isFinite(num) || num < 0)
+        throw new HttpError(422, "Bad deposit amount");
+      patch.depositAmount = num;
+    }
   }
 
   const next = await setOrderMeta(orderId, patch);

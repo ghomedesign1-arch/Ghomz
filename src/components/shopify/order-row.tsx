@@ -21,6 +21,7 @@ import type {
   ShopifyOrderPriority,
   ShopifyOrderStatus,
   ShopifyOrderSummary,
+  ShopifyPaymentMode,
 } from "@/lib/shopify";
 
 const STATUS_OPTS: { value: ShopifyOrderStatus; label: string }[] = [
@@ -188,7 +189,7 @@ export function ShopifyOrderRow({
             <div className="text-xs text-muted-foreground">
               {totalItems} item{totalItems === 1 ? "" : "s"}
             </div>
-            <PaymentBadge order={order} />
+            <PaymentBadge order={order} meta={meta} />
           </div>
         </div>
 
@@ -222,7 +223,12 @@ export function ShopifyOrderRow({
         </div>
 
         <div className="grid gap-3 md:grid-cols-2">
-          <PaymentBreakdown order={order} />
+          <PaymentBreakdown
+            order={order}
+            meta={meta}
+            saving={saving}
+            onSave={save}
+          />
           <AddressBlock
             address={order.shipping_address ?? order.billing_address}
             fallbackPhone={order.customer?.phone ?? null}
@@ -399,8 +405,14 @@ function fmt(v: string | number | null | undefined): string {
   return n.toLocaleString("en-EG", { maximumFractionDigits: 2 });
 }
 
-function PaymentBadge({ order }: { order: ShopifyOrderSummary }) {
-  const kind = paymentKind(order);
+function PaymentBadge({
+  order,
+  meta,
+}: {
+  order: ShopifyOrderSummary;
+  meta: ShopifyOrderMeta;
+}) {
+  const { kind } = resolvePayment(order, meta);
   const label =
     kind === "paid"
       ? "Fully paid"
@@ -426,53 +438,135 @@ function PaymentBadge({ order }: { order: ShopifyOrderSummary }) {
   );
 }
 
-function paymentKind(
+function resolvePayment(
   order: ShopifyOrderSummary,
-): "paid" | "deposit" | "unpaid" | "refunded" {
+  meta: ShopifyOrderMeta,
+): { kind: "paid" | "deposit" | "unpaid" | "refunded"; paid: number; remaining: number } {
+  const total = Number(order.total_price ?? 0);
   const status = (order.financial_status ?? "").toLowerCase();
-  if (status === "refunded" || status === "voided") return "refunded";
-  const total = Number(order.total_price ?? 0);
-  const outstanding = Number(order.total_outstanding ?? 0);
-  const paid = total - outstanding;
-  if (outstanding <= 0.009) return "paid";
-  if (paid > 0.009) return "deposit";
-  return "unpaid";
-}
-
-function PaymentBreakdown({ order }: { order: ShopifyOrderSummary }) {
-  const total = Number(order.total_price ?? 0);
+  if (meta.paymentMode === "FULL") {
+    return { kind: "paid", paid: total, remaining: 0 };
+  }
+  if (meta.paymentMode === "DEPOSIT") {
+    const deposit = Math.max(0, Number(meta.depositAmount ?? 0));
+    const remaining = Math.max(0, total - deposit);
+    if (remaining <= 0.009) return { kind: "paid", paid: total, remaining: 0 };
+    if (deposit > 0.009) return { kind: "deposit", paid: deposit, remaining };
+    return { kind: "unpaid", paid: 0, remaining: total };
+  }
+  // AUTO — follow Shopify's financial state
+  if (status === "refunded" || status === "voided") {
+    const paid = Math.max(0, total - Number(order.total_outstanding ?? 0));
+    return { kind: "refunded", paid, remaining: 0 };
+  }
   const outstanding = Number(order.total_outstanding ?? 0);
   const paid = Math.max(0, total - outstanding);
+  if (outstanding <= 0.009) return { kind: "paid", paid: total, remaining: 0 };
+  if (paid > 0.009) return { kind: "deposit", paid, remaining: outstanding };
+  return { kind: "unpaid", paid: 0, remaining: total };
+}
+
+function PaymentBreakdown({
+  order,
+  meta,
+  saving,
+  onSave,
+}: {
+  order: ShopifyOrderSummary;
+  meta: ShopifyOrderMeta;
+  saving: string | null;
+  onSave: (patch: Partial<ShopifyOrderMeta>, key: string) => void;
+}) {
+  const [depositDraft, setDepositDraft] = React.useState<string>(
+    meta.depositAmount != null ? String(meta.depositAmount) : "",
+  );
+  React.useEffect(() => {
+    setDepositDraft(meta.depositAmount != null ? String(meta.depositAmount) : "");
+  }, [meta.depositAmount]);
+
+  const total = Number(order.total_price ?? 0);
   const subtotal = Number(order.subtotal_price ?? 0);
   const discount = Number(order.total_discounts ?? 0);
   const tax = Number(order.total_tax ?? 0);
   const shipping = Math.max(0, total - subtotal - tax + discount);
-  const kind = paymentKind(order);
+  const { kind, paid, remaining } = resolvePayment(order, meta);
 
   return (
-    <div className="rounded-md border border-border bg-secondary/30 p-3 text-xs">
-      <div className="mb-2 flex items-center justify-between text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+    <div className="space-y-3 rounded-md border border-border bg-secondary/30 p-3 text-xs">
+      <div className="flex items-center justify-between text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
         <span>Payment</span>
         <span>{order.currency}</span>
       </div>
-      <Row label="Subtotal" value={fmt(subtotal)} />
-      {discount > 0 && <Row label="Discount" value={`− ${fmt(discount)}`} />}
-      {shipping > 0 && <Row label="Shipping" value={fmt(shipping)} />}
-      {tax > 0 && <Row label="Tax" value={fmt(tax)} />}
-      <Row label="Total" value={fmt(total)} bold />
-      <div className="my-2 border-t border-border" />
-      {kind === "paid" ? (
-        <Row label="Paid" value={fmt(paid)} tone="success" bold />
-      ) : kind === "deposit" ? (
-        <>
-          <Row label="Deposit paid" value={fmt(paid)} tone="success" bold />
-          <Row label="Remaining" value={fmt(outstanding)} tone="warning" bold />
-        </>
-      ) : kind === "unpaid" ? (
-        <Row label="Outstanding" value={fmt(total)} tone="danger" bold />
-      ) : (
-        <Row label="Refunded" value={fmt(paid)} tone="muted" />
-      )}
+      <div>
+        <Row label="Subtotal" value={fmt(subtotal)} />
+        {discount > 0 && <Row label="Discount" value={`− ${fmt(discount)}`} />}
+        {shipping > 0 && <Row label="Shipping" value={fmt(shipping)} />}
+        {tax > 0 && <Row label="Tax" value={fmt(tax)} />}
+        <Row label="Total" value={fmt(total)} bold />
+      </div>
+
+      <div className="space-y-2 rounded-md border border-border bg-background p-2">
+        <div>
+          <label className="mb-1 block text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
+            Payment mode
+          </label>
+          <Select
+            value={meta.paymentMode}
+            onValueChange={(v) =>
+              onSave({ paymentMode: v as ShopifyPaymentMode }, "paymentMode")
+            }
+            disabled={saving === "paymentMode"}
+          >
+            <SelectTrigger className="h-8 text-xs">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="AUTO">Auto (from Shopify)</SelectItem>
+              <SelectItem value="FULL">Full payment</SelectItem>
+              <SelectItem value="DEPOSIT">Deposit</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        {meta.paymentMode === "DEPOSIT" && (
+          <div>
+            <label className="mb-1 block text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
+              Deposit amount
+            </label>
+            <Input
+              type="number"
+              inputMode="decimal"
+              min="0"
+              step="0.01"
+              className="h-8 text-xs"
+              value={depositDraft}
+              onChange={(e) => setDepositDraft(e.target.value)}
+              onBlur={() => {
+                const num = depositDraft === "" ? null : Number(depositDraft);
+                if (num !== meta.depositAmount) {
+                  onSave({ depositAmount: num }, "depositAmount");
+                }
+              }}
+              disabled={saving === "depositAmount"}
+              placeholder="0"
+            />
+          </div>
+        )}
+      </div>
+
+      <div>
+        {kind === "paid" ? (
+          <Row label="Paid" value={fmt(paid)} tone="success" bold />
+        ) : kind === "deposit" ? (
+          <>
+            <Row label="Deposit paid" value={fmt(paid)} tone="success" bold />
+            <Row label="Remaining" value={fmt(remaining)} tone="warning" bold />
+          </>
+        ) : kind === "unpaid" ? (
+          <Row label="Outstanding" value={fmt(remaining)} tone="danger" bold />
+        ) : (
+          <Row label="Refunded" value={fmt(paid)} tone="muted" />
+        )}
+      </div>
     </div>
   );
 }
