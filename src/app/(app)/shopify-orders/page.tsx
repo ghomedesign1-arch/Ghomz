@@ -98,7 +98,11 @@ export default async function ShopifyOrdersPage({
     CANCELLED: 0,
     OVERDUE: 0,
   };
-  for (const o of orders) {
+  const activeOrders = orders.filter((o) => {
+    const status = (o.financial_status ?? "").toLowerCase();
+    return status !== "refunded" && status !== "voided";
+  });
+  for (const o of activeOrders) {
     const m = metaFor(o);
     tileCounts[m.status] = (tileCounts[m.status] ?? 0) + 1;
     if (
@@ -115,6 +119,8 @@ export default async function ShopifyOrdersPage({
   const query = (searchParams?.q ?? "").trim().toLowerCase();
 
   const filtered = orders.filter((o) => {
+    const status = (o.financial_status ?? "").toLowerCase();
+    if (status === "refunded" || status === "voided") return false;
     const m = metaFor(o);
     if (activeStatus) {
       if (activeStatus === "OVERDUE") {
@@ -157,7 +163,7 @@ export default async function ShopifyOrdersPage({
     <div className="space-y-6">
       <PageHeader
         title="Shopify orders"
-        description={`Last 30 days from ${connection.shop} · ${orders.length} order${orders.length === 1 ? "" : "s"}`}
+        description={`Last 30 days from ${connection.shop} · ${activeOrders.length} order${activeOrders.length === 1 ? "" : "s"}`}
       />
 
       {error && (
