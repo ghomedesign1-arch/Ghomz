@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 const SHOP_DOMAIN_KEY = "shopify.shopDomain";
 const ACCESS_TOKEN_KEY = "shopify.accessToken";
 const SCOPES_KEY = "shopify.scopes";
+const API_VERSION = "2024-10";
 
 export const SHOPIFY_SCOPES = [
   "read_orders",
@@ -101,4 +102,60 @@ export async function getShopifyToken(): Promise<{
   const token = rows.find((r) => r.key === ACCESS_TOKEN_KEY)?.value;
   if (!shop || !token) return null;
   return { shop, token };
+}
+
+export interface ShopifyLineItem {
+  id: number;
+  title: string;
+  variant_title: string | null;
+  sku: string | null;
+  quantity: number;
+  price: string;
+}
+
+export interface ShopifyOrderSummary {
+  id: number;
+  name: string;
+  created_at: string;
+  financial_status: string | null;
+  fulfillment_status: string | null;
+  total_price: string;
+  currency: string;
+  customer: {
+    first_name: string | null;
+    last_name: string | null;
+    email: string | null;
+  } | null;
+  line_items: ShopifyLineItem[];
+}
+
+export async function fetchRecentOrders(
+  days = 30,
+): Promise<ShopifyOrderSummary[]> {
+  const conn = await getShopifyToken();
+  if (!conn) throw new Error("Shopify not connected");
+  const since = new Date(Date.now() - days * 86_400_000).toISOString();
+  const url = new URL(
+    `https://${conn.shop}/admin/api/${API_VERSION}/orders.json`,
+  );
+  url.searchParams.set("status", "any");
+  url.searchParams.set("created_at_min", since);
+  url.searchParams.set("limit", "100");
+  const res = await fetch(url, {
+    headers: {
+      "X-Shopify-Access-Token": conn.token,
+      "Content-Type": "application/json",
+    },
+    cache: "no-store",
+  });
+  if (!res.ok) {
+    const text = await res.text().catch(() => "");
+    throw new Error(`Shopify orders fetch failed (${res.status}): ${text}`);
+  }
+  const data = (await res.json()) as { orders?: ShopifyOrderSummary[] };
+  return data.orders ?? [];
+}
+
+export function shopAdminOrderUrl(shop: string, orderId: number): string {
+  return `https://admin.shopify.com/store/${shop.replace(".myshopify.com", "")}/orders/${orderId}`;
 }
