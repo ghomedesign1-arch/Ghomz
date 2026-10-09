@@ -270,23 +270,31 @@ export default async function ShopifyOrdersPage({
       </div>
 
       {/* ── Payment filter tiles ──────────────────────────────── */}
-      <div className="grid grid-cols-3 gap-3">
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         {(
           [
+            { key: "ALL", label: "All", tone: "border-slate-300 bg-slate-100 text-slate-900" },
             { key: "PAID", label: "Fully paid", tone: "border-emerald-200 bg-emerald-50 text-emerald-900" },
             { key: "DEPOSIT", label: "Deposit", tone: "border-amber-200 bg-amber-50 text-amber-900" },
             { key: "UNPAID", label: "Unpaid", tone: "border-rose-200 bg-rose-50 text-rose-900" },
           ] as const
         ).map((p) => {
-          const active = activePayment === p.key;
+          const active =
+            p.key === "ALL" ? activePayment === "" : activePayment === p.key;
           const href = {
             pathname: "/shopify-orders",
             query: {
               ...(query ? { q: query } : {}),
               ...(activeStatus ? { status: activeStatus.toLowerCase() } : {}),
-              ...(active ? {} : { payment: p.key.toLowerCase() }),
+              ...(p.key === "ALL" ? {} : { payment: p.key.toLowerCase() }),
             },
           };
+          const count =
+            p.key === "ALL"
+              ? (paymentCounts.PAID ?? 0) +
+                (paymentCounts.DEPOSIT ?? 0) +
+                (paymentCounts.UNPAID ?? 0)
+              : (paymentCounts[p.key] ?? 0);
           return (
             <Link
               key={p.key}
@@ -297,7 +305,7 @@ export default async function ShopifyOrdersPage({
                 {p.label}
               </div>
               <div className="mt-1 font-display text-xl font-semibold">
-                {paymentCounts[p.key] ?? 0}
+                {count}
               </div>
             </Link>
           );
