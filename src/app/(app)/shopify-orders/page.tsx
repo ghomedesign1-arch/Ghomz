@@ -107,14 +107,31 @@ export default async function ShopifyOrdersPage({
     return status !== "refunded" && status !== "voided";
   });
   const dueSoonCutoff = now + DUE_SOON_WINDOW_DAYS * 86_400_000;
+  let revenueExpected = 0;
+  let revenueCollected = 0;
+  let revenueCurrency: string | null = null;
   for (const o of activeOrders) {
     const m = metaFor(o);
     tileCounts[m.status] = (tileCounts[m.status] ?? 0) + 1;
-    if (m.status === "SHIPPED" || m.status === "CANCELLED") continue;
-    const dueMs = effectiveDeliveryDate(o.created_at, m).getTime();
-    if (dueMs < now) tileCounts.OVERDUE++;
-    else if (dueMs <= dueSoonCutoff) tileCounts.DUE_SOON++;
+    if (m.status !== "SHIPPED" && m.status !== "CANCELLED") {
+      const dueMs = effectiveDeliveryDate(o.created_at, m).getTime();
+      if (dueMs < now) tileCounts.OVERDUE++;
+      else if (dueMs <= dueSoonCutoff) tileCounts.DUE_SOON++;
+    }
+    if (m.status === "CANCELLED") continue;
+    revenueCurrency = revenueCurrency ?? o.currency;
+    const total = Number(o.current_total_price ?? o.total_price ?? 0);
+    revenueExpected += total;
+    if (m.paymentMode === "FULL") {
+      revenueCollected += total;
+    } else if (m.paymentMode === "DEPOSIT") {
+      revenueCollected += Math.min(total, Math.max(0, Number(m.depositAmount ?? 0)));
+    } else {
+      const outstanding = Number(o.total_outstanding ?? 0);
+      revenueCollected += Math.max(0, total - outstanding);
+    }
   }
+  const revenueOutstanding = Math.max(0, revenueExpected - revenueCollected);
 
   const activeStatus = (searchParams?.status ?? "").toUpperCase();
   const query = (searchParams?.q ?? "").trim().toLowerCase();
@@ -180,7 +197,36 @@ export default async function ShopifyOrdersPage({
         </Card>
       )}
 
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
+      {/* ── Revenue summary ────────────────────────────────────── */}
+      <div className="grid gap-3 sm:grid-cols-3">
+        <RevenueTile
+          label="Expected total"
+          value={revenueExpected}
+          currency={revenueCurrency}
+          tone="border-slate-300 bg-slate-50 text-slate-900"
+          hint={`${activeOrders.filter((o) => metaFor(o).status !== "CANCELLED").length} orders`}
+        />
+        <RevenueTile
+          label="Collected"
+          value={revenueCollected}
+          currency={revenueCurrency}
+          tone="border-emerald-200 bg-emerald-50 text-emerald-900"
+          hint={
+            revenueExpected > 0
+              ? `${Math.round((revenueCollected / revenueExpected) * 100)}% of expected`
+              : "—"
+          }
+        />
+        <RevenueTile
+          label="Outstanding"
+          value={revenueOutstanding}
+          currency={revenueCurrency}
+          tone="border-rose-200 bg-rose-50 text-rose-900"
+          hint="Still to collect"
+        />
+      </div>
+
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-7">
         {TILE_CONFIG.map((t) => {
           const count = tileCounts[t.key] ?? 0;
           const href = {
@@ -258,6 +304,33 @@ export default async function ShopifyOrdersPage({
           ))}
         </div>
       )}
+    </div>
+  );
+}
+
+function RevenueTile({
+  label,
+  value,
+  currency,
+  tone,
+  hint,
+}: {
+  label: string;
+  value: number;
+  currency: string | null;
+  tone: string;
+  hint?: string;
+}) {
+  return (
+    <div className={`rounded-xl border p-4 ${tone}`}>
+      <div className="text-xs font-medium uppercase tracking-wide opacity-70">
+        {label}
+      </div>
+      <div className="mt-1 font-display text-2xl font-semibold tabular-nums">
+        {value.toLocaleString("en-EG", { maximumFractionDigits: 0 })}{" "}
+        <span className="text-sm font-medium opacity-70">{currency ?? ""}</span>
+      </div>
+      {hint && <div className="mt-1 text-xs opacity-60">{hint}</div>}
     </div>
   );
 }
