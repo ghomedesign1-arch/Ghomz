@@ -86,7 +86,10 @@ export function ShopifyOrderRow({
     month: "short",
     year: "numeric",
   });
-  const totalItems = order.line_items.reduce((a, i) => a + i.quantity, 0);
+  const activeLineItems = order.line_items.filter(
+    (li) => effectiveQty(li) > 0,
+  );
+  const totalItems = activeLineItems.reduce((a, i) => a + effectiveQty(i), 0);
   const isOverdue =
     meta.deliveryDate &&
     meta.status !== "SHIPPED" &&
@@ -194,32 +197,35 @@ export function ShopifyOrderRow({
         </div>
 
         <div className="divide-y divide-border border-y border-border">
-          {order.line_items.map((li) => (
-            <div
-              key={li.id}
-              className="flex items-start justify-between gap-3 py-2 text-sm"
-            >
-              <div className="min-w-0">
-                <div className="truncate font-medium">{li.title}</div>
-                {li.variant_title && (
-                  <div className="text-xs text-foreground/80">
-                    {li.variant_title}
+          {activeLineItems.map((li) => {
+            const qty = effectiveQty(li);
+            return (
+              <div
+                key={li.id}
+                className="flex items-start justify-between gap-3 py-2 text-sm"
+              >
+                <div className="min-w-0">
+                  <div className="truncate font-medium">{li.title}</div>
+                  {li.variant_title && (
+                    <div className="text-xs text-foreground/80">
+                      {li.variant_title}
+                    </div>
+                  )}
+                  {li.sku && (
+                    <div className="text-[11px] text-muted-foreground">
+                      SKU: {li.sku}
+                    </div>
+                  )}
+                </div>
+                <div className="shrink-0 text-right text-sm">
+                  <div>×{qty}</div>
+                  <div className="text-xs text-muted-foreground">
+                    {fmt(li.price)} {order.currency}
                   </div>
-                )}
-                {li.sku && (
-                  <div className="text-[11px] text-muted-foreground">
-                    SKU: {li.sku}
-                  </div>
-                )}
-              </div>
-              <div className="shrink-0 text-right text-sm">
-                <div>×{li.quantity}</div>
-                <div className="text-xs text-muted-foreground">
-                  {fmt(li.price)} {order.currency}
                 </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
 
         <div className="grid gap-3 md:grid-cols-2">
@@ -397,6 +403,16 @@ function ErpField({
       {children}
     </div>
   );
+}
+
+function effectiveQty(li: {
+  quantity: number;
+  current_quantity?: number | null;
+}): number {
+  // Shopify leaves refunded/removed line items in the payload with
+  // `current_quantity` set to the still-active quantity (0 when removed).
+  if (li.current_quantity != null) return Math.max(0, li.current_quantity);
+  return Math.max(0, li.quantity ?? 0);
 }
 
 function fmt(v: string | number | null | undefined): string {

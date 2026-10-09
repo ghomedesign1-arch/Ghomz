@@ -111,6 +111,8 @@ export interface ShopifyLineItem {
   variant_title: string | null;
   sku: string | null;
   quantity: number;
+  current_quantity?: number | null;
+  fulfillable_quantity?: number | null;
   price: string;
 }
 
