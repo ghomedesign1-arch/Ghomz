@@ -119,7 +119,11 @@ export interface ShopifyAddress {
   address1?: string | null;
   address2?: string | null;
   city?: string | null;
+  province?: string | null;
+  country?: string | null;
+  zip?: string | null;
   phone?: string | null;
+  company?: string | null;
 }
 
 export interface ShopifyOrderSummary {
@@ -129,7 +133,12 @@ export interface ShopifyOrderSummary {
   financial_status: string | null;
   fulfillment_status: string | null;
   total_price: string;
+  subtotal_price: string | null;
+  total_discounts: string | null;
+  total_tax: string | null;
+  total_outstanding: string | null;
   currency: string;
+  note: string | null;
   customer: {
     first_name: string | null;
     last_name: string | null;
@@ -137,6 +146,7 @@ export interface ShopifyOrderSummary {
     phone: string | null;
   } | null;
   shipping_address: ShopifyAddress | null;
+  billing_address: ShopifyAddress | null;
   line_items: ShopifyLineItem[];
 }
 
