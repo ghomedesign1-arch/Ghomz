@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import Link from "next/link";
-import { ExternalLink, Factory, Loader2 } from "lucide-react";
+import { CalendarDays, ExternalLink, Factory, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -196,8 +196,41 @@ export function ShopifyOrderRow({
               )}
             </div>
             <div className="text-sm text-muted-foreground">
-              {customerDisplay} · {date}
+              {customerDisplay} · Ordered {date}
               {order.customer?.phone && ` · ${order.customer.phone}`}
+            </div>
+            <div className="flex flex-wrap items-center gap-2 pt-1 text-xs">
+              <span
+                className={`inline-flex items-center gap-1.5 rounded-md border px-2 py-1 font-medium ${
+                  isOverdue
+                    ? "border-rose-300 bg-rose-50 text-rose-800"
+                    : isDueSoon
+                      ? "border-amber-300 bg-amber-50 text-amber-800"
+                      : "border-border bg-secondary/40 text-foreground"
+                }`}
+              >
+                <CalendarDays className="h-3.5 w-3.5" />
+                Deliver by{" "}
+                {dueDate.toLocaleDateString("en-GB", {
+                  day: "numeric",
+                  month: "short",
+                  year: "numeric",
+                })}
+                {!meta.deliveryDate && (
+                  <span className="text-[10px] opacity-70">(auto)</span>
+                )}
+              </span>
+              <button
+                type="button"
+                onClick={() =>
+                  document
+                    .getElementById(`due-date-${order.id}`)
+                    ?.scrollIntoView({ behavior: "smooth", block: "center" })
+                }
+                className="text-[11px] text-muted-foreground underline-offset-2 hover:underline"
+              >
+                Change
+              </button>
             </div>
           </div>
           <div className="text-right">
@@ -310,6 +343,7 @@ export function ShopifyOrderRow({
 
           <ErpField label="Delivery date">
             <Input
+              id={`due-date-${order.id}`}
               type="date"
               className="h-9"
               value={meta.deliveryDate ? meta.deliveryDate.slice(0, 10) : dueDateIso}
