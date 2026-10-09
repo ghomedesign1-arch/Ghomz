@@ -1,0 +1,104 @@
+import crypto from "crypto";
+import { prisma } from "@/lib/prisma";
+
+const SHOP_DOMAIN_KEY = "shopify.shopDomain";
+const ACCESS_TOKEN_KEY = "shopify.accessToken";
+const SCOPES_KEY = "shopify.scopes";
+
+export const SHOPIFY_SCOPES = [
+  "read_orders",
+  "write_orders",
+  "read_products",
+  "read_fulfillments",
+  "read_customers",
+].join(",");
+
+export function getShopifyEnv() {
+  const shop = process.env.SHOPIFY_SHOP_DOMAIN;
+  const clientId = process.env.SHOPIFY_CLIENT_ID;
+  const clientSecret = process.env.SHOPIFY_CLIENT_SECRET;
+  if (!shop || !clientId || !clientSecret) {
+    throw new Error(
+      "Missing SHOPIFY_SHOP_DOMAIN / SHOPIFY_CLIENT_ID / SHOPIFY_CLIENT_SECRET",
+    );
+  }
+  return { shop, clientId, clientSecret };
+}
+
+export function verifyOAuthHmac(
+  query: Record<string, string>,
+  secret: string,
+): boolean {
+  const { hmac, signature: _sig, ...rest } = query;
+  if (!hmac) return false;
+  const message = Object.keys(rest)
+    .sort()
+    .map((k) => `${k}=${rest[k]}`)
+    .join("&");
+  const digest = crypto
+    .createHmac("sha256", secret)
+    .update(message)
+    .digest("hex");
+  const a = Buffer.from(digest, "utf8");
+  const b = Buffer.from(hmac, "utf8");
+  return a.length === b.length && crypto.timingSafeEqual(a, b);
+}
+
+export async function exchangeCodeForToken(
+  shop: string,
+  code: string,
+): Promise<{ access_token: string; scope: string }> {
+  const { clientId, clientSecret } = getShopifyEnv();
+  const res = await fetch(`https://${shop}/admin/oauth/access_token`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      client_id: clientId,
+      client_secret: clientSecret,
+      code,
+    }),
+  });
+  if (!res.ok) {
+    const text = await res.text().catch(() => "");
+    throw new Error(`Shopify token exchange failed (${res.status}): ${text}`);
+  }
+  return res.json();
+}
+
+export async function saveShopifyToken(
+  shop: string,
+  accessToken: string,
+  scope: string,
+): Promise<void> {
+  const now = new Date();
+  await prisma.$transaction([
+    prisma.setting.upsert({
+      where: { key: SHOP_DOMAIN_KEY },
+      create: { key: SHOP_DOMAIN_KEY, value: shop, updatedAt: now },
+      update: { value: shop, updatedAt: now },
+    }),
+    prisma.setting.upsert({
+      where: { key: ACCESS_TOKEN_KEY },
+      create: { key: ACCESS_TOKEN_KEY, value: accessToken, updatedAt: now },
+      update: { value: accessToken, updatedAt: now },
+    }),
+    prisma.setting.upsert({
+      where: { key: SCOPES_KEY },
+      create: { key: SCOPES_KEY, value: scope, updatedAt: now },
+      update: { value: scope, updatedAt: now },
+    }),
+  ]);
+}
+
+export async function getShopifyToken(): Promise<{
+  shop: string;
+  token: string;
+} | null> {
+  const rows = await prisma.setting.findMany({
+    where: { key: { in: [SHOP_DOMAIN_KEY, ACCESS_TOKEN_KEY] } },
+  });
+  const shop = rows.find((r) => r.key === SHOP_DOMAIN_KEY)?.value;
+  const token = rows.find((r) => r.key === ACCESS_TOKEN_KEY)?.value;
+  if (!shop || !token) return null;
+  return { shop, token };
+}
