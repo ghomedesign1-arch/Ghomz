@@ -2,7 +2,14 @@
 
 import * as React from "react";
 import Link from "next/link";
-import { CalendarDays, ExternalLink, Factory, Loader2 } from "lucide-react";
+import {
+  CalendarDays,
+  ChevronDown,
+  ChevronUp,
+  ExternalLink,
+  Factory,
+  Loader2,
+} from "lucide-react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -77,6 +84,7 @@ export function ShopifyOrderRow({
   );
   const [saving, setSaving] = React.useState<string | null>(null);
   const [promoting, setPromoting] = React.useState(false);
+  const [expanded, setExpanded] = React.useState(false);
 
   const customerName = (order.customer
     ? [order.customer.first_name, order.customer.last_name]
@@ -257,17 +265,33 @@ export function ShopifyOrderRow({
               </button>
             </div>
           </div>
-          <div className="text-right">
-            <div className="font-display text-lg font-semibold">
-              {fmt(currentTotal)} {order.currency}
+          <div className="flex items-start gap-2">
+            <div className="text-right">
+              <div className="font-display text-lg font-semibold">
+                {fmt(currentTotal)} {order.currency}
+              </div>
+              <div className="text-xs text-muted-foreground">
+                {totalItems} item{totalItems === 1 ? "" : "s"}
+              </div>
+              <PaymentBadge order={order} meta={meta} />
             </div>
-            <div className="text-xs text-muted-foreground">
-              {totalItems} item{totalItems === 1 ? "" : "s"}
-            </div>
-            <PaymentBadge order={order} meta={meta} />
+            <button
+              type="button"
+              onClick={() => setExpanded((s) => !s)}
+              aria-label={expanded ? "Collapse details" : "Expand details"}
+              className="ml-1 inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-md border border-input text-muted-foreground hover:bg-secondary"
+            >
+              {expanded ? (
+                <ChevronUp className="h-4 w-4" />
+              ) : (
+                <ChevronDown className="h-4 w-4" />
+              )}
+            </button>
           </div>
         </div>
 
+        {expanded && (
+          <>
         <div className="divide-y divide-border border-y border-border">
           {activeLineItems.map((li) => {
             const qty = effectiveQty(li);
@@ -461,6 +485,8 @@ export function ShopifyOrderRow({
               <div className="mt-1 text-xs text-muted-foreground">Saving…</div>
             )}
           </div>
+        )}
+          </>
         )}
       </CardContent>
     </Card>
