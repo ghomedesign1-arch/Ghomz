@@ -19,10 +19,11 @@ import { ShopifyOrderRow } from "@/components/shopify/order-row";
 export const dynamic = "force-dynamic";
 
 const TILE_CONFIG: {
-  key: ShopifyOrderStatus | "OVERDUE" | "DUE_SOON";
+  key: ShopifyOrderStatus | "OVERDUE" | "DUE_SOON" | "ALL";
   label: string;
   tone: string;
 }[] = [
+  { key: "ALL", label: "All", tone: "border-slate-300 bg-slate-100" },
   { key: "NEW", label: "New", tone: "border-slate-300 bg-slate-50" },
   { key: "SCHEDULED", label: "Scheduled", tone: "border-blue-200 bg-blue-50" },
   { key: "IN_PRODUCTION", label: "In production", tone: "border-amber-200 bg-amber-50" },
@@ -240,18 +241,20 @@ export default async function ShopifyOrdersPage({
         />
       </div>
 
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-7">
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-8">
         {TILE_CONFIG.map((t) => {
-          const count = tileCounts[t.key] ?? 0;
+          const count =
+            t.key === "ALL" ? activeOrders.length : (tileCounts[t.key] ?? 0);
           const href = {
             pathname: "/shopify-orders",
             query: {
               ...(query ? { q: query } : {}),
               ...(activePayment ? { payment: activePayment.toLowerCase() } : {}),
-              ...(activeStatus === t.key ? {} : { status: t.key.toLowerCase() }),
+              ...(t.key === "ALL" ? {} : { status: t.key.toLowerCase() }),
             },
           };
-          const active = activeStatus === t.key;
+          const active =
+            t.key === "ALL" ? activeStatus === "" : activeStatus === t.key;
           return (
             <Link
               key={t.key}
