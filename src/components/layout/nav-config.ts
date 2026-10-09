@@ -11,6 +11,7 @@ import {
   Scissors,
   Settings,
   ShoppingBag,
+  ShoppingCart,
   Tags,
   Truck,
   type LucideIcon,
@@ -27,7 +28,6 @@ export interface NavGroup {
   items: NavItem[];
 }
 
-/** Single source of truth for sidebar / mobile-drawer navigation. */
 export const NAV: NavGroup[] = [
   {
     section: "Overview",
@@ -51,11 +51,12 @@ export const NAV: NavGroup[] = [
   {
     section: "Operations",
     items: [
-      { href: "/production",    label: "Production",        icon: Factory },
-      { href: "/custom-orders", label: "Custom orders",     icon: ClipboardList },
-      { href: "/pricing",       label: "Pricing scenarios", icon: Tags },
-      { href: "/purchases",     label: "Purchases",         icon: ReceiptText },
-      { href: "/suppliers",     label: "Suppliers",         icon: Truck },
+      { href: "/shopify-orders", label: "Shopify orders",    icon: ShoppingCart },
+      { href: "/production",     label: "Production",        icon: Factory },
+      { href: "/custom-orders",  label: "Custom orders",     icon: ClipboardList },
+      { href: "/pricing",        label: "Pricing scenarios", icon: Tags },
+      { href: "/purchases",      label: "Purchases",         icon: ReceiptText },
+      { href: "/suppliers",      label: "Suppliers",         icon: Truck },
     ],
   },
   {
@@ -64,15 +65,6 @@ export const NAV: NavGroup[] = [
   },
 ];
 
-/**
- * Active-state predicate shared by desktop + mobile nav.
- *
- * Rules:
- *   - "/" only lights up on the exact root pathname
- *   - Any other href lights up when the pathname matches it or starts with
- *     `href + "/"` — UNLESS a sibling in the same group has a longer prefix
- *     match. That way `/sponges/intake` doesn't also highlight `/sponges`.
- */
 export function isActive(
   href: string,
   pathname: string,
