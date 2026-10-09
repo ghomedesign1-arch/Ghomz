@@ -3,6 +3,8 @@ import { Card, CardContent } from "@/components/ui/card";
 import { PageHeader } from "@/components/layout/page-header";
 import { prisma } from "@/lib/prisma";
 import {
+  DUE_SOON_WINDOW_DAYS,
+  effectiveDeliveryDate,
   fetchRecentOrders,
   getOrdersMeta,
   getShopifyToken,
@@ -16,7 +18,7 @@ import { ShopifyOrderRow } from "@/components/shopify/order-row";
 export const dynamic = "force-dynamic";
 
 const TILE_CONFIG: {
-  key: ShopifyOrderStatus | "OVERDUE";
+  key: ShopifyOrderStatus | "OVERDUE" | "DUE_SOON";
   label: string;
   tone: string;
 }[] = [
@@ -25,6 +27,7 @@ const TILE_CONFIG: {
   { key: "IN_PRODUCTION", label: "In production", tone: "border-amber-200 bg-amber-50" },
   { key: "READY", label: "Ready", tone: "border-emerald-200 bg-emerald-50" },
   { key: "SHIPPED", label: "Shipped", tone: "border-emerald-300 bg-emerald-100" },
+  { key: "DUE_SOON", label: "Due soon", tone: "border-amber-300 bg-amber-100" },
   { key: "OVERDUE", label: "Overdue", tone: "border-rose-300 bg-rose-50" },
 ];
 
@@ -97,22 +100,20 @@ export default async function ShopifyOrdersPage({
     SHIPPED: 0,
     CANCELLED: 0,
     OVERDUE: 0,
+    DUE_SOON: 0,
   };
   const activeOrders = orders.filter((o) => {
     const status = (o.financial_status ?? "").toLowerCase();
     return status !== "refunded" && status !== "voided";
   });
+  const dueSoonCutoff = now + DUE_SOON_WINDOW_DAYS * 86_400_000;
   for (const o of activeOrders) {
     const m = metaFor(o);
     tileCounts[m.status] = (tileCounts[m.status] ?? 0) + 1;
-    if (
-      m.deliveryDate &&
-      m.status !== "SHIPPED" &&
-      m.status !== "CANCELLED" &&
-      new Date(m.deliveryDate).getTime() < now
-    ) {
-      tileCounts.OVERDUE++;
-    }
+    if (m.status === "SHIPPED" || m.status === "CANCELLED") continue;
+    const dueMs = effectiveDeliveryDate(o.created_at, m).getTime();
+    if (dueMs < now) tileCounts.OVERDUE++;
+    else if (dueMs <= dueSoonCutoff) tileCounts.DUE_SOON++;
   }
 
   const activeStatus = (searchParams?.status ?? "").toUpperCase();
@@ -123,13 +124,15 @@ export default async function ShopifyOrdersPage({
     if (status === "refunded" || status === "voided") return false;
     const m = metaFor(o);
     if (activeStatus) {
-      if (activeStatus === "OVERDUE") {
-        const overdue =
-          m.deliveryDate &&
-          m.status !== "SHIPPED" &&
-          m.status !== "CANCELLED" &&
-          new Date(m.deliveryDate).getTime() < now;
-        if (!overdue) return false;
+      if (activeStatus === "OVERDUE" || activeStatus === "DUE_SOON") {
+        if (m.status === "SHIPPED" || m.status === "CANCELLED") return false;
+        const dueMs = effectiveDeliveryDate(o.created_at, m).getTime();
+        if (activeStatus === "OVERDUE" && dueMs >= now) return false;
+        if (
+          activeStatus === "DUE_SOON" &&
+          (dueMs < now || dueMs > dueSoonCutoff)
+        )
+          return false;
       } else if (m.status !== activeStatus) {
         return false;
       }
@@ -156,7 +159,10 @@ export default async function ShopifyOrdersPage({
       if (ma.priority === "URGENT") return -1;
       if (mb.priority === "URGENT") return 1;
     }
-    return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+    // Earlier delivery date first (so soon-due & overdue bubble to the top).
+    const dueA = effectiveDeliveryDate(a.created_at, ma).getTime();
+    const dueB = effectiveDeliveryDate(b.created_at, mb).getTime();
+    return dueA - dueB;
   });
 
   return (

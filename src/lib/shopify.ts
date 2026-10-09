@@ -225,6 +225,24 @@ export const DEFAULT_ORDER_META: ShopifyOrderMeta = {
 
 const metaKey = (id: number) => `${META_KEY_PREFIX}${id}`;
 
+/** Default delivery promise: 14 days after the order is placed. */
+export const DEFAULT_LEAD_TIME_DAYS = 14;
+export const DUE_SOON_WINDOW_DAYS = 3;
+
+/**
+ * Resolves the delivery date for an order. Uses the ERP-side override when
+ * set; otherwise falls back to {order date + lead time}.
+ */
+export function effectiveDeliveryDate(
+  orderCreatedAt: string,
+  meta: ShopifyOrderMeta,
+): Date {
+  if (meta.deliveryDate) return new Date(meta.deliveryDate);
+  const d = new Date(orderCreatedAt);
+  d.setDate(d.getDate() + DEFAULT_LEAD_TIME_DAYS);
+  return d;
+}
+
 export async function getOrdersMeta(
   ids: number[],
 ): Promise<Map<number, ShopifyOrderMeta>> {

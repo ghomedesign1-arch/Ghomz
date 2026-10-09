@@ -16,12 +16,15 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import type {
-  ShopifyOrderMeta,
-  ShopifyOrderPriority,
-  ShopifyOrderStatus,
-  ShopifyOrderSummary,
-  ShopifyPaymentMode,
+import {
+  DEFAULT_LEAD_TIME_DAYS,
+  DUE_SOON_WINDOW_DAYS,
+  effectiveDeliveryDate,
+  type ShopifyOrderMeta,
+  type ShopifyOrderPriority,
+  type ShopifyOrderStatus,
+  type ShopifyOrderSummary,
+  type ShopifyPaymentMode,
 } from "@/lib/shopify";
 
 const STATUS_OPTS: { value: ShopifyOrderStatus; label: string }[] = [
@@ -91,11 +94,15 @@ export function ShopifyOrderRow({
   );
   const totalItems = activeLineItems.reduce((a, i) => a + effectiveQty(i), 0);
   const currentTotal = currentAmount(order.current_total_price, order.total_price);
-  const isOverdue =
-    meta.deliveryDate &&
-    meta.status !== "SHIPPED" &&
-    meta.status !== "CANCELLED" &&
-    new Date(meta.deliveryDate) < new Date();
+  const isTerminal = meta.status === "SHIPPED" || meta.status === "CANCELLED";
+  const dueDate = effectiveDeliveryDate(order.created_at, meta);
+  const daysToDue = Math.ceil(
+    (dueDate.getTime() - Date.now()) / 86_400_000,
+  );
+  const isOverdue = !isTerminal && daysToDue < 0;
+  const isDueSoon =
+    !isTerminal && daysToDue >= 0 && daysToDue <= DUE_SOON_WINDOW_DAYS;
+  const dueDateIso = dueDate.toISOString().slice(0, 10);
 
   async function save(patch: Partial<ShopifyOrderMeta>, key: string) {
     setSaving(key);
@@ -172,8 +179,15 @@ export function ShopifyOrderRow({
               )}
               {isOverdue && (
                 <Badge variant="destructive" className="text-[10px]">
-                  Overdue
+                  Overdue by {Math.abs(daysToDue)}d
                 </Badge>
+              )}
+              {isDueSoon && (
+                <span className="rounded-full border border-amber-300 bg-amber-100 px-2 py-0.5 text-[10px] font-medium text-amber-800">
+                  {daysToDue === 0
+                    ? "Due today"
+                    : `Due in ${daysToDue}d`}
+                </span>
               )}
               {meta.productionLogId && (
                 <Badge variant="success" className="gap-1 text-[10px]">
@@ -298,7 +312,7 @@ export function ShopifyOrderRow({
             <Input
               type="date"
               className="h-9"
-              value={meta.deliveryDate ? meta.deliveryDate.slice(0, 10) : ""}
+              value={meta.deliveryDate ? meta.deliveryDate.slice(0, 10) : dueDateIso}
               onChange={(e) =>
                 save(
                   { deliveryDate: e.target.value ? e.target.value : null },
@@ -307,6 +321,11 @@ export function ShopifyOrderRow({
               }
               disabled={saving === "deliveryDate"}
             />
+            {!meta.deliveryDate && (
+              <div className="text-[10px] text-muted-foreground">
+                Auto (order date + {DEFAULT_LEAD_TIME_DAYS}d)
+              </div>
+            )}
           </ErpField>
 
           <ErpField label="Assigned to">
