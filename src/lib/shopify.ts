@@ -135,9 +135,13 @@ export interface ShopifyOrderSummary {
   financial_status: string | null;
   fulfillment_status: string | null;
   total_price: string;
+  current_total_price: string | null;
   subtotal_price: string | null;
+  current_subtotal_price: string | null;
   total_discounts: string | null;
+  current_total_discounts: string | null;
   total_tax: string | null;
+  current_total_tax: string | null;
   total_outstanding: string | null;
   currency: string;
   note: string | null;

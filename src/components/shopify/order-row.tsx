@@ -90,6 +90,7 @@ export function ShopifyOrderRow({
     (li) => effectiveQty(li) > 0,
   );
   const totalItems = activeLineItems.reduce((a, i) => a + effectiveQty(i), 0);
+  const currentTotal = currentAmount(order.current_total_price, order.total_price);
   const isOverdue =
     meta.deliveryDate &&
     meta.status !== "SHIPPED" &&
@@ -187,7 +188,7 @@ export function ShopifyOrderRow({
           </div>
           <div className="text-right">
             <div className="font-display text-lg font-semibold">
-              {fmt(order.total_price)} {order.currency}
+              {fmt(currentTotal)} {order.currency}
             </div>
             <div className="text-xs text-muted-foreground">
               {totalItems} item{totalItems === 1 ? "" : "s"}
@@ -415,6 +416,16 @@ function effectiveQty(li: {
   return Math.max(0, li.quantity ?? 0);
 }
 
+function currentAmount(
+  current: string | number | null | undefined,
+  original: string | number | null | undefined,
+): number {
+  const c = current == null || current === "" ? NaN : Number(current);
+  if (Number.isFinite(c)) return c;
+  const o = Number(original ?? 0);
+  return Number.isFinite(o) ? o : 0;
+}
+
 function fmt(v: string | number | null | undefined): string {
   const n = Number(v ?? 0);
   if (!Number.isFinite(n)) return "0";
@@ -458,7 +469,7 @@ function resolvePayment(
   order: ShopifyOrderSummary,
   meta: ShopifyOrderMeta,
 ): { kind: "paid" | "deposit" | "unpaid" | "refunded"; paid: number; remaining: number } {
-  const total = Number(order.total_price ?? 0);
+  const total = currentAmount(order.current_total_price, order.total_price);
   const status = (order.financial_status ?? "").toLowerCase();
   if (meta.paymentMode === "FULL") {
     return { kind: "paid", paid: total, remaining: 0 };
@@ -500,10 +511,10 @@ function PaymentBreakdown({
     setDepositDraft(meta.depositAmount != null ? String(meta.depositAmount) : "");
   }, [meta.depositAmount]);
 
-  const total = Number(order.total_price ?? 0);
-  const subtotal = Number(order.subtotal_price ?? 0);
-  const discount = Number(order.total_discounts ?? 0);
-  const tax = Number(order.total_tax ?? 0);
+  const total = currentAmount(order.current_total_price, order.total_price);
+  const subtotal = currentAmount(order.current_subtotal_price, order.subtotal_price);
+  const discount = currentAmount(order.current_total_discounts, order.total_discounts);
+  const tax = currentAmount(order.current_total_tax, order.total_tax);
   const shipping = Math.max(0, total - subtotal - tax + discount);
   const { kind, paid, remaining } = resolvePayment(order, meta);
 
