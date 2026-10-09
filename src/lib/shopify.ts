@@ -5,6 +5,7 @@ const SHOP_DOMAIN_KEY = "shopify.shopDomain";
 const ACCESS_TOKEN_KEY = "shopify.accessToken";
 const SCOPES_KEY = "shopify.scopes";
 const API_VERSION = "2024-10";
+const META_KEY_PREFIX = "shopify.order.";
 
 export const SHOPIFY_SCOPES = [
   "read_orders",
@@ -113,6 +114,14 @@ export interface ShopifyLineItem {
   price: string;
 }
 
+export interface ShopifyAddress {
+  name?: string | null;
+  address1?: string | null;
+  address2?: string | null;
+  city?: string | null;
+  phone?: string | null;
+}
+
 export interface ShopifyOrderSummary {
   id: number;
   name: string;
@@ -125,7 +134,9 @@ export interface ShopifyOrderSummary {
     first_name: string | null;
     last_name: string | null;
     email: string | null;
+    phone: string | null;
   } | null;
+  shipping_address: ShopifyAddress | null;
   line_items: ShopifyLineItem[];
 }
 
@@ -158,4 +169,77 @@ export async function fetchRecentOrders(
 
 export function shopAdminOrderUrl(shop: string, orderId: number): string {
   return `https://admin.shopify.com/store/${shop.replace(".myshopify.com", "")}/orders/${orderId}`;
+}
+
+// ─── ERP-side metadata (stored as JSON in the Setting table) ─────────────────
+
+export type ShopifyOrderStatus =
+  | "NEW"
+  | "SCHEDULED"
+  | "IN_PRODUCTION"
+  | "READY"
+  | "SHIPPED"
+  | "CANCELLED";
+
+export type ShopifyOrderPriority = "LOW" | "NORMAL" | "URGENT";
+
+export interface ShopifyOrderMeta {
+  status: ShopifyOrderStatus;
+  priority: ShopifyOrderPriority;
+  assignedToId: string | null;
+  deliveryDate: string | null;
+  notes: string | null;
+  productionLogId: string | null;
+}
+
+export const DEFAULT_ORDER_META: ShopifyOrderMeta = {
+  status: "NEW",
+  priority: "NORMAL",
+  assignedToId: null,
+  deliveryDate: null,
+  notes: null,
+  productionLogId: null,
+};
+
+const metaKey = (id: number) => `${META_KEY_PREFIX}${id}`;
+
+export async function getOrdersMeta(
+  ids: number[],
+): Promise<Map<number, ShopifyOrderMeta>> {
+  const out = new Map<number, ShopifyOrderMeta>();
+  if (!ids.length) return out;
+  const rows = await prisma.setting.findMany({
+    where: { key: { in: ids.map(metaKey) } },
+  });
+  for (const r of rows) {
+    const idStr = r.key.slice(META_KEY_PREFIX.length);
+    const id = Number(idStr);
+    if (!Number.isFinite(id)) continue;
+    try {
+      const parsed = JSON.parse(r.value);
+      out.set(id, { ...DEFAULT_ORDER_META, ...parsed });
+    } catch {
+      /* ignore malformed row */
+    }
+  }
+  return out;
+}
+
+export async function getOrderMeta(id: number): Promise<ShopifyOrderMeta> {
+  return (await getOrdersMeta([id])).get(id) ?? DEFAULT_ORDER_META;
+}
+
+export async function setOrderMeta(
+  id: number,
+  patch: Partial<ShopifyOrderMeta>,
+): Promise<ShopifyOrderMeta> {
+  const current = await getOrderMeta(id);
+  const next: ShopifyOrderMeta = { ...current, ...patch };
+  const now = new Date();
+  await prisma.setting.upsert({
+    where: { key: metaKey(id) },
+    create: { key: metaKey(id), value: JSON.stringify(next), updatedAt: now },
+    update: { value: JSON.stringify(next), updatedAt: now },
+  });
+  return next;
 }
