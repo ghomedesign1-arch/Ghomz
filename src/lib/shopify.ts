@@ -201,6 +201,16 @@ export type ShopifyOrderPriority = "LOW" | "NORMAL" | "URGENT";
 
 export type ShopifyPaymentMode = "AUTO" | "FULL" | "DEPOSIT";
 
+export type CallOutcome = "no_answer" | "answered" | "promised";
+
+export interface CallAttempt {
+  at: string; // ISO
+  outcome: CallOutcome;
+  byUserId?: string | null;
+}
+
+export const MAX_CALL_ATTEMPTS = 3;
+
 export interface ShopifyOrderMeta {
   status: ShopifyOrderStatus;
   priority: ShopifyOrderPriority;
@@ -210,6 +220,7 @@ export interface ShopifyOrderMeta {
   productionLogId: string | null;
   paymentMode: ShopifyPaymentMode;
   depositAmount: number | null;
+  callAttempts: CallAttempt[];
 }
 
 export const DEFAULT_ORDER_META: ShopifyOrderMeta = {
@@ -221,7 +232,35 @@ export const DEFAULT_ORDER_META: ShopifyOrderMeta = {
   productionLogId: null,
   paymentMode: "AUTO",
   depositAmount: null,
+  callAttempts: [],
 };
+
+/** Payment kind as the ERP sees it, respecting the paymentMode override. */
+export function resolvePaymentKind(
+  order: {
+    financial_status: string | null;
+    total_price: string;
+    current_total_price?: string | null;
+    total_outstanding?: string | null;
+  },
+  meta: ShopifyOrderMeta,
+): "paid" | "deposit" | "unpaid" | "refunded" {
+  const total = Number(order.current_total_price ?? order.total_price ?? 0);
+  const status = (order.financial_status ?? "").toLowerCase();
+  if (meta.paymentMode === "FULL") return "paid";
+  if (meta.paymentMode === "DEPOSIT") {
+    const deposit = Math.max(0, Number(meta.depositAmount ?? 0));
+    if (total - deposit <= 0.009) return "paid";
+    if (deposit > 0.009) return "deposit";
+    return "unpaid";
+  }
+  if (status === "refunded" || status === "voided") return "refunded";
+  const outstanding = Number(order.total_outstanding ?? 0);
+  const paid = total - outstanding;
+  if (outstanding <= 0.009) return "paid";
+  if (paid > 0.009) return "deposit";
+  return "unpaid";
+}
 
 const metaKey = (id: number) => `${META_KEY_PREFIX}${id}`;
 

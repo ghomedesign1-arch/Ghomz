@@ -8,6 +8,7 @@ import {
   fetchRecentOrders,
   getOrdersMeta,
   getShopifyToken,
+  resolvePaymentKind,
   shopAdminOrderUrl,
   type ShopifyOrderMeta,
   type ShopifyOrderStatus,
@@ -34,7 +35,7 @@ const TILE_CONFIG: {
 export default async function ShopifyOrdersPage({
   searchParams,
 }: {
-  searchParams?: { status?: string; q?: string };
+  searchParams?: { status?: string; q?: string; payment?: string };
 }) {
   const connection = await getShopifyToken().catch(() => null);
 
@@ -90,6 +91,7 @@ export default async function ShopifyOrdersPage({
       productionLogId: null,
       paymentMode: "AUTO",
       depositAmount: null,
+      callAttempts: [],
     };
 
   const tileCounts: Record<string, number> = {
@@ -110,6 +112,7 @@ export default async function ShopifyOrdersPage({
   let revenueExpected = 0;
   let revenueCollected = 0;
   let revenueCurrency: string | null = null;
+  const paymentCounts = { PAID: 0, DEPOSIT: 0, UNPAID: 0 } as Record<string, number>;
   for (const o of activeOrders) {
     const m = metaFor(o);
     tileCounts[m.status] = (tileCounts[m.status] ?? 0) + 1;
@@ -130,10 +133,15 @@ export default async function ShopifyOrdersPage({
       const outstanding = Number(o.total_outstanding ?? 0);
       revenueCollected += Math.max(0, total - outstanding);
     }
+    const kind = resolvePaymentKind(o, m);
+    if (kind === "paid") paymentCounts.PAID++;
+    else if (kind === "deposit") paymentCounts.DEPOSIT++;
+    else if (kind === "unpaid") paymentCounts.UNPAID++;
   }
   const revenueOutstanding = Math.max(0, revenueExpected - revenueCollected);
 
   const activeStatus = (searchParams?.status ?? "").toUpperCase();
+  const activePayment = (searchParams?.payment ?? "").toUpperCase();
   const query = (searchParams?.q ?? "").trim().toLowerCase();
 
   const filtered = orders.filter((o) => {
@@ -153,6 +161,12 @@ export default async function ShopifyOrdersPage({
       } else if (m.status !== activeStatus) {
         return false;
       }
+    }
+    if (activePayment) {
+      const kind = resolvePaymentKind(o, m);
+      if (activePayment === "PAID" && kind !== "paid") return false;
+      if (activePayment === "DEPOSIT" && kind !== "deposit") return false;
+      if (activePayment === "UNPAID" && kind !== "unpaid") return false;
     }
     if (query) {
       const hay = [
@@ -233,6 +247,7 @@ export default async function ShopifyOrdersPage({
             pathname: "/shopify-orders",
             query: {
               ...(query ? { q: query } : {}),
+              ...(activePayment ? { payment: activePayment.toLowerCase() } : {}),
               ...(activeStatus === t.key ? {} : { status: t.key.toLowerCase() }),
             },
           };
@@ -254,6 +269,41 @@ export default async function ShopifyOrdersPage({
         })}
       </div>
 
+      {/* ── Payment filter tiles ──────────────────────────────── */}
+      <div className="grid grid-cols-3 gap-3">
+        {(
+          [
+            { key: "PAID", label: "Fully paid", tone: "border-emerald-200 bg-emerald-50 text-emerald-900" },
+            { key: "DEPOSIT", label: "Deposit", tone: "border-amber-200 bg-amber-50 text-amber-900" },
+            { key: "UNPAID", label: "Unpaid", tone: "border-rose-200 bg-rose-50 text-rose-900" },
+          ] as const
+        ).map((p) => {
+          const active = activePayment === p.key;
+          const href = {
+            pathname: "/shopify-orders",
+            query: {
+              ...(query ? { q: query } : {}),
+              ...(activeStatus ? { status: activeStatus.toLowerCase() } : {}),
+              ...(active ? {} : { payment: p.key.toLowerCase() }),
+            },
+          };
+          return (
+            <Link
+              key={p.key}
+              href={href}
+              className={`rounded-xl border p-3 text-left transition-colors ${p.tone} ${active ? "ring-2 ring-primary ring-offset-1" : "hover:brightness-95"}`}
+            >
+              <div className="text-xs font-medium uppercase tracking-wide opacity-70">
+                {p.label}
+              </div>
+              <div className="mt-1 font-display text-xl font-semibold">
+                {paymentCounts[p.key] ?? 0}
+              </div>
+            </Link>
+          );
+        })}
+      </div>
+
       <form className="flex flex-wrap items-center gap-2" method="get">
         <input
           type="text"
@@ -265,13 +315,16 @@ export default async function ShopifyOrdersPage({
         {activeStatus && (
           <input type="hidden" name="status" value={activeStatus.toLowerCase()} />
         )}
+        {activePayment && (
+          <input type="hidden" name="payment" value={activePayment.toLowerCase()} />
+        )}
         <button
           type="submit"
           className="h-9 rounded-md border border-input bg-secondary px-4 text-sm font-medium hover:bg-secondary/80"
         >
           Search
         </button>
-        {(query || activeStatus) && (
+        {(query || activeStatus || activePayment) && (
           <Link
             href="/shopify-orders"
             className="h-9 rounded-md border border-input bg-background px-4 text-sm font-medium leading-9 text-muted-foreground hover:bg-secondary"

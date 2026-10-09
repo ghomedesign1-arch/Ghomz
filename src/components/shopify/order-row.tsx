@@ -19,7 +19,9 @@ import {
 import {
   DEFAULT_LEAD_TIME_DAYS,
   DUE_SOON_WINDOW_DAYS,
+  MAX_CALL_ATTEMPTS,
   effectiveDeliveryDate,
+  type CallOutcome,
   type ShopifyOrderMeta,
   type ShopifyOrderPriority,
   type ShopifyOrderStatus,
@@ -119,6 +121,28 @@ export function ShopifyOrderRow({
       }
       const next: ShopifyOrderMeta = await res.json();
       setMeta(next);
+    } finally {
+      setSaving(null);
+    }
+  }
+
+  async function callOp(
+    body: { logCallAttempt?: CallOutcome; resetCallAttempts?: true },
+    key: string,
+  ) {
+    setSaving(key);
+    try {
+      const res = await fetch(`/api/shopify/orders/${order.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+      const payload = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        toast.error(payload.error ?? "Save failed");
+        return;
+      }
+      setMeta(payload);
     } finally {
       setSaving(null);
     }
@@ -282,6 +306,7 @@ export function ShopifyOrderRow({
             meta={meta}
             saving={saving}
             onSave={save}
+            onCallOp={callOp}
           />
           <AddressBlock
             address={order.shipping_address ?? order.billing_address}
@@ -551,11 +576,16 @@ function PaymentBreakdown({
   meta,
   saving,
   onSave,
+  onCallOp,
 }: {
   order: ShopifyOrderSummary;
   meta: ShopifyOrderMeta;
   saving: string | null;
   onSave: (patch: Partial<ShopifyOrderMeta>, key: string) => void;
+  onCallOp: (
+    body: { logCallAttempt?: CallOutcome; resetCallAttempts?: true },
+    key: string,
+  ) => void;
 }) {
   const [depositDraft, setDepositDraft] = React.useState<string>(
     meta.depositAmount != null ? String(meta.depositAmount) : "",
@@ -647,6 +677,134 @@ function PaymentBreakdown({
           <Row label="Refunded" value={fmt(paid)} tone="muted" />
         )}
       </div>
+
+      {kind === "unpaid" && (
+        <CallTracker
+          meta={meta}
+          saving={saving}
+          onCallOp={onCallOp}
+          onCancel={() => onSave({ status: "CANCELLED" }, "status")}
+        />
+      )}
+    </div>
+  );
+}
+
+function CallTracker({
+  meta,
+  saving,
+  onCallOp,
+  onCancel,
+}: {
+  meta: ShopifyOrderMeta;
+  saving: string | null;
+  onCallOp: (
+    body: { logCallAttempt?: CallOutcome; resetCallAttempts?: true },
+    key: string,
+  ) => void;
+  onCancel: () => void;
+}) {
+  const attempts = meta.callAttempts;
+  const noAnswerCount = attempts.filter((a) => a.outcome === "no_answer").length;
+  const outOfAttempts = attempts.length >= MAX_CALL_ATTEMPTS;
+  const shouldCancel = noAnswerCount >= MAX_CALL_ATTEMPTS;
+
+  return (
+    <div className="space-y-2 rounded-md border border-rose-200 bg-rose-50/60 p-2">
+      <div className="flex items-center justify-between">
+        <div className="text-[11px] font-semibold uppercase tracking-wide text-rose-900">
+          Collection calls ({attempts.length}/{MAX_CALL_ATTEMPTS})
+        </div>
+        {attempts.length > 0 && (
+          <button
+            type="button"
+            onClick={() =>
+              onCallOp({ resetCallAttempts: true }, "callReset")
+            }
+            disabled={saving === "callReset"}
+            className="text-[10px] text-muted-foreground underline-offset-2 hover:underline"
+          >
+            Reset
+          </button>
+        )}
+      </div>
+
+      <div className="space-y-1">
+        {Array.from({ length: MAX_CALL_ATTEMPTS }).map((_, i) => {
+          const a = attempts[i];
+          if (!a) return null;
+          const tone =
+            a.outcome === "no_answer"
+              ? "text-rose-700"
+              : a.outcome === "answered"
+                ? "text-slate-700"
+                : "text-emerald-700";
+          const label =
+            a.outcome === "no_answer"
+              ? "No answer"
+              : a.outcome === "answered"
+                ? "Answered"
+                : "Promised to pay";
+          return (
+            <div
+              key={i}
+              className={`flex items-center justify-between text-[11px] ${tone}`}
+            >
+              <span>#{i + 1} · {label}</span>
+              <span className="text-muted-foreground">
+                {new Date(a.at).toLocaleDateString("en-GB", {
+                  day: "numeric",
+                  month: "short",
+                })}{" "}
+                {new Date(a.at).toLocaleTimeString("en-GB", {
+                  hour: "2-digit",
+                  minute: "2-digit",
+                })}
+              </span>
+            </div>
+          );
+        })}
+      </div>
+
+      {!outOfAttempts && (
+        <div className="flex flex-wrap gap-1 pt-1">
+          <button
+            type="button"
+            onClick={() => onCallOp({ logCallAttempt: "no_answer" }, "callLog")}
+            disabled={saving === "callLog"}
+            className="rounded-md border border-rose-300 bg-white px-2 py-1 text-[11px] font-medium text-rose-700 hover:bg-rose-100 disabled:opacity-50"
+          >
+            No answer
+          </button>
+          <button
+            type="button"
+            onClick={() => onCallOp({ logCallAttempt: "promised" }, "callLog")}
+            disabled={saving === "callLog"}
+            className="rounded-md border border-emerald-300 bg-white px-2 py-1 text-[11px] font-medium text-emerald-700 hover:bg-emerald-100 disabled:opacity-50"
+          >
+            Promised to pay
+          </button>
+          <button
+            type="button"
+            onClick={() => onCallOp({ logCallAttempt: "answered" }, "callLog")}
+            disabled={saving === "callLog"}
+            className="rounded-md border border-slate-300 bg-white px-2 py-1 text-[11px] font-medium text-slate-700 hover:bg-slate-100 disabled:opacity-50"
+          >
+            Answered (other)
+          </button>
+        </div>
+      )}
+
+      {shouldCancel && (
+        <button
+          type="button"
+          onClick={onCancel}
+          disabled={saving === "status"}
+          className="w-full rounded-md bg-rose-600 px-3 py-2 text-xs font-semibold text-white hover:bg-rose-700 disabled:opacity-50"
+        >
+          3 no-answers — cancel this order
+        </button>
+      )}
     </div>
   );
 }

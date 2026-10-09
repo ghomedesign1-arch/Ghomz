@@ -5,7 +5,9 @@ import { resolveProductCost } from "@/lib/product-cost";
 import {
   getOrderMeta,
   getShopifyToken,
+  MAX_CALL_ATTEMPTS,
   setOrderMeta,
+  type CallOutcome,
   type ShopifyOrderMeta,
   type ShopifyOrderPriority,
   type ShopifyOrderStatus,
@@ -23,6 +25,7 @@ const VALID_STATUS: ShopifyOrderStatus[] = [
 ];
 const VALID_PRIORITY: ShopifyOrderPriority[] = ["LOW", "NORMAL", "URGENT"];
 const VALID_PAYMENT_MODE: ShopifyPaymentMode[] = ["AUTO", "FULL", "DEPOSIT"];
+const VALID_CALL_OUTCOME: CallOutcome[] = ["no_answer", "answered", "promised"];
 
 export const PATCH = withApi(async (
   req: NextRequest,
@@ -37,6 +40,30 @@ export const PATCH = withApi(async (
 
   if (body.promote === true) {
     const next = await promoteOrder(orderId);
+    return NextResponse.json(next);
+  }
+
+  if (typeof body.logCallAttempt === "string") {
+    if (!VALID_CALL_OUTCOME.includes(body.logCallAttempt as CallOutcome))
+      throw new HttpError(422, "Bad call outcome");
+    const current = await getOrderMeta(orderId);
+    if (current.callAttempts.length >= MAX_CALL_ATTEMPTS) {
+      throw new HttpError(409, "Maximum call attempts already logged");
+    }
+    const next = await setOrderMeta(orderId, {
+      callAttempts: [
+        ...current.callAttempts,
+        {
+          at: new Date().toISOString(),
+          outcome: body.logCallAttempt as CallOutcome,
+        },
+      ],
+    });
+    return NextResponse.json(next);
+  }
+
+  if (body.resetCallAttempts === true) {
+    const next = await setOrderMeta(orderId, { callAttempts: [] });
     return NextResponse.json(next);
   }
 
