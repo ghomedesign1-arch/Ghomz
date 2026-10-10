@@ -16,6 +16,10 @@ import {
 } from "@/lib/shopify";
 import { ShopifyOrderRow } from "@/components/shopify/order-row";
 import { RevenueSummary } from "@/components/shopify/revenue-summary";
+import {
+  ProductionQueue,
+  type ProductionQueueItem,
+} from "@/components/shopify/production-queue";
 
 export const dynamic = "force-dynamic";
 
@@ -143,6 +147,44 @@ export default async function ShopifyOrdersPage({
   }
   const revenueOutstanding = Math.max(0, revenueExpected - revenueCollected);
 
+  // ── Production queue: aggregate line items from orders that still
+  // need to be made (NEW / SCHEDULED / IN_PRODUCTION), grouping by
+  // product + variant so Baby Blue vs Light Beige show separately.
+  const productionAcc = new Map<string, ProductionQueueItem>();
+  let productionUnits = 0;
+  for (const o of activeOrders) {
+    const m = metaFor(o);
+    if (
+      m.status !== "NEW" &&
+      m.status !== "SCHEDULED" &&
+      m.status !== "IN_PRODUCTION"
+    ) {
+      continue;
+    }
+    for (const li of o.line_items) {
+      const qty = li.current_quantity ?? li.quantity ?? 0;
+      if (qty <= 0) continue;
+      const key = `${li.title}||${li.variant_title ?? ""}||${li.sku ?? ""}`;
+      const existing = productionAcc.get(key);
+      if (existing) {
+        existing.quantity += qty;
+        existing.orderCount += 1;
+      } else {
+        productionAcc.set(key, {
+          title: li.title,
+          variant: li.variant_title,
+          sku: li.sku,
+          quantity: qty,
+          orderCount: 1,
+        });
+      }
+      productionUnits += qty;
+    }
+  }
+  const productionItems = Array.from(productionAcc.values()).sort(
+    (a, b) => b.quantity - a.quantity,
+  );
+
   const activeStatus = (searchParams?.status ?? "").toUpperCase();
   const activePayment = (searchParams?.payment ?? "").toUpperCase();
   const query = (searchParams?.q ?? "").trim().toLowerCase();
@@ -221,6 +263,8 @@ export default async function ShopifyOrdersPage({
         currency={revenueCurrency}
         orderCount={activeOrders.filter((o) => metaFor(o).status !== "CANCELLED").length}
       />
+
+      <ProductionQueue items={productionItems} totalUnits={productionUnits} />
 
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-8">
         {TILE_CONFIG.map((t) => {
