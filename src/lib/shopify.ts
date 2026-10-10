@@ -211,6 +211,13 @@ export interface CallAttempt {
 
 export const MAX_CALL_ATTEMPTS = 3;
 
+export interface ReceiptAttachment {
+  url: string;
+  contentType: string;
+  fileName: string;
+  uploadedAt: string;
+}
+
 export interface ShopifyOrderMeta {
   status: ShopifyOrderStatus;
   priority: ShopifyOrderPriority;
@@ -221,6 +228,7 @@ export interface ShopifyOrderMeta {
   paymentMode: ShopifyPaymentMode;
   depositAmount: number | null;
   callAttempts: CallAttempt[];
+  receipts: ReceiptAttachment[];
 }
 
 export const DEFAULT_ORDER_META: ShopifyOrderMeta = {
@@ -233,6 +241,7 @@ export const DEFAULT_ORDER_META: ShopifyOrderMeta = {
   paymentMode: "AUTO",
   depositAmount: null,
   callAttempts: [],
+  receipts: [],
 };
 
 /** Payment kind as the ERP sees it, respecting the paymentMode override. */

@@ -8,7 +8,10 @@ import {
   ChevronUp,
   ExternalLink,
   Factory,
+  FileText,
   Loader2,
+  Paperclip,
+  X,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
@@ -129,6 +132,45 @@ export function ShopifyOrderRow({
       }
       const next: ShopifyOrderMeta = await res.json();
       setMeta(next);
+    } finally {
+      setSaving(null);
+    }
+  }
+
+  async function uploadReceipt(file: File) {
+    setSaving("receipt");
+    try {
+      const fd = new FormData();
+      fd.append("file", file);
+      const res = await fetch(
+        `/api/shopify/orders/${order.id}/receipts`,
+        { method: "POST", body: fd },
+      );
+      const payload = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        toast.error(payload.error ?? "Upload failed");
+        return;
+      }
+      setMeta(payload);
+      toast.success("Receipt attached");
+    } finally {
+      setSaving(null);
+    }
+  }
+
+  async function deleteReceipt(url: string) {
+    setSaving("receipt");
+    try {
+      const res = await fetch(
+        `/api/shopify/orders/${order.id}/receipts?url=${encodeURIComponent(url)}`,
+        { method: "DELETE" },
+      );
+      const payload = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        toast.error(payload.error ?? "Delete failed");
+        return;
+      }
+      setMeta(payload);
     } finally {
       setSaving(null);
     }
@@ -331,6 +373,8 @@ export function ShopifyOrderRow({
             saving={saving}
             onSave={save}
             onCallOp={callOp}
+            onUploadReceipt={uploadReceipt}
+            onDeleteReceipt={deleteReceipt}
           />
           <AddressBlock
             address={order.shipping_address ?? order.billing_address}
@@ -603,6 +647,8 @@ function PaymentBreakdown({
   saving,
   onSave,
   onCallOp,
+  onUploadReceipt,
+  onDeleteReceipt,
 }: {
   order: ShopifyOrderSummary;
   meta: ShopifyOrderMeta;
@@ -612,6 +658,8 @@ function PaymentBreakdown({
     body: { logCallAttempt?: CallOutcome; resetCallAttempts?: true },
     key: string,
   ) => void;
+  onUploadReceipt: (file: File) => void;
+  onDeleteReceipt: (url: string) => void;
 }) {
   const [depositDraft, setDepositDraft] = React.useState<string>(
     meta.depositAmount != null ? String(meta.depositAmount) : "",
@@ -703,6 +751,13 @@ function PaymentBreakdown({
           <Row label="Refunded" value={fmt(paid)} tone="muted" />
         )}
       </div>
+
+      <ReceiptsRow
+        receipts={meta.receipts}
+        saving={saving}
+        onUpload={onUploadReceipt}
+        onDelete={onDeleteReceipt}
+      />
 
       {kind === "unpaid" && (
         <CallTracker
@@ -862,6 +917,101 @@ function Row({
     >
       <span>{label}</span>
       <span className="tabular-nums">{value}</span>
+    </div>
+  );
+}
+
+function ReceiptsRow({
+  receipts,
+  saving,
+  onUpload,
+  onDelete,
+}: {
+  receipts: ShopifyOrderMeta["receipts"];
+  saving: string | null;
+  onUpload: (file: File) => void;
+  onDelete: (url: string) => void;
+}) {
+  const inputRef = React.useRef<HTMLInputElement>(null);
+  const busy = saving === "receipt";
+
+  return (
+    <div className="space-y-2 border-t border-border pt-2">
+      <div className="flex items-center justify-between">
+        <div className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+          Receipts ({receipts.length})
+        </div>
+        <button
+          type="button"
+          onClick={() => inputRef.current?.click()}
+          disabled={busy}
+          className="inline-flex items-center gap-1 rounded-md border border-input bg-white px-2 py-1 text-[11px] font-medium hover:bg-secondary disabled:opacity-50"
+        >
+          {busy ? (
+            <Loader2 className="h-3 w-3 animate-spin" />
+          ) : (
+            <Paperclip className="h-3 w-3" />
+          )}
+          Attach
+        </button>
+        <input
+          ref={inputRef}
+          type="file"
+          accept="image/png,image/jpeg,image/webp,image/gif,image/heic,image/heif,application/pdf"
+          className="sr-only"
+          onChange={(e) => {
+            const f = e.target.files?.[0];
+            if (f) onUpload(f);
+            if (inputRef.current) inputRef.current.value = "";
+          }}
+        />
+      </div>
+
+      {receipts.length > 0 && (
+        <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
+          {receipts.map((r) => {
+            const isImage = r.contentType.startsWith("image/");
+            return (
+              <div
+                key={r.url}
+                className="group relative overflow-hidden rounded-md border border-border bg-white"
+              >
+                <a
+                  href={r.url}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="block aspect-square"
+                >
+                  {isImage ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={r.url}
+                      alt={r.fileName}
+                      className="h-full w-full object-cover"
+                    />
+                  ) : (
+                    <div className="flex h-full w-full flex-col items-center justify-center gap-1 text-muted-foreground">
+                      <FileText className="h-6 w-6" />
+                      <span className="px-1 text-center text-[10px] leading-tight line-clamp-2">
+                        {r.fileName || "PDF"}
+                      </span>
+                    </div>
+                  )}
+                </a>
+                <button
+                  type="button"
+                  onClick={() => onDelete(r.url)}
+                  disabled={busy}
+                  aria-label="Remove receipt"
+                  className="absolute right-1 top-1 hidden rounded-full bg-rose-600 p-0.5 text-white shadow-sm hover:bg-rose-700 group-hover:block"
+                >
+                  <X className="h-3 w-3" />
+                </button>
+              </div>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }

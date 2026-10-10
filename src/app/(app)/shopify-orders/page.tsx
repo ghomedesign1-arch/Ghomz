@@ -94,6 +94,7 @@ export default async function ShopifyOrdersPage({
       paymentMode: "AUTO",
       depositAmount: null,
       callAttempts: [],
+      receipts: [],
     };
 
   const tileCounts: Record<string, number> = {
