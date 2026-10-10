@@ -15,6 +15,7 @@ import {
   type ShopifyOrderSummary,
 } from "@/lib/shopify";
 import { ShopifyOrderRow } from "@/components/shopify/order-row";
+import { RevenueSummary } from "@/components/shopify/revenue-summary";
 
 export const dynamic = "force-dynamic";
 
@@ -212,34 +213,13 @@ export default async function ShopifyOrdersPage({
         </Card>
       )}
 
-      {/* ── Revenue summary ────────────────────────────────────── */}
-      <div className="grid gap-3 sm:grid-cols-3">
-        <RevenueTile
-          label="Expected total"
-          value={revenueExpected}
-          currency={revenueCurrency}
-          tone="border-slate-300 bg-slate-50 text-slate-900"
-          hint={`${activeOrders.filter((o) => metaFor(o).status !== "CANCELLED").length} orders`}
-        />
-        <RevenueTile
-          label="Collected"
-          value={revenueCollected}
-          currency={revenueCurrency}
-          tone="border-emerald-200 bg-emerald-50 text-emerald-900"
-          hint={
-            revenueExpected > 0
-              ? `${Math.round((revenueCollected / revenueExpected) * 100)}% of expected`
-              : "—"
-          }
-        />
-        <RevenueTile
-          label="Outstanding"
-          value={revenueOutstanding}
-          currency={revenueCurrency}
-          tone="border-rose-200 bg-rose-50 text-rose-900"
-          hint="Still to collect"
-        />
-      </div>
+      <RevenueSummary
+        expected={revenueExpected}
+        collected={revenueCollected}
+        outstanding={revenueOutstanding}
+        currency={revenueCurrency}
+        orderCount={activeOrders.filter((o) => metaFor(o).status !== "CANCELLED").length}
+      />
 
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-8">
         {TILE_CONFIG.map((t) => {
@@ -372,29 +352,3 @@ export default async function ShopifyOrdersPage({
   );
 }
 
-function RevenueTile({
-  label,
-  value,
-  currency,
-  tone,
-  hint,
-}: {
-  label: string;
-  value: number;
-  currency: string | null;
-  tone: string;
-  hint?: string;
-}) {
-  return (
-    <div className={`rounded-xl border p-4 ${tone}`}>
-      <div className="text-xs font-medium uppercase tracking-wide opacity-70">
-        {label}
-      </div>
-      <div className="mt-1 font-display text-2xl font-semibold tabular-nums">
-        {value.toLocaleString("en-EG", { maximumFractionDigits: 0 })}{" "}
-        <span className="text-sm font-medium opacity-70">{currency ?? ""}</span>
-      </div>
-      {hint && <div className="mt-1 text-xs opacity-60">{hint}</div>}
-    </div>
-  );
-}
