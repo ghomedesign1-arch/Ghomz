@@ -290,8 +290,6 @@ export function ShopifyOrderRow({
           </div>
         </div>
 
-        {expanded && (
-          <>
         <div className="divide-y divide-border border-y border-border">
           {activeLineItems.map((li) => {
             const qty = effectiveQty(li);
@@ -324,6 +322,8 @@ export function ShopifyOrderRow({
           })}
         </div>
 
+        {expanded && (
+          <>
         <div className="grid gap-3 md:grid-cols-2">
           <PaymentBreakdown
             order={order}
