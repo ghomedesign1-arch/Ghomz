@@ -111,7 +111,9 @@ export function ShopifyOrderRow({
     (li) => effectiveQty(li) > 0,
   );
   const totalItems = activeLineItems.reduce((a, i) => a + effectiveQty(i), 0);
-  const currentTotal = currentAmount(order.current_total_price, order.total_price);
+  const rawTotal = currentAmount(order.current_total_price, order.total_price);
+  const erpDiscount = Math.max(0, Number(meta.discount ?? 0));
+  const currentTotal = Math.max(0, rawTotal - erpDiscount);
   const isTerminal = meta.status === "SHIPPED" || meta.status === "CANCELLED";
   const dueDate = effectiveDeliveryDate(order.created_at, meta);
   const daysToDue = Math.ceil(
@@ -777,7 +779,9 @@ function resolvePayment(
   order: ShopifyOrderSummary,
   meta: ShopifyOrderMeta,
 ): { kind: "paid" | "deposit" | "unpaid" | "refunded"; paid: number; remaining: number } {
-  const total = currentAmount(order.current_total_price, order.total_price);
+  const raw = currentAmount(order.current_total_price, order.total_price);
+  const discount = Math.max(0, Number(meta.discount ?? 0));
+  const total = Math.max(0, raw - discount);
   const status = (order.financial_status ?? "").toLowerCase();
   if (meta.paymentMode === "FULL") {
     return { kind: "paid", paid: total, remaining: 0 };
@@ -789,15 +793,20 @@ function resolvePayment(
     if (deposit > 0.009) return { kind: "deposit", paid: deposit, remaining };
     return { kind: "unpaid", paid: 0, remaining: total };
   }
-  // AUTO — follow Shopify's financial state
+  // AUTO — follow Shopify's financial state (payments Shopify recorded, then
+  // the ERP discount reduces what is still owed).
   if (status === "refunded" || status === "voided") {
-    const paid = Math.max(0, total - Number(order.total_outstanding ?? 0));
+    const paid = Math.max(0, raw - Number(order.total_outstanding ?? 0));
     return { kind: "refunded", paid, remaining: 0 };
   }
-  const outstanding = Number(order.total_outstanding ?? 0);
-  const paid = Math.max(0, total - outstanding);
-  if (outstanding <= 0.009) return { kind: "paid", paid: total, remaining: 0 };
-  if (paid > 0.009) return { kind: "deposit", paid, remaining: outstanding };
+  const paidFromShopify = Math.max(
+    0,
+    raw - Number(order.total_outstanding ?? 0),
+  );
+  const stillOwed = Math.max(0, total - paidFromShopify);
+  if (stillOwed <= 0.009) return { kind: "paid", paid: total, remaining: 0 };
+  if (paidFromShopify > 0.009)
+    return { kind: "deposit", paid: paidFromShopify, remaining: stillOwed };
   return { kind: "unpaid", paid: 0, remaining: total };
 }
 
@@ -828,12 +837,21 @@ function PaymentBreakdown({
     setDepositDraft(meta.depositAmount != null ? String(meta.depositAmount) : "");
   }, [meta.depositAmount]);
 
-  const total = currentAmount(order.current_total_price, order.total_price);
+  const rawTotal = currentAmount(order.current_total_price, order.total_price);
+  const erpDiscount = Math.max(0, Number(meta.discount ?? 0));
+  const total = Math.max(0, rawTotal - erpDiscount);
   const subtotal = currentAmount(order.current_subtotal_price, order.subtotal_price);
-  const discount = currentAmount(order.current_total_discounts, order.total_discounts);
+  const shopifyDiscount = currentAmount(order.current_total_discounts, order.total_discounts);
   const tax = currentAmount(order.current_total_tax, order.total_tax);
-  const shipping = Math.max(0, total - subtotal - tax + discount);
+  const shipping = Math.max(0, rawTotal - subtotal - tax + shopifyDiscount);
   const { kind, paid, remaining } = resolvePayment(order, meta);
+
+  const [discountDraft, setDiscountDraft] = React.useState<string>(
+    meta.discount != null ? String(meta.discount) : "",
+  );
+  React.useEffect(() => {
+    setDiscountDraft(meta.discount != null ? String(meta.discount) : "");
+  }, [meta.discount]);
 
   return (
     <div className="space-y-3 rounded-md border border-border bg-secondary/30 p-3 text-xs">
@@ -843,10 +861,43 @@ function PaymentBreakdown({
       </div>
       <div>
         <Row label="Subtotal" value={fmt(subtotal)} />
-        {discount > 0 && <Row label="Discount" value={`− ${fmt(discount)}`} />}
+        {shopifyDiscount > 0 && (
+          <Row label="Discount (Shopify)" value={`− ${fmt(shopifyDiscount)}`} />
+        )}
         {shipping > 0 && <Row label="Shipping" value={fmt(shipping)} />}
         {tax > 0 && <Row label="Tax" value={fmt(tax)} />}
-        <Row label="Total" value={fmt(total)} bold />
+        <Row label="Order total" value={fmt(rawTotal)} />
+        {erpDiscount > 0 && (
+          <Row
+            label="ERP discount"
+            value={`− ${fmt(erpDiscount)}`}
+            tone="warning"
+          />
+        )}
+        <Row label="Total due" value={fmt(total)} bold />
+      </div>
+
+      <div className="rounded-md border border-border bg-background p-2">
+        <label className="mb-1 block text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
+          ERP discount ({order.currency})
+        </label>
+        <Input
+          type="number"
+          inputMode="decimal"
+          min="0"
+          step="0.01"
+          className="h-8 text-xs"
+          value={discountDraft}
+          onChange={(e) => setDiscountDraft(e.target.value)}
+          onBlur={() => {
+            const num = discountDraft === "" ? null : Number(discountDraft);
+            if (num !== meta.discount) {
+              onSave({ discount: num }, "discount");
+            }
+          }}
+          disabled={saving === "discount"}
+          placeholder="0"
+        />
       </div>
 
       <div className="space-y-2 rounded-md border border-border bg-background p-2">

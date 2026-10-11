@@ -108,6 +108,17 @@ export const PATCH = withApi(async (
   } else if (body.markConfirmationSent === false) {
     patch.confirmationSentAt = null;
   }
+  if ("discount" in body) {
+    const v = body.discount;
+    if (v === null || v === "") {
+      patch.discount = null;
+    } else {
+      const num = Number(v);
+      if (!Number.isFinite(num) || num < 0)
+        throw new HttpError(422, "Bad discount");
+      patch.discount = num;
+    }
+  }
   if ("depositAmount" in body) {
     const v = body.depositAmount;
     if (v === null || v === "") {

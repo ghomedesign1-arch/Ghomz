@@ -227,6 +227,7 @@ export interface ShopifyOrderMeta {
   productionLogId: string | null;
   paymentMode: ShopifyPaymentMode;
   depositAmount: number | null;
+  discount: number | null;
   callAttempts: CallAttempt[];
   receipts: ReceiptAttachment[];
   scheduledFor: string | null;
@@ -242,6 +243,7 @@ export const DEFAULT_ORDER_META: ShopifyOrderMeta = {
   productionLogId: null,
   paymentMode: "AUTO",
   depositAmount: null,
+  discount: null,
   callAttempts: [],
   receipts: [],
   scheduledFor: null,
@@ -265,7 +267,8 @@ export function resolvePaymentKind(
   },
   meta: ShopifyOrderMeta,
 ): "paid" | "deposit" | "unpaid" | "refunded" {
-  const total = Number(order.current_total_price ?? order.total_price ?? 0);
+  const raw = Number(order.current_total_price ?? order.total_price ?? 0);
+  const total = Math.max(0, raw - Math.max(0, Number(meta.discount ?? 0)));
   const status = (order.financial_status ?? "").toLowerCase();
   if (meta.paymentMode === "FULL") return "paid";
   if (meta.paymentMode === "DEPOSIT") {
@@ -275,10 +278,12 @@ export function resolvePaymentKind(
     return "unpaid";
   }
   if (status === "refunded" || status === "voided") return "refunded";
-  const outstanding = Number(order.total_outstanding ?? 0);
-  const paid = total - outstanding;
-  if (outstanding <= 0.009) return "paid";
-  if (paid > 0.009) return "deposit";
+  // Payments Shopify already saw: raw − outstanding. Then the ERP discount
+  // reduces what the customer still owes.
+  const paidFromShopify = raw - Number(order.total_outstanding ?? 0);
+  const stillOwed = Math.max(0, total - paidFromShopify);
+  if (stillOwed <= 0.009) return "paid";
+  if (paidFromShopify > 0.009) return "deposit";
   return "unpaid";
 }
 

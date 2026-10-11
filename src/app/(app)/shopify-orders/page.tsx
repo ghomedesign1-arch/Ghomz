@@ -103,6 +103,7 @@ export default async function ShopifyOrdersPage({
       productionLogId: null,
       paymentMode: "AUTO",
       depositAmount: null,
+      discount: null,
       callAttempts: [],
       receipts: [],
       scheduledFor: null,
@@ -138,15 +139,20 @@ export default async function ShopifyOrdersPage({
     }
     if (m.status === "CANCELLED") continue;
     revenueCurrency = revenueCurrency ?? o.currency;
-    const total = Number(o.current_total_price ?? o.total_price ?? 0);
+    const rawTotal = Number(o.current_total_price ?? o.total_price ?? 0);
+    const erpDiscount = Math.max(0, Number(m.discount ?? 0));
+    const total = Math.max(0, rawTotal - erpDiscount);
     revenueExpected += total;
     if (m.paymentMode === "FULL") {
       revenueCollected += total;
     } else if (m.paymentMode === "DEPOSIT") {
       revenueCollected += Math.min(total, Math.max(0, Number(m.depositAmount ?? 0)));
     } else {
-      const outstanding = Number(o.total_outstanding ?? 0);
-      revenueCollected += Math.max(0, total - outstanding);
+      const paidFromShopify = Math.max(
+        0,
+        rawTotal - Number(o.total_outstanding ?? 0),
+      );
+      revenueCollected += Math.min(total, paidFromShopify);
     }
     const kind = resolvePaymentKind(o, m);
     if (kind === "paid") paymentCounts.PAID++;
