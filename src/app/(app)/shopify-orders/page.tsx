@@ -301,8 +301,6 @@ export default async function ShopifyOrdersPage({
 
       <ProductionQueue items={productionItems} totalUnits={productionUnits} />
 
-      <TomorrowQueue tomorrowDate={tomorrow} orders={tomorrowOrders} />
-
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-8">
         {TILE_CONFIG.map((t) => {
           const count =
@@ -406,6 +404,8 @@ export default async function ShopifyOrdersPage({
           </Link>
         )}
       </form>
+
+      <TomorrowQueue tomorrowDate={tomorrow} orders={tomorrowOrders} />
 
       {(() => {
         const activeList = filtered.filter((o) => {
