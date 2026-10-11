@@ -19,7 +19,7 @@ import {
   TomorrowQueue,
   type TomorrowOrderEntry,
 } from "@/components/shopify/tomorrow-queue";
-import { ShippedSection } from "@/components/shopify/shipped-section";
+import { OrdersSection } from "@/components/shopify/shipped-section";
 import { ShopifyOrderRow } from "@/components/shopify/order-row";
 import { RevenueSummary } from "@/components/shopify/revenue-summary";
 import {
@@ -408,26 +408,53 @@ export default async function ShopifyOrdersPage({
       </form>
 
       {(() => {
-        const activeList = filtered.filter((o) => metaFor(o).status !== "SHIPPED");
-        const shippedList = filtered.filter((o) => metaFor(o).status === "SHIPPED");
-        const showShippedOpen = activeStatus === "SHIPPED";
+        const activeList = filtered.filter((o) => {
+          const s = metaFor(o).status;
+          return s !== "SHIPPED" && s !== "READY";
+        });
+        const readyList = filtered.filter((o) => metaFor(o).status === "READY");
+        const shippedList = filtered.filter(
+          (o) => metaFor(o).status === "SHIPPED",
+        );
 
         return (
           <>
-            {!error && activeList.length === 0 && shippedList.length === 0 && (
-              <Card>
-                <CardContent className="px-6 py-8 text-center text-sm text-muted-foreground">
-                  {orders.length === 0
-                    ? "No orders in the last 30 days."
-                    : "No orders match the current filter."}
-                </CardContent>
-              </Card>
+            {!error &&
+              activeList.length === 0 &&
+              readyList.length === 0 &&
+              shippedList.length === 0 && (
+                <Card>
+                  <CardContent className="px-6 py-8 text-center text-sm text-muted-foreground">
+                    {orders.length === 0
+                      ? "No orders in the last 30 days."
+                      : "No orders match the current filter."}
+                  </CardContent>
+                </Card>
+              )}
+
+            {readyList.length > 0 && (
+              <OrdersSection
+                variant="ready"
+                count={readyList.length}
+                defaultOpen={activeStatus === "READY"}
+              >
+                {readyList.map((o) => (
+                  <ShopifyOrderRow
+                    key={o.id}
+                    order={o}
+                    initialMeta={metaFor(o)}
+                    shopUrl={shopAdminOrderUrl(connection.shop, o.id)}
+                    users={users}
+                  />
+                ))}
+              </OrdersSection>
             )}
 
             {shippedList.length > 0 && (
-              <ShippedSection
+              <OrdersSection
+                variant="shipped"
                 count={shippedList.length}
-                defaultOpen={showShippedOpen}
+                defaultOpen={activeStatus === "SHIPPED"}
               >
                 {shippedList.map((o) => (
                   <ShopifyOrderRow
@@ -438,7 +465,7 @@ export default async function ShopifyOrdersPage({
                     users={users}
                   />
                 ))}
-              </ShippedSection>
+              </OrdersSection>
             )}
 
             {activeList.length > 0 && (
