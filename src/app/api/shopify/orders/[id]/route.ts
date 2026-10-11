@@ -72,6 +72,9 @@ export const PATCH = withApi(async (
     if (!VALID_STATUS.includes(body.status as ShopifyOrderStatus))
       throw new HttpError(422, "Bad status");
     patch.status = body.status as ShopifyOrderStatus;
+    // Once an order ships it no longer needs a priority — drop it to NORMAL
+    // so the dashboard isn't noisy with URGENT chips on already-shipped work.
+    if (patch.status === "SHIPPED") patch.priority = "NORMAL";
   }
   if (typeof body.priority === "string") {
     if (!VALID_PRIORITY.includes(body.priority as ShopifyOrderPriority))
