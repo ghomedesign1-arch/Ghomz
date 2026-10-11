@@ -19,6 +19,7 @@ import {
   TomorrowQueue,
   type TomorrowOrderEntry,
 } from "@/components/shopify/tomorrow-queue";
+import { ShippedSection } from "@/components/shopify/shipped-section";
 import { ShopifyOrderRow } from "@/components/shopify/order-row";
 import { RevenueSummary } from "@/components/shopify/revenue-summary";
 import {
@@ -406,29 +407,56 @@ export default async function ShopifyOrdersPage({
         )}
       </form>
 
-      {!error && filtered.length === 0 && (
-        <Card>
-          <CardContent className="px-6 py-8 text-center text-sm text-muted-foreground">
-            {orders.length === 0
-              ? "No orders in the last 30 days."
-              : "No orders match the current filter."}
-          </CardContent>
-        </Card>
-      )}
+      {(() => {
+        const activeList = filtered.filter((o) => metaFor(o).status !== "SHIPPED");
+        const shippedList = filtered.filter((o) => metaFor(o).status === "SHIPPED");
+        const showShippedOpen = activeStatus === "SHIPPED";
 
-      {filtered.length > 0 && (
-        <div className="space-y-3">
-          {filtered.map((o) => (
-            <ShopifyOrderRow
-              key={o.id}
-              order={o}
-              initialMeta={metaFor(o)}
-              shopUrl={shopAdminOrderUrl(connection.shop, o.id)}
-              users={users}
-            />
-          ))}
-        </div>
-      )}
+        return (
+          <>
+            {!error && activeList.length === 0 && shippedList.length === 0 && (
+              <Card>
+                <CardContent className="px-6 py-8 text-center text-sm text-muted-foreground">
+                  {orders.length === 0
+                    ? "No orders in the last 30 days."
+                    : "No orders match the current filter."}
+                </CardContent>
+              </Card>
+            )}
+
+            {activeList.length > 0 && (
+              <div className="space-y-3">
+                {activeList.map((o) => (
+                  <ShopifyOrderRow
+                    key={o.id}
+                    order={o}
+                    initialMeta={metaFor(o)}
+                    shopUrl={shopAdminOrderUrl(connection.shop, o.id)}
+                    users={users}
+                  />
+                ))}
+              </div>
+            )}
+
+            {shippedList.length > 0 && (
+              <ShippedSection
+                count={shippedList.length}
+                defaultOpen={showShippedOpen}
+              >
+                {shippedList.map((o) => (
+                  <ShopifyOrderRow
+                    key={o.id}
+                    order={o}
+                    initialMeta={metaFor(o)}
+                    shopUrl={shopAdminOrderUrl(connection.shop, o.id)}
+                    users={users}
+                  />
+                ))}
+              </ShippedSection>
+            )}
+          </>
+        );
+      })()}
     </div>
   );
 }
