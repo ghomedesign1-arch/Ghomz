@@ -219,11 +219,18 @@ export default async function ShopifyOrdersPage({
         o.customer?.first_name,
         o.customer?.last_name,
         o.customer?.email,
+        o.customer?.phone,
+        o.shipping_address?.phone,
+        o.billing_address?.phone,
       ]
         .filter(Boolean)
         .join(" ")
         .toLowerCase();
-      if (!hay.includes(query)) return false;
+      // Also strip spaces/dashes from phones so "+20 100 123 4567" matches a
+      // raw digit search.
+      const digits = hay.replace(/[^\d+]/g, "");
+      const q = query.replace(/\s+/g, "").toLowerCase();
+      if (!hay.includes(query) && !digits.includes(q)) return false;
     }
     return true;
   });
@@ -345,7 +352,7 @@ export default async function ShopifyOrdersPage({
           type="text"
           name="q"
           defaultValue={query}
-          placeholder="Search order # or customer name…"
+          placeholder="Search order # · customer name · phone…"
           className="h-9 min-w-[220px] flex-1 rounded-md border border-input bg-background px-3 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-ring"
         />
         {activeStatus && (

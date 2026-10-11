@@ -10,6 +10,7 @@ import {
   Factory,
   FileText,
   Loader2,
+  MessageCircle,
   Paperclip,
   X,
 } from "lucide-react";
@@ -269,9 +270,32 @@ export function ShopifyOrderRow({
                 </Badge>
               )}
             </div>
-            <div className="text-sm text-muted-foreground">
-              {customerDisplay} · Ordered {date}
-              {order.customer?.phone && ` · ${order.customer.phone}`}
+            <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
+              <span>
+                {customerDisplay} · Ordered {date}
+              </span>
+              {(() => {
+                const phone =
+                  order.customer?.phone ?? order.shipping_address?.phone ?? null;
+                if (!phone) return null;
+                const waLink = whatsAppLink(phone);
+                return (
+                  <span className="inline-flex items-center gap-1">
+                    <span>· {phone}</span>
+                    {waLink && (
+                      <a
+                        href={waLink}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-medium text-emerald-700 hover:bg-emerald-200"
+                        aria-label="Open WhatsApp chat"
+                      >
+                        <MessageCircle className="h-3 w-3" /> WhatsApp
+                      </a>
+                    )}
+                  </span>
+                );
+              })()}
             </div>
             <div className="flex flex-wrap items-center gap-2 pt-1 text-xs">
               <span
@@ -552,6 +576,21 @@ function ErpField({
       {children}
     </div>
   );
+}
+
+function whatsAppLink(raw: string | null | undefined): string | null {
+  if (!raw) return null;
+  // Keep only digits; drop leading zeros. If the number looks local (10 digits
+  // starting with 1 or 0 — common for Egyptian mobiles like 010/011/012/015)
+  // prefix the Egyptian country code 20.
+  let digits = raw.replace(/[^\d]/g, "");
+  if (!digits) return null;
+  if (digits.startsWith("00")) digits = digits.slice(2);
+  if (digits.length === 11 && digits.startsWith("0")) digits = "20" + digits.slice(1);
+  else if (digits.length === 10 && (digits.startsWith("1") || digits.startsWith("2"))) {
+    digits = "20" + digits;
+  }
+  return `https://wa.me/${digits}`;
 }
 
 function effectiveQty(li: {
@@ -1048,7 +1087,21 @@ function AddressBlock({
         {lines.map((line, i) => (
           <div key={i}>{line}</div>
         ))}
-        {phone && <div className="mt-1 text-muted-foreground">📞 {phone}</div>}
+        {phone && (
+          <div className="mt-1 flex items-center gap-2 text-muted-foreground">
+            <span>📞 {phone}</span>
+            {whatsAppLink(phone) && (
+              <a
+                href={whatsAppLink(phone)!}
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-medium text-emerald-700 hover:bg-emerald-200"
+              >
+                <MessageCircle className="h-3 w-3" /> WhatsApp
+              </a>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );
