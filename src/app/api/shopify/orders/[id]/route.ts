@@ -103,6 +103,11 @@ export const PATCH = withApi(async (
     const v = body.scheduledFor;
     patch.scheduledFor = v === null || v === "" ? null : String(v);
   }
+  if (body.markConfirmationSent === true) {
+    patch.confirmationSentAt = new Date().toISOString();
+  } else if (body.markConfirmationSent === false) {
+    patch.confirmationSentAt = null;
+  }
   if ("depositAmount" in body) {
     const v = body.depositAmount;
     if (v === null || v === "") {

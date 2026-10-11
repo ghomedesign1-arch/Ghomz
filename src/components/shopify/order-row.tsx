@@ -5,6 +5,7 @@ import Link from "next/link";
 import {
   CalendarClock,
   CalendarDays,
+  Check,
   ChevronDown,
   ChevronUp,
   ExternalLink,
@@ -13,6 +14,7 @@ import {
   Loader2,
   MessageCircle,
   Paperclip,
+  Send,
   X,
 } from "lucide-react";
 import { toast } from "sonner";
@@ -135,6 +137,56 @@ export function ShopifyOrderRow({
       }
       const next: ShopifyOrderMeta = await res.json();
       setMeta(next);
+    } finally {
+      setSaving(null);
+    }
+  }
+
+  function buildConfirmationMessage(): string {
+    const name =
+      [order.customer?.first_name, order.customer?.last_name]
+        .filter(Boolean)
+        .join(" ")
+        .trim() || "there";
+    const items = order.line_items
+      .filter((li) => effectiveQty(li) > 0)
+      .map(
+        (li) =>
+          `• ${effectiveQty(li)}× ${li.title}${li.variant_title ? ` (${li.variant_title})` : ""}`,
+      )
+      .join("\n");
+    const total = fmt(currentAmount(order.current_total_price, order.total_price));
+    const due = effectiveDeliveryDate(order.created_at, meta).toLocaleDateString(
+      "en-GB",
+      { day: "numeric", month: "short", year: "numeric" },
+    );
+    return `Hi ${name}! 👋\n\nThis is G-Homz confirming your order ${order.name}:\n\n${items}\n\n*Total:* ${total} ${order.currency}\n*Expected delivery:* by ${due}\n\nWe'll keep you updated as your bed moves through production. Thank you for choosing G-Homz! 🛏️`;
+  }
+
+  async function sendConfirmation() {
+    const phone =
+      order.customer?.phone ?? order.shipping_address?.phone ?? null;
+    const wa = whatsAppLink(phone);
+    if (!wa) {
+      toast.error("No phone number on this order");
+      return;
+    }
+    const message = encodeURIComponent(buildConfirmationMessage());
+    window.open(`${wa}?text=${message}`, "_blank", "noopener,noreferrer");
+    // Mark as sent in the ERP (the user still has to tap Send inside WhatsApp,
+    // but opening the pre-filled chat is the explicit intent).
+    setSaving("confirmation");
+    try {
+      const res = await fetch(`/api/shopify/orders/${order.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ markConfirmationSent: true }),
+      });
+      if (res.ok) {
+        const next = await res.json();
+        setMeta(next);
+        toast.success("Confirmation message ready in WhatsApp — tap send");
+      }
     } finally {
       setSaving(null);
     }
@@ -352,6 +404,38 @@ export function ShopifyOrderRow({
                   >
                     <CalendarClock className="h-3 w-3" />
                     {onTomorrow ? "On tomorrow's list" : "+ Tomorrow"}
+                  </button>
+                );
+              })()}
+              {(() => {
+                const phone =
+                  order.customer?.phone ??
+                  order.shipping_address?.phone ??
+                  null;
+                if (!phone) return null;
+                if (meta.confirmationSentAt) {
+                  return (
+                    <button
+                      type="button"
+                      onClick={sendConfirmation}
+                      disabled={saving === "confirmation"}
+                      className="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2 py-0.5 text-[11px] font-medium text-emerald-700 hover:bg-emerald-200"
+                      title={`Sent ${new Date(meta.confirmationSentAt).toLocaleDateString("en-GB")}`}
+                    >
+                      <Check className="h-3 w-3" />
+                      Confirmed · resend
+                    </button>
+                  );
+                }
+                return (
+                  <button
+                    type="button"
+                    onClick={sendConfirmation}
+                    disabled={saving === "confirmation"}
+                    className="inline-flex items-center gap-1 rounded-full border border-emerald-300 bg-emerald-50 px-2 py-0.5 text-[11px] font-medium text-emerald-700 hover:bg-emerald-100"
+                  >
+                    <Send className="h-3 w-3" />
+                    Send confirmation
                   </button>
                 );
               })()}

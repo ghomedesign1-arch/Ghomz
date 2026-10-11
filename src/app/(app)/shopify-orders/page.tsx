@@ -105,6 +105,7 @@ export default async function ShopifyOrdersPage({
       callAttempts: [],
       receipts: [],
       scheduledFor: null,
+      confirmationSentAt: null,
     };
 
   const tileCounts: Record<string, number> = {

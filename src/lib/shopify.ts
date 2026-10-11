@@ -230,6 +230,7 @@ export interface ShopifyOrderMeta {
   callAttempts: CallAttempt[];
   receipts: ReceiptAttachment[];
   scheduledFor: string | null;
+  confirmationSentAt: string | null;
 }
 
 export const DEFAULT_ORDER_META: ShopifyOrderMeta = {
@@ -244,6 +245,7 @@ export const DEFAULT_ORDER_META: ShopifyOrderMeta = {
   callAttempts: [],
   receipts: [],
   scheduledFor: null,
+  confirmationSentAt: null,
 };
 
 /** YYYY-MM-DD for the day after today in the server's timezone. */
