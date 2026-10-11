@@ -10,6 +10,7 @@ import {
   getShopifyToken,
   resolvePaymentKind,
   shopAdminOrderUrl,
+  todayIsoDate,
   tomorrowIsoDate,
   type ShopifyOrderMeta,
   type ShopifyOrderStatus,
@@ -166,8 +167,10 @@ export default async function ShopifyOrdersPage({
   // product + variant so Baby Blue vs Light Beige show separately.
   const productionAcc = new Map<string, ProductionQueueItem>();
   let productionUnits = 0;
+  const today = todayIsoDate();
   const tomorrow = tomorrowIsoDate();
-  const tomorrowOrders: TomorrowOrderEntry[] = [];
+  const todayScheduled: TomorrowOrderEntry[] = [];
+  const tomorrowScheduled: TomorrowOrderEntry[] = [];
   for (const o of activeOrders) {
     const m = metaFor(o);
     if (
@@ -196,7 +199,7 @@ export default async function ShopifyOrdersPage({
       }
       productionUnits += qty;
     }
-    if (m.scheduledFor === tomorrow) {
+    if (m.scheduledFor === today || m.scheduledFor === tomorrow) {
       const items = o.line_items
         .map((li) => ({
           title: li.title,
@@ -212,7 +215,9 @@ export default async function ShopifyOrdersPage({
         o.customer?.email ||
         "Guest"
       ).trim();
-      tomorrowOrders.push({ id: o.id, name: o.name, customer, items });
+      const entry = { id: o.id, name: o.name, customer, items };
+      if (m.scheduledFor === today) todayScheduled.push(entry);
+      else tomorrowScheduled.push(entry);
     }
   }
   const productionItems = Array.from(productionAcc.values()).sort(
@@ -411,7 +416,12 @@ export default async function ShopifyOrdersPage({
         )}
       </form>
 
-      <TomorrowQueue tomorrowDate={tomorrow} orders={tomorrowOrders} />
+      <TomorrowQueue
+        todayDate={today}
+        tomorrowDate={tomorrow}
+        todayOrders={todayScheduled}
+        tomorrowOrders={tomorrowScheduled}
+      />
 
       {(() => {
         const activeList = filtered.filter((o) => {

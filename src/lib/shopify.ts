@@ -250,11 +250,19 @@ export const DEFAULT_ORDER_META: ShopifyOrderMeta = {
   confirmationSentAt: null,
 };
 
-/** YYYY-MM-DD for the day after today in the server's timezone. */
-export function tomorrowIsoDate(): string {
+/** YYYY-MM-DD for a date offset from today in the server's timezone. */
+export function offsetIsoDate(dayOffset: number): string {
   const d = new Date();
-  d.setDate(d.getDate() + 1);
+  d.setDate(d.getDate() + dayOffset);
   return d.toISOString().slice(0, 10);
+}
+
+export function todayIsoDate(): string {
+  return offsetIsoDate(0);
+}
+
+export function tomorrowIsoDate(): string {
+  return offsetIsoDate(1);
 }
 
 /** Payment kind as the ERP sees it, respecting the paymentMode override. */
