@@ -854,8 +854,8 @@ function PaymentBreakdown({
   }, [meta.discount]);
 
   return (
-    <div className="space-y-3 rounded-md border border-border bg-secondary/30 p-3 text-xs">
-      <div className="flex items-center justify-between text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+    <div className="space-y-3 rounded-md border border-border bg-secondary/30 p-3 text-sm">
+      <div className="flex items-center justify-between text-xs font-semibold uppercase tracking-wide text-muted-foreground">
         <span>Payment</span>
         <span>{order.currency}</span>
       </div>
@@ -1251,8 +1251,8 @@ function AddressBlock({
   ].filter((s) => s && String(s).trim());
   const phone = address.phone ?? fallbackPhone;
   return (
-    <div className="rounded-md border border-border bg-secondary/30 p-3 text-xs">
-      <div className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+    <div className="rounded-md border border-border bg-secondary/30 p-3 text-sm">
+      <div className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
         Shipping address
       </div>
       <div className="space-y-0.5">
