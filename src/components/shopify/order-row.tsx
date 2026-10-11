@@ -466,6 +466,17 @@ export function ShopifyOrderRow({
           </div>
         </div>
 
+        {meta.notes && meta.notes.trim() && (
+          <div className="rounded-md border border-amber-200 bg-amber-50 p-2 text-xs">
+            <div className="text-[10px] font-semibold uppercase tracking-wide text-amber-800">
+              Note
+            </div>
+            <div className="mt-0.5 whitespace-pre-wrap text-amber-900">
+              {meta.notes}
+            </div>
+          </div>
+        )}
+
         <div className="divide-y divide-border border-y border-border">
           {activeLineItems.map((li) => {
             const qty = effectiveQty(li);
