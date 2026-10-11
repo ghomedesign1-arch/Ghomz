@@ -48,7 +48,12 @@ const TILE_CONFIG: {
 export default async function ShopifyOrdersPage({
   searchParams,
 }: {
-  searchParams?: { status?: string; q?: string; payment?: string };
+  searchParams?: {
+    status?: string;
+    q?: string;
+    payment?: string;
+    sort?: string;
+  };
 }) {
   const connection = await getShopifyToken().catch(() => null);
 
@@ -274,17 +279,60 @@ export default async function ShopifyOrdersPage({
     return true;
   });
 
+  const sort = (searchParams?.sort ?? "default").toLowerCase();
   filtered.sort((a, b) => {
     const ma = metaFor(a);
     const mb = metaFor(b);
-    if (ma.priority !== mb.priority) {
-      if (ma.priority === "URGENT") return -1;
-      if (mb.priority === "URGENT") return 1;
+    switch (sort) {
+      case "newest":
+        return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+      case "oldest":
+        return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
+      case "due":
+        return (
+          effectiveDeliveryDate(a.created_at, ma).getTime() -
+          effectiveDeliveryDate(b.created_at, mb).getTime()
+        );
+      case "value": {
+        const va = Number(a.current_total_price ?? a.total_price ?? 0);
+        const vb = Number(b.current_total_price ?? b.total_price ?? 0);
+        return vb - va;
+      }
+      case "unpaid": {
+        const ka = resolvePaymentKind(a, ma);
+        const kb = resolvePaymentKind(b, mb);
+        const rank = (k: string) =>
+          k === "unpaid" ? 0 : k === "deposit" ? 1 : k === "paid" ? 2 : 3;
+        if (rank(ka) !== rank(kb)) return rank(ka) - rank(kb);
+        return (
+          effectiveDeliveryDate(a.created_at, ma).getTime() -
+          effectiveDeliveryDate(b.created_at, mb).getTime()
+        );
+      }
+      case "customer": {
+        const na = (
+          [a.customer?.first_name, a.customer?.last_name]
+            .filter(Boolean)
+            .join(" ") || a.customer?.email || ""
+        ).toLowerCase();
+        const nb = (
+          [b.customer?.first_name, b.customer?.last_name]
+            .filter(Boolean)
+            .join(" ") || b.customer?.email || ""
+        ).toLowerCase();
+        return na.localeCompare(nb);
+      }
+      case "default":
+      default:
+        if (ma.priority !== mb.priority) {
+          if (ma.priority === "URGENT") return -1;
+          if (mb.priority === "URGENT") return 1;
+        }
+        return (
+          effectiveDeliveryDate(a.created_at, ma).getTime() -
+          effectiveDeliveryDate(b.created_at, mb).getTime()
+        );
     }
-    // Earlier delivery date first (so soon-due & overdue bubble to the top).
-    const dueA = effectiveDeliveryDate(a.created_at, ma).getTime();
-    const dueB = effectiveDeliveryDate(b.created_at, mb).getTime();
-    return dueA - dueB;
   });
 
   return (
@@ -321,6 +369,7 @@ export default async function ShopifyOrdersPage({
             query: {
               ...(query ? { q: query } : {}),
               ...(activePayment ? { payment: activePayment.toLowerCase() } : {}),
+              ...(sort !== "default" ? { sort } : {}),
               ...(t.key === "ALL" ? {} : { status: t.key.toLowerCase() }),
             },
           };
@@ -360,6 +409,7 @@ export default async function ShopifyOrdersPage({
             query: {
               ...(query ? { q: query } : {}),
               ...(activeStatus ? { status: activeStatus.toLowerCase() } : {}),
+              ...(sort !== "default" ? { sort } : {}),
               ...(p.key === "ALL" ? {} : { payment: p.key.toLowerCase() }),
             },
           };
@@ -400,13 +450,26 @@ export default async function ShopifyOrdersPage({
         {activePayment && (
           <input type="hidden" name="payment" value={activePayment.toLowerCase()} />
         )}
+        <select
+          name="sort"
+          defaultValue={sort}
+          className="h-9 rounded-md border border-input bg-background px-2 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-ring"
+        >
+          <option value="default">Sort: Priority + due date</option>
+          <option value="newest">Newest first</option>
+          <option value="oldest">Oldest first</option>
+          <option value="due">Earliest due date</option>
+          <option value="value">Highest total first</option>
+          <option value="unpaid">Unpaid first</option>
+          <option value="customer">Customer A → Z</option>
+        </select>
         <button
           type="submit"
           className="h-9 rounded-md border border-input bg-secondary px-4 text-sm font-medium hover:bg-secondary/80"
         >
-          Search
+          Apply
         </button>
-        {(query || activeStatus || activePayment) && (
+        {(query || activeStatus || activePayment || sort !== "default") && (
           <Link
             href="/shopify-orders"
             className="h-9 rounded-md border border-input bg-background px-4 text-sm font-medium leading-9 text-muted-foreground hover:bg-secondary"
