@@ -99,6 +99,10 @@ export const PATCH = withApi(async (
     patch.paymentMode = body.paymentMode as ShopifyPaymentMode;
     if (patch.paymentMode === "FULL") patch.depositAmount = null;
   }
+  if ("scheduledFor" in body) {
+    const v = body.scheduledFor;
+    patch.scheduledFor = v === null || v === "" ? null : String(v);
+  }
   if ("depositAmount" in body) {
     const v = body.depositAmount;
     if (v === null || v === "") {

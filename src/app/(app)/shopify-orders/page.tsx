@@ -10,10 +10,15 @@ import {
   getShopifyToken,
   resolvePaymentKind,
   shopAdminOrderUrl,
+  tomorrowIsoDate,
   type ShopifyOrderMeta,
   type ShopifyOrderStatus,
   type ShopifyOrderSummary,
 } from "@/lib/shopify";
+import {
+  TomorrowQueue,
+  type TomorrowOrderEntry,
+} from "@/components/shopify/tomorrow-queue";
 import { ShopifyOrderRow } from "@/components/shopify/order-row";
 import { RevenueSummary } from "@/components/shopify/revenue-summary";
 import {
@@ -99,6 +104,7 @@ export default async function ShopifyOrdersPage({
       depositAmount: null,
       callAttempts: [],
       receipts: [],
+      scheduledFor: null,
     };
 
   const tileCounts: Record<string, number> = {
@@ -152,6 +158,8 @@ export default async function ShopifyOrdersPage({
   // product + variant so Baby Blue vs Light Beige show separately.
   const productionAcc = new Map<string, ProductionQueueItem>();
   let productionUnits = 0;
+  const tomorrow = tomorrowIsoDate();
+  const tomorrowOrders: TomorrowOrderEntry[] = [];
   for (const o of activeOrders) {
     const m = metaFor(o);
     if (
@@ -179,6 +187,24 @@ export default async function ShopifyOrdersPage({
         });
       }
       productionUnits += qty;
+    }
+    if (m.scheduledFor === tomorrow) {
+      const items = o.line_items
+        .map((li) => ({
+          title: li.title,
+          variant: li.variant_title,
+          sku: li.sku,
+          quantity: li.current_quantity ?? li.quantity ?? 0,
+        }))
+        .filter((i) => i.quantity > 0);
+      const customer = (
+        [o.customer?.first_name, o.customer?.last_name]
+          .filter(Boolean)
+          .join(" ") ||
+        o.customer?.email ||
+        "Guest"
+      ).trim();
+      tomorrowOrders.push({ id: o.id, name: o.name, customer, items });
     }
   }
   const productionItems = Array.from(productionAcc.values()).sort(
@@ -272,6 +298,8 @@ export default async function ShopifyOrdersPage({
       />
 
       <ProductionQueue items={productionItems} totalUnits={productionUnits} />
+
+      <TomorrowQueue tomorrowDate={tomorrow} orders={tomorrowOrders} />
 
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-8">
         {TILE_CONFIG.map((t) => {

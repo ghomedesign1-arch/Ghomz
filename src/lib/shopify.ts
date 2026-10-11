@@ -229,6 +229,7 @@ export interface ShopifyOrderMeta {
   depositAmount: number | null;
   callAttempts: CallAttempt[];
   receipts: ReceiptAttachment[];
+  scheduledFor: string | null;
 }
 
 export const DEFAULT_ORDER_META: ShopifyOrderMeta = {
@@ -242,7 +243,15 @@ export const DEFAULT_ORDER_META: ShopifyOrderMeta = {
   depositAmount: null,
   callAttempts: [],
   receipts: [],
+  scheduledFor: null,
 };
+
+/** YYYY-MM-DD for the day after today in the server's timezone. */
+export function tomorrowIsoDate(): string {
+  const d = new Date();
+  d.setDate(d.getDate() + 1);
+  return d.toISOString().slice(0, 10);
+}
 
 /** Payment kind as the ERP sees it, respecting the paymentMode override. */
 export function resolvePaymentKind(

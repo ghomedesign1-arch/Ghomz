@@ -3,6 +3,7 @@
 import * as React from "react";
 import Link from "next/link";
 import {
+  CalendarClock,
   CalendarDays,
   ChevronDown,
   ChevronUp,
@@ -32,6 +33,7 @@ import {
   DUE_SOON_WINDOW_DAYS,
   MAX_CALL_ATTEMPTS,
   effectiveDeliveryDate,
+  tomorrowIsoDate,
   type CallOutcome,
   type ShopifyOrderMeta,
   type ShopifyOrderPriority,
@@ -329,6 +331,30 @@ export function ShopifyOrderRow({
               >
                 Change
               </button>
+              {(() => {
+                const tomorrow = tomorrowIsoDate();
+                const onTomorrow = meta.scheduledFor === tomorrow;
+                return (
+                  <button
+                    type="button"
+                    onClick={() =>
+                      save(
+                        { scheduledFor: onTomorrow ? null : tomorrow },
+                        "scheduledFor",
+                      )
+                    }
+                    disabled={saving === "scheduledFor"}
+                    className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-medium transition-colors ${
+                      onTomorrow
+                        ? "bg-amber-200 text-amber-900 hover:bg-amber-300"
+                        : "border border-amber-300 bg-amber-50 text-amber-800 hover:bg-amber-100"
+                    } disabled:opacity-50`}
+                  >
+                    <CalendarClock className="h-3 w-3" />
+                    {onTomorrow ? "On tomorrow's list" : "+ Tomorrow"}
+                  </button>
+                );
+              })()}
             </div>
           </div>
           <div className="flex items-start gap-2">
