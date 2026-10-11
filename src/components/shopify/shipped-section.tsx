@@ -42,7 +42,7 @@ export function ShippedSection({
   };
 
   return (
-    <div className="space-y-3 pt-4">
+    <div className="space-y-3">
       <button
         type="button"
         onClick={toggle}

@@ -424,20 +424,6 @@ export default async function ShopifyOrdersPage({
               </Card>
             )}
 
-            {activeList.length > 0 && (
-              <div className="space-y-3">
-                {activeList.map((o) => (
-                  <ShopifyOrderRow
-                    key={o.id}
-                    order={o}
-                    initialMeta={metaFor(o)}
-                    shopUrl={shopAdminOrderUrl(connection.shop, o.id)}
-                    users={users}
-                  />
-                ))}
-              </div>
-            )}
-
             {shippedList.length > 0 && (
               <ShippedSection
                 count={shippedList.length}
@@ -453,6 +439,20 @@ export default async function ShopifyOrdersPage({
                   />
                 ))}
               </ShippedSection>
+            )}
+
+            {activeList.length > 0 && (
+              <div className="space-y-3">
+                {activeList.map((o) => (
+                  <ShopifyOrderRow
+                    key={o.id}
+                    order={o}
+                    initialMeta={metaFor(o)}
+                    shopUrl={shopAdminOrderUrl(connection.shop, o.id)}
+                    users={users}
+                  />
+                ))}
+              </div>
             )}
           </>
         );
