@@ -142,7 +142,7 @@ const styles = StyleSheet.create({
   totalEmphasis: { fontSize: 11 },
 
   // ── Notes ──────────────────────────────────────────────────
-  notesBlock: { marginTop: "auto" },
+  notesBlock: { marginTop: "auto", marginBottom: 150 },
   notesTitle: { fontFamily: "Helvetica-Bold", marginBottom: 4 },
   noteLine: { marginBottom: 2, fontSize: 10 },
 });
@@ -184,13 +184,13 @@ function BottomCurve({ curveUrl }: { curveUrl: string | null }) {
           position: "absolute",
           right: 0,
           bottom: 0,
-          width: 520,
-          height: 220,
+          width: 595, // full A4 width
+          height: 170,
         }}
       >
         <Image
           src={curveUrl}
-          style={{ width: "100%", height: "100%", objectFit: "cover" }}
+          style={{ width: "100%", height: "100%", objectFit: "contain" }}
         />
       </View>
     );
