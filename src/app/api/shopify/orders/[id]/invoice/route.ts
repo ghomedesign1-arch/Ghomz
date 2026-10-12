@@ -49,7 +49,13 @@ export const GET = withApi(async (
     getOrderMeta(orderId),
     loadInvoiceBranding(),
   ]);
-  const pdf = await renderInvoicePdf({ order, meta, branding });
+  let pdf: Buffer;
+  try {
+    pdf = await renderInvoicePdf({ order, meta, branding });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    throw new HttpError(500, `PDF render failed: ${message}`);
+  }
   const bytes = new Uint8Array(pdf);
 
   return new NextResponse(bytes, {

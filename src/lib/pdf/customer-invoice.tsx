@@ -27,20 +27,17 @@ import type {
 let fontsRegistered = false;
 function ensureFonts(): void {
   if (fontsRegistered) return;
-  const origin =
-    process.env.NEXTAUTH_URL ??
-    (process.env.VERCEL_URL
-      ? `https://${process.env.VERCEL_URL}`
-      : "http://localhost:3000");
+  // Load Cairo (Latin + Arabic) from jsDelivr's GitHub mirror — avoids any
+  // dependency on our own site + auth middleware for serving the fonts.
+  const base =
+    "https://cdn.jsdelivr.net/gh/google/fonts@main/ofl/cairo/static";
   Font.register({
     family: "Cairo",
     fonts: [
-      { src: `${origin}/fonts/Cairo-Regular.ttf` },
-      { src: `${origin}/fonts/Cairo-Bold.ttf`, fontWeight: "bold" },
+      { src: `${base}/Cairo-Regular.ttf` },
+      { src: `${base}/Cairo-Bold.ttf`, fontWeight: "bold" },
     ],
   });
-  // Avoid react-pdf's default hyphenation callback mangling long tokens
-  // (e.g. Arabic address lines).
   Font.registerHyphenationCallback((word) => [word]);
   fontsRegistered = true;
 }
