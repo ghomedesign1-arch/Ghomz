@@ -5,7 +5,11 @@ import {
   getShopifyToken,
   type ShopifyOrderSummary,
 } from "@/lib/shopify";
-import { invoiceFileName, renderInvoicePdf } from "@/lib/pdf/customer-invoice";
+import {
+  invoiceFileName,
+  loadInvoiceBranding,
+  renderInvoicePdf,
+} from "@/lib/pdf/customer-invoice";
 
 /**
  * GET /api/shopify/orders/[id]/invoice
@@ -41,8 +45,11 @@ export const GET = withApi(async (
   const order = payload.order;
   if (!order) throw new HttpError(404, "Order not found on Shopify");
 
-  const meta = await getOrderMeta(orderId);
-  const pdf = await renderInvoicePdf({ order, meta });
+  const [meta, branding] = await Promise.all([
+    getOrderMeta(orderId),
+    loadInvoiceBranding(),
+  ]);
+  const pdf = await renderInvoicePdf({ order, meta, branding });
   const bytes = new Uint8Array(pdf);
 
   return new NextResponse(bytes, {

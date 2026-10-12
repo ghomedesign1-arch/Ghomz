@@ -21,6 +21,7 @@ import {
   type TomorrowOrderEntry,
 } from "@/components/shopify/tomorrow-queue";
 import { OrdersSection } from "@/components/shopify/shipped-section";
+import { InvoiceBrandingDialog } from "@/components/shopify/invoice-branding-dialog";
 import { ShopifyOrderRow } from "@/components/shopify/order-row";
 import { RevenueSummary } from "@/components/shopify/revenue-summary";
 import {
@@ -340,6 +341,7 @@ export default async function ShopifyOrdersPage({
       <PageHeader
         title="Shopify orders"
         description={`Last 30 days from ${connection.shop} · ${activeOrders.length} order${activeOrders.length === 1 ? "" : "s"}`}
+        actions={<InvoiceBrandingDialog />}
       />
 
       {error && (

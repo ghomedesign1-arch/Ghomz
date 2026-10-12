@@ -9,12 +9,30 @@ import {
   Rect,
   Path,
   G,
+  Image,
   renderToBuffer,
 } from "@react-pdf/renderer";
+import { prisma } from "@/lib/prisma";
 import type {
   ShopifyOrderMeta,
   ShopifyOrderSummary,
 } from "@/lib/shopify";
+
+export interface InvoiceBranding {
+  logoUrl: string | null;
+  bottomCurveUrl: string | null;
+}
+
+export async function loadInvoiceBranding(): Promise<InvoiceBranding> {
+  const rows = await prisma.setting.findMany({
+    where: { key: { in: ["invoice.logoUrl", "invoice.bottomCurveUrl"] } },
+  });
+  return {
+    logoUrl: rows.find((r) => r.key === "invoice.logoUrl")?.value ?? null,
+    bottomCurveUrl:
+      rows.find((r) => r.key === "invoice.bottomCurveUrl")?.value ?? null,
+  };
+}
 
 const BLACK = "#111111";
 const SUBTLE = "#666666";
@@ -129,7 +147,15 @@ const styles = StyleSheet.create({
   noteLine: { marginBottom: 2, fontSize: 10 },
 });
 
-function GhomzLogo() {
+function GhomzLogo({ logoUrl }: { logoUrl: string | null }) {
+  if (logoUrl) {
+    // Use the uploaded brand PNG at a fixed height so the aspect ratio keeps.
+    return (
+      <View style={styles.logoRow}>
+        <Image src={logoUrl} style={{ height: 36, objectFit: "contain" }} />
+      </View>
+    );
+  }
   return (
     <View style={styles.logoRow}>
       <Svg width={34} height={34} viewBox="0 0 64 64">
@@ -147,10 +173,28 @@ function GhomzLogo() {
 }
 
 /**
- * Decorative curve in the bottom-right corner — matches the quotation
- * template's black wave motif.
+ * Decorative curve in the bottom-right corner — uses the uploaded PNG when
+ * available, otherwise falls back to an inline-drawn wave.
  */
-function BottomCurve() {
+function BottomCurve({ curveUrl }: { curveUrl: string | null }) {
+  if (curveUrl) {
+    return (
+      <View
+        style={{
+          position: "absolute",
+          right: 0,
+          bottom: 0,
+          width: 300,
+          height: 140,
+        }}
+      >
+        <Image
+          src={curveUrl}
+          style={{ width: "100%", height: "100%", objectFit: "contain" }}
+        />
+      </View>
+    );
+  }
   return (
     <View
       style={{
@@ -171,6 +215,7 @@ function BottomCurve() {
 interface InvoiceInput {
   order: ShopifyOrderSummary;
   meta: ShopifyOrderMeta;
+  branding?: InvoiceBranding;
 }
 
 function num(v: string | number | null | undefined): number {
@@ -220,7 +265,9 @@ function customerAddress(o: ShopifyOrderSummary): string {
     .join(", ");
 }
 
-export function GhomzInvoice({ order, meta }: InvoiceInput) {
+export function GhomzInvoice({ order, meta, branding }: InvoiceInput) {
+  const logoUrl = branding?.logoUrl ?? null;
+  const curveUrl = branding?.bottomCurveUrl ?? null;
   const activeItems = order.line_items.filter((li) => {
     const q = li.current_quantity ?? li.quantity ?? 0;
     return q > 0;
@@ -254,7 +301,7 @@ export function GhomzInvoice({ order, meta }: InvoiceInput) {
     <Document>
       <Page size="A4" style={styles.page}>
         {/* Header ─────────────────────────────────────────── */}
-        <GhomzLogo />
+        <GhomzLogo logoUrl={logoUrl} />
         <View style={styles.thickRule} />
 
         {/* Tagline + location ──────────────────────────────── */}
@@ -370,7 +417,7 @@ export function GhomzInvoice({ order, meta }: InvoiceInput) {
           <Text style={styles.noteLine}>- Warranty: 4 years</Text>
         </View>
 
-        <BottomCurve />
+        <BottomCurve curveUrl={curveUrl} />
       </Page>
     </Document>
   );
