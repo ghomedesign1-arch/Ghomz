@@ -1,5 +1,4 @@
 import * as React from "react";
-import path from "path";
 import {
   Document,
   Font,
@@ -21,22 +20,27 @@ import type {
 } from "@/lib/shopify";
 
 // ── Font registration ─────────────────────────────────────────
-// Cairo supports both Latin and Arabic so names and أرقام render on the
-// same invoice without garbled glyphs. Files live in /public/fonts/ and
-// are read off disk at render time — works both locally and on Vercel.
+// Cairo supports both Latin and Arabic. Files live in /public/fonts/ and
+// are fetched over the deployed public URL so the serverless bundler
+// doesn't need to trace them off disk — more reliable across Vercel
+// deployments.
 let fontsRegistered = false;
 function ensureFonts(): void {
   if (fontsRegistered) return;
-  const base = path.join(process.cwd(), "public", "fonts");
+  const origin =
+    process.env.NEXTAUTH_URL ??
+    (process.env.VERCEL_URL
+      ? `https://${process.env.VERCEL_URL}`
+      : "http://localhost:3000");
   Font.register({
     family: "Cairo",
     fonts: [
-      { src: path.join(base, "Cairo-Regular.ttf") },
-      { src: path.join(base, "Cairo-Bold.ttf"), fontWeight: "bold" },
+      { src: `${origin}/fonts/Cairo-Regular.ttf` },
+      { src: `${origin}/fonts/Cairo-Bold.ttf`, fontWeight: "bold" },
     ],
   });
   // Avoid react-pdf's default hyphenation callback mangling long tokens
-  // (e.g. the long Arabic address lines).
+  // (e.g. Arabic address lines).
   Font.registerHyphenationCallback((word) => [word]);
   fontsRegistered = true;
 }

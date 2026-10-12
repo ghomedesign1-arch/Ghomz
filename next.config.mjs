@@ -8,13 +8,6 @@ const nextConfig = {
       { protocol: "https", hostname: "res.cloudinary.com" },
     ],
   },
-  // Make the Cairo TTFs available to the invoice-PDF API route on Vercel
-  // (serverless bundler needs to be told which /public files to trace).
-  experimental: {
-    outputFileTracingIncludes: {
-      "/api/shopify/orders/[id]/invoice": ["./public/fonts/**/*"],
-    },
-  },
 };
 
 export default nextConfig;
