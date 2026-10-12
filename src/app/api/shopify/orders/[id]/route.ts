@@ -108,6 +108,11 @@ export const PATCH = withApi(async (
   } else if (body.markConfirmationSent === false) {
     patch.confirmationSentAt = null;
   }
+  if (body.markDeliveryDateSent === true) {
+    patch.deliveryDateSentAt = new Date().toISOString();
+  } else if (body.markDeliveryDateSent === false) {
+    patch.deliveryDateSentAt = null;
+  }
   if ("discount" in body) {
     const v = body.discount;
     if (v === null || v === "") {

@@ -167,6 +167,48 @@ export function ShopifyOrderRow({
     return `Hi ${name}! 👋\n\nThis is G-Homz confirming your order ${order.name}:\n\n${items}\n\n*Total:* ${total} ${order.currency}\n*Expected delivery:* by ${due}\n\nWe'll keep you updated as your bed moves through production. Thank you for choosing G-Homz! 🛏️`;
   }
 
+  async function sendDeliveryDate() {
+    const phone =
+      order.customer?.phone ?? order.shipping_address?.phone ?? null;
+    const wa = whatsAppLink(phone);
+    if (!wa) {
+      toast.error("No phone number on this order");
+      return;
+    }
+    const name =
+      [order.customer?.first_name, order.customer?.last_name]
+        .filter(Boolean)
+        .join(" ")
+        .trim() || "there";
+    const dateStr = dueDate.toLocaleDateString("en-GB", {
+      weekday: "long",
+      day: "numeric",
+      month: "long",
+      year: "numeric",
+    });
+    const message = `Hi ${name}! 👋\n\nGood news — your G-Homz order ${order.name} is scheduled for delivery on *${dateStr}*.\n\nOur team will reach out shortly to confirm a time window with you. Thank you for choosing G-Homz! 🛏️`;
+    window.open(
+      `${wa}?text=${encodeURIComponent(message)}`,
+      "_blank",
+      "noopener,noreferrer",
+    );
+    setSaving("deliverySent");
+    try {
+      const res = await fetch(`/api/shopify/orders/${order.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ markDeliveryDateSent: true }),
+      });
+      if (res.ok) {
+        const next = await res.json();
+        setMeta(next);
+        toast.success("Delivery message ready in WhatsApp — tap send");
+      }
+    } finally {
+      setSaving(null);
+    }
+  }
+
   async function sendInvoiceOnWhatsApp() {
     const phone =
       order.customer?.phone ?? order.shipping_address?.phone ?? null;
@@ -421,6 +463,33 @@ export function ShopifyOrderRow({
               >
                 Change
               </button>
+              {(order.customer?.phone || order.shipping_address?.phone) && (
+                <button
+                  type="button"
+                  onClick={sendDeliveryDate}
+                  disabled={saving === "deliverySent"}
+                  className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-medium transition-colors disabled:opacity-50 ${
+                    meta.deliveryDateSentAt
+                      ? "bg-emerald-100 text-emerald-700 hover:bg-emerald-200"
+                      : "border border-emerald-300 bg-emerald-50 text-emerald-700 hover:bg-emerald-100"
+                  }`}
+                  title={
+                    meta.deliveryDateSentAt
+                      ? `Sent ${new Date(meta.deliveryDateSentAt).toLocaleDateString("en-GB")}`
+                      : "Send delivery date via WhatsApp"
+                  }
+                >
+                  {meta.deliveryDateSentAt ? (
+                    <>
+                      <Check className="h-3 w-3" /> Delivery date sent · resend
+                    </>
+                  ) : (
+                    <>
+                      <Send className="h-3 w-3" /> Send delivery date
+                    </>
+                  )}
+                </button>
+              )}
               {(() => {
                 const today = todayIsoDate();
                 const tomorrow = tomorrowIsoDate();

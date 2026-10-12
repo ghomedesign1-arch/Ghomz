@@ -113,6 +113,7 @@ export default async function ShopifyOrdersPage({
       receipts: [],
       scheduledFor: null,
       confirmationSentAt: null,
+      deliveryDateSentAt: null,
     };
 
   const tileCounts: Record<string, number> = {
