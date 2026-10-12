@@ -96,9 +96,9 @@ const styles = StyleSheet.create({
   },
   tagline: {
     fontSize: 30,
-    fontStyle: "italic",
-    fontWeight: 400,
+    fontWeight: "bold",
     lineHeight: 1.05,
+    letterSpacing: 0.5,
   },
   location: { fontSize: 11, marginTop: 10 },
 
