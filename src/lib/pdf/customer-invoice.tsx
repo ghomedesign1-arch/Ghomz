@@ -27,18 +27,19 @@ import type {
 let fontsRegistered = false;
 function ensureFonts(): void {
   if (fontsRegistered) return;
-  // Load Cairo (Latin + Arabic) from our own /public/fonts path. The auth
-  // middleware is configured to pass /fonts/* through without redirecting.
+  // Load Amiri (Latin + Arabic, static TTF with no variable-axis quirks)
+  // from our own /public/fonts path. The auth middleware is configured to
+  // pass /fonts/* through without redirecting.
   const origin =
     process.env.NEXTAUTH_URL ??
     (process.env.VERCEL_URL
       ? `https://${process.env.VERCEL_URL}`
       : "http://localhost:3000");
   Font.register({
-    family: "Cairo",
+    family: "Amiri",
     fonts: [
-      { src: `${origin}/fonts/Cairo-Regular.ttf` },
-      { src: `${origin}/fonts/Cairo-Bold.ttf`, fontWeight: "bold" },
+      { src: `${origin}/fonts/Amiri-Regular.ttf` },
+      { src: `${origin}/fonts/Amiri-Bold.ttf`, fontWeight: "bold" },
     ],
   });
   Font.registerHyphenationCallback((word) => [word]);
@@ -71,7 +72,7 @@ const styles = StyleSheet.create({
     paddingTop: 36,
     paddingBottom: 36,
     paddingHorizontal: 42,
-    fontFamily: "Cairo",
+    fontFamily: "Amiri",
     fontSize: 10,
     color: BLACK,
   },
