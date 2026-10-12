@@ -27,15 +27,18 @@ import type {
 let fontsRegistered = false;
 function ensureFonts(): void {
   if (fontsRegistered) return;
-  // Load Cairo (Latin + Arabic) from jsDelivr's GitHub mirror — avoids any
-  // dependency on our own site + auth middleware for serving the fonts.
-  const base =
-    "https://cdn.jsdelivr.net/gh/google/fonts@main/ofl/cairo/static";
+  // Load Cairo (Latin + Arabic) from our own /public/fonts path. The auth
+  // middleware is configured to pass /fonts/* through without redirecting.
+  const origin =
+    process.env.NEXTAUTH_URL ??
+    (process.env.VERCEL_URL
+      ? `https://${process.env.VERCEL_URL}`
+      : "http://localhost:3000");
   Font.register({
     family: "Cairo",
     fonts: [
-      { src: `${base}/Cairo-Regular.ttf` },
-      { src: `${base}/Cairo-Bold.ttf`, fontWeight: "bold" },
+      { src: `${origin}/fonts/Cairo-Regular.ttf` },
+      { src: `${origin}/fonts/Cairo-Bold.ttf`, fontWeight: "bold" },
     ],
   });
   Font.registerHyphenationCallback((word) => [word]);
