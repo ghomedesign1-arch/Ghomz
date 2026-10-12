@@ -186,7 +186,7 @@ export function ShopifyOrderRow({
       month: "long",
       year: "numeric",
     });
-    const message = `Hi ${name}! 👋\n\nGood news — your G-Homz order ${order.name} is scheduled for delivery on *${dateStr}*.\n\nOur team will reach out shortly to confirm a time window with you. Thank you for choosing G-Homz! 🛏️`;
+    const message = `Hi ${name}! 👋\n\nGood news — your G-Homz order ${order.name} is scheduled for delivery on *${dateStr}*.\n\nIf this date doesn't suit you, please let us know — or suggest a day that works better and we'll do our best to make it happen. Thank you for choosing G-Homz! 🛏️`;
     window.open(
       `${wa}?text=${encodeURIComponent(message)}`,
       "_blank",
