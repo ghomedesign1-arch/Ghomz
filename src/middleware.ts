@@ -20,5 +20,5 @@ export default auth((req) => {
 
 export const config = {
   // Run on every path except static assets and the auth handlers themselves.
-  matcher: ["/((?!api/auth|_next/static|_next/image|favicon.ico).*)"],
+  matcher: ["/((?!api/auth|_next/static|_next/image|fonts|favicon.ico).*)"],
 };
