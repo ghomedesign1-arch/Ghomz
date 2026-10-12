@@ -167,6 +167,40 @@ export function ShopifyOrderRow({
     return `Hi ${name}! 👋\n\nThis is G-Homz confirming your order ${order.name}:\n\n${items}\n\n*Total:* ${total} ${order.currency}\n*Expected delivery:* by ${due}\n\nWe'll keep you updated as your bed moves through production. Thank you for choosing G-Homz! 🛏️`;
   }
 
+  async function sendInvoiceOnWhatsApp() {
+    const phone =
+      order.customer?.phone ?? order.shipping_address?.phone ?? null;
+    const wa = whatsAppLink(phone);
+    if (!wa) {
+      toast.error("No phone number on this order");
+      return;
+    }
+    setSaving("invoiceShare");
+    try {
+      const res = await fetch(
+        `/api/shopify/orders/${order.id}/invoice/share`,
+        { method: "POST" },
+      );
+      const payload = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        toast.error(payload.error ?? "Invoice upload failed");
+        return;
+      }
+      const name =
+        [order.customer?.first_name, order.customer?.last_name]
+          .filter(Boolean)
+          .join(" ")
+          .trim() || "there";
+      const total = fmt(currentTotal);
+      const message = `Hi ${name}! 👋\n\nHere's your G-Homz invoice ${order.name}:\n${payload.url}\n\n*Total:* ${total} ${order.currency}\n\nPlease let us know if anything needs changing. Thank you! 🛏️`;
+      const link = `${wa}?text=${encodeURIComponent(message)}`;
+      window.open(link, "_blank", "noopener,noreferrer");
+      toast.success("Invoice ready in WhatsApp — tap send");
+    } finally {
+      setSaving(null);
+    }
+  }
+
   async function sendConfirmation() {
     const phone =
       order.customer?.phone ?? order.shipping_address?.phone ?? null;
@@ -443,6 +477,22 @@ export function ShopifyOrderRow({
                 <FileDown className="h-3 w-3" />
                 Invoice PDF
               </a>
+              {(order.customer?.phone || order.shipping_address?.phone) && (
+                <button
+                  type="button"
+                  onClick={sendInvoiceOnWhatsApp}
+                  disabled={saving === "invoiceShare"}
+                  className="inline-flex items-center gap-1 rounded-full border border-emerald-300 bg-emerald-50 px-2 py-0.5 text-[11px] font-medium text-emerald-700 hover:bg-emerald-100 disabled:opacity-50"
+                  title="Upload invoice and open WhatsApp with the link"
+                >
+                  {saving === "invoiceShare" ? (
+                    <Loader2 className="h-3 w-3 animate-spin" />
+                  ) : (
+                    <Send className="h-3 w-3" />
+                  )}
+                  Invoice → WhatsApp
+                </button>
+              )}
               {(() => {
                 const phone =
                   order.customer?.phone ??
