@@ -10,6 +10,7 @@ import {
   ChevronUp,
   ExternalLink,
   Factory,
+  FileDown,
   FileText,
   Loader2,
   MessageCircle,
@@ -432,6 +433,16 @@ export function ShopifyOrderRow({
                   </>
                 );
               })()}
+              <a
+                href={`/api/shopify/orders/${order.id}/invoice`}
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex items-center gap-1 rounded-full border border-slate-300 bg-white px-2 py-0.5 text-[11px] font-medium text-slate-700 hover:bg-slate-100"
+                title="Open invoice PDF in a new tab"
+              >
+                <FileDown className="h-3 w-3" />
+                Invoice PDF
+              </a>
               {(() => {
                 const phone =
                   order.customer?.phone ??
