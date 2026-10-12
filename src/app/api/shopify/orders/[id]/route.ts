@@ -113,6 +113,11 @@ export const PATCH = withApi(async (
   } else if (body.markDeliveryDateSent === false) {
     patch.deliveryDateSentAt = null;
   }
+  if (body.markDepositRequestSent === true) {
+    patch.depositRequestSentAt = new Date().toISOString();
+  } else if (body.markDepositRequestSent === false) {
+    patch.depositRequestSentAt = null;
+  }
   if ("discount" in body) {
     const v = body.discount;
     if (v === null || v === "") {

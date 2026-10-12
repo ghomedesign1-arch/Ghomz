@@ -167,6 +167,53 @@ export function ShopifyOrderRow({
     return `Hi ${name}! 👋\n\nThis is G-Homz confirming your order ${order.name}:\n\n${items}\n\n*Total:* ${total} ${order.currency}\n*Expected delivery:* by ${due}\n\nWe'll keep you updated as your bed moves through production. Thank you for choosing G-Homz! 🛏️`;
   }
 
+  async function sendDepositRequest() {
+    const phone =
+      order.customer?.phone ?? order.shipping_address?.phone ?? null;
+    const wa = whatsAppLink(phone);
+    if (!wa) {
+      toast.error("No phone number on this order");
+      return;
+    }
+    const name =
+      [order.customer?.first_name, order.customer?.last_name]
+        .filter(Boolean)
+        .join(" ")
+        .trim() || "there";
+    const half = Math.round(currentTotal / 2);
+    const total = fmt(currentTotal);
+    const message =
+`Hi ${name}! ✨
+
+Thank you for choosing G-Homz for your order ${order.name} — we can't wait to craft it for you! 🛏️
+
+Each G-Homz piece is custom-made just for you, so to reserve your spot in our workshop and lock in your materials we kindly ask for a *50% deposit of ${fmt(half)} ${order.currency}* (half of your ${total} ${order.currency} total).
+
+Why a deposit? It lets our team begin production without delay — once we receive it, your order is officially *in production* and your delivery timeline begins. The remaining 50% is due on delivery. 🚚
+
+Reply here as soon as you've sent it and we'll fire up the workshop! 🪚✨`;
+    window.open(
+      `${wa}?text=${encodeURIComponent(message)}`,
+      "_blank",
+      "noopener,noreferrer",
+    );
+    setSaving("depositSent");
+    try {
+      const res = await fetch(`/api/shopify/orders/${order.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ markDepositRequestSent: true }),
+      });
+      if (res.ok) {
+        const next = await res.json();
+        setMeta(next);
+        toast.success("Deposit request ready in WhatsApp — tap send");
+      }
+    } finally {
+      setSaving(null);
+    }
+  }
+
   async function sendDeliveryDate() {
     const phone =
       order.customer?.phone ?? order.shipping_address?.phone ?? null;
@@ -463,33 +510,6 @@ export function ShopifyOrderRow({
               >
                 Change
               </button>
-              {(order.customer?.phone || order.shipping_address?.phone) && (
-                <button
-                  type="button"
-                  onClick={sendDeliveryDate}
-                  disabled={saving === "deliverySent"}
-                  className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-medium transition-colors disabled:opacity-50 ${
-                    meta.deliveryDateSentAt
-                      ? "bg-emerald-100 text-emerald-700 hover:bg-emerald-200"
-                      : "border border-emerald-300 bg-emerald-50 text-emerald-700 hover:bg-emerald-100"
-                  }`}
-                  title={
-                    meta.deliveryDateSentAt
-                      ? `Sent ${new Date(meta.deliveryDateSentAt).toLocaleDateString("en-GB")}`
-                      : "Send delivery date via WhatsApp"
-                  }
-                >
-                  {meta.deliveryDateSentAt ? (
-                    <>
-                      <Check className="h-3 w-3" /> Delivery date sent · resend
-                    </>
-                  ) : (
-                    <>
-                      <Send className="h-3 w-3" /> Send delivery date
-                    </>
-                  )}
-                </button>
-              )}
               {(() => {
                 const today = todayIsoDate();
                 const tomorrow = tomorrowIsoDate();
@@ -594,6 +614,60 @@ export function ShopifyOrderRow({
                   </button>
                 );
               })()}
+              {(order.customer?.phone || order.shipping_address?.phone) && (
+                <button
+                  type="button"
+                  onClick={sendDeliveryDate}
+                  disabled={saving === "deliverySent"}
+                  className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-medium transition-colors disabled:opacity-50 ${
+                    meta.deliveryDateSentAt
+                      ? "bg-emerald-100 text-emerald-700 hover:bg-emerald-200"
+                      : "border border-emerald-300 bg-emerald-50 text-emerald-700 hover:bg-emerald-100"
+                  }`}
+                  title={
+                    meta.deliveryDateSentAt
+                      ? `Sent ${new Date(meta.deliveryDateSentAt).toLocaleDateString("en-GB")}`
+                      : "Send delivery date via WhatsApp"
+                  }
+                >
+                  {meta.deliveryDateSentAt ? (
+                    <>
+                      <Check className="h-3 w-3" /> Delivery date sent · resend
+                    </>
+                  ) : (
+                    <>
+                      <Send className="h-3 w-3" /> Send delivery date
+                    </>
+                  )}
+                </button>
+              )}
+              {(order.customer?.phone || order.shipping_address?.phone) && (
+                <button
+                  type="button"
+                  onClick={sendDepositRequest}
+                  disabled={saving === "depositSent"}
+                  className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-medium transition-colors disabled:opacity-50 ${
+                    meta.depositRequestSentAt
+                      ? "bg-amber-100 text-amber-800 hover:bg-amber-200"
+                      : "border border-amber-300 bg-amber-50 text-amber-800 hover:bg-amber-100"
+                  }`}
+                  title={
+                    meta.depositRequestSentAt
+                      ? `Sent ${new Date(meta.depositRequestSentAt).toLocaleDateString("en-GB")}`
+                      : "Send 50% deposit request via WhatsApp"
+                  }
+                >
+                  {meta.depositRequestSentAt ? (
+                    <>
+                      <Check className="h-3 w-3" /> Deposit asked · resend
+                    </>
+                  ) : (
+                    <>
+                      <Send className="h-3 w-3" /> Ask for 50% deposit
+                    </>
+                  )}
+                </button>
+              )}
             </div>
           </div>
           <div className="flex items-start gap-2">
