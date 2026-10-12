@@ -617,33 +617,6 @@ Reply here as soon as you've sent it and we'll fire up the workshop! 🪚✨`;
               {(order.customer?.phone || order.shipping_address?.phone) && (
                 <button
                   type="button"
-                  onClick={sendDeliveryDate}
-                  disabled={saving === "deliverySent"}
-                  className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-medium transition-colors disabled:opacity-50 ${
-                    meta.deliveryDateSentAt
-                      ? "bg-emerald-100 text-emerald-700 hover:bg-emerald-200"
-                      : "border border-emerald-300 bg-emerald-50 text-emerald-700 hover:bg-emerald-100"
-                  }`}
-                  title={
-                    meta.deliveryDateSentAt
-                      ? `Sent ${new Date(meta.deliveryDateSentAt).toLocaleDateString("en-GB")}`
-                      : "Send delivery date via WhatsApp"
-                  }
-                >
-                  {meta.deliveryDateSentAt ? (
-                    <>
-                      <Check className="h-3 w-3" /> Delivery date sent · resend
-                    </>
-                  ) : (
-                    <>
-                      <Send className="h-3 w-3" /> Send delivery date
-                    </>
-                  )}
-                </button>
-              )}
-              {(order.customer?.phone || order.shipping_address?.phone) && (
-                <button
-                  type="button"
                   onClick={sendDepositRequest}
                   disabled={saving === "depositSent"}
                   className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-medium transition-colors disabled:opacity-50 ${
@@ -664,6 +637,33 @@ Reply here as soon as you've sent it and we'll fire up the workshop! 🪚✨`;
                   ) : (
                     <>
                       <Send className="h-3 w-3" /> Ask for 50% deposit
+                    </>
+                  )}
+                </button>
+              )}
+              {(order.customer?.phone || order.shipping_address?.phone) && (
+                <button
+                  type="button"
+                  onClick={sendDeliveryDate}
+                  disabled={saving === "deliverySent"}
+                  className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-medium transition-colors disabled:opacity-50 ${
+                    meta.deliveryDateSentAt
+                      ? "bg-emerald-100 text-emerald-700 hover:bg-emerald-200"
+                      : "border border-emerald-300 bg-emerald-50 text-emerald-700 hover:bg-emerald-100"
+                  }`}
+                  title={
+                    meta.deliveryDateSentAt
+                      ? `Sent ${new Date(meta.deliveryDateSentAt).toLocaleDateString("en-GB")}`
+                      : "Send delivery date via WhatsApp"
+                  }
+                >
+                  {meta.deliveryDateSentAt ? (
+                    <>
+                      <Check className="h-3 w-3" /> Delivery date sent · resend
+                    </>
+                  ) : (
+                    <>
+                      <Send className="h-3 w-3" /> Send delivery date
                     </>
                   )}
                 </button>
