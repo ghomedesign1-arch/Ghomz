@@ -25,10 +25,7 @@ import { InvoiceBrandingDialog } from "@/components/shopify/invoice-branding-dia
 import { NewOrdersWatcher } from "@/components/shopify/new-orders-watcher";
 import { ShopifyOrderRow } from "@/components/shopify/order-row";
 import { RevenueSummary } from "@/components/shopify/revenue-summary";
-import {
-  ProductionQueue,
-  type ProductionQueueItem,
-} from "@/components/shopify/production-queue";
+import type { ProductionQueueItem } from "@/components/shopify/production-queue";
 
 export const dynamic = "force-dynamic";
 
@@ -367,7 +364,6 @@ export default async function ShopifyOrdersPage({
         orderCount={activeOrders.filter((o) => metaFor(o).status !== "CANCELLED").length}
       />
 
-      <ProductionQueue items={productionItems} totalUnits={productionUnits} />
 
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-8">
         {TILE_CONFIG.map((t) => {
