@@ -412,7 +412,7 @@ export function GhomzInvoice({ order, meta, branding }: InvoiceInput) {
         {/* Notes ───────────────────────────────────────────── */}
         <View style={styles.notesBlock}>
           <Text style={styles.notesTitle}>Notes:</Text>
-          <Text style={styles.noteLine}>- Delivery within 7–10 days</Text>
+          <Text style={styles.noteLine}>- Delivery within 10–14 days</Text>
           <Text style={styles.noteLine}>- No returns on custom orders</Text>
           <Text style={styles.noteLine}>- Warranty: 5 year</Text>
         </View>
