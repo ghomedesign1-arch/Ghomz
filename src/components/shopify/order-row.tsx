@@ -164,29 +164,7 @@ export function ShopifyOrderRow({
       "en-GB",
       { day: "numeric", month: "short", year: "numeric" },
     );
-    return `أهلاً ${name}! 👋
-
-نؤكد لك طلبك ${order.name} من G-Homz:
-
-${items}
-
-*الإجمالي:* ${total} ${order.currency}
-*موعد التسليم المتوقع:* قبل ${due}
-
-هنوافيك بالتحديثات أول بأول خلال مراحل التصنيع. شكراً لاختيارك جي-هومز! 🛏️
-
-— — —
-
-Hi ${name}! 👋
-
-This is G-Homz confirming your order ${order.name}:
-
-${items}
-
-*Total:* ${total} ${order.currency}
-*Expected delivery:* by ${due}
-
-We'll keep you updated as your bed moves through production. Thank you for choosing G-Homz! 🛏️`;
+    return `Hi ${name}! 👋\n\nThis is G-Homz confirming your order ${order.name}:\n\n${items}\n\n*Total:* ${total} ${order.currency}\n*Expected delivery:* by ${due}\n\nWe'll keep you updated as your bed moves through production. Thank you for choosing G-Homz! 🛏️`;
   }
 
   async function sendDepositRequest() {
@@ -205,19 +183,7 @@ We'll keep you updated as your bed moves through production. Thank you for choos
     const half = Math.round(currentTotal / 2);
     const total = fmt(currentTotal);
     const message =
-`أهلاً ${name}! ✨
-
-شكراً جداً لاختيارك جي-هومز لطلبك ${order.name} — متحمسين نصنعه لك! 🛏️
-
-كل قطعة من G-Homz بتتصنع خصيصاً لك، وعشان نحجز لك دور في الورشة ونثبّت الخامات بنطلب *دفعة مقدمة 50% بمبلغ ${fmt(half)} ${order.currency}* (نصف إجمالي ${total} ${order.currency}).
-
-ليه مقدم؟ عشان نقدر نبدأ التصنيع فوراً — بمجرد وصول المبلغ، طلبك يدخل مرحلة *قيد التصنيع* ويبدأ حساب موعد التسليم. الـ50% المتبقية بتتدفع عند التسليم. 🚚
-
-ابعتلنا هنا بمجرد ما تحوّل المبلغ وهنبدأ شغل الورشة فوراً! 🪚✨
-
-— — —
-
-Hi ${name}! ✨
+`Hi ${name}! ✨
 
 Thank you for choosing G-Homz for your order ${order.name} — we can't wait to craft it for you! 🛏️
 
@@ -267,19 +233,7 @@ Reply here as soon as you've sent it and we'll fire up the workshop! 🪚✨`;
       month: "long",
       year: "numeric",
     });
-    const message = `أهلاً ${name}! 👋
-
-خبر سعيد — طلبك ${order.name} من G-Homz مجهز للتسليم يوم *${dateStr}*.
-
-لو الموعد ده مش مناسب، احكي معانا ولا اقترح يوم تاني أحسن وهنعمل اللي علينا عشان يتم في الموعد اللي يناسبك. شكراً لاختيارك جي-هومز! 🛏️
-
-— — —
-
-Hi ${name}! 👋
-
-Good news — your G-Homz order ${order.name} is scheduled for delivery on *${dateStr}*.
-
-If this date doesn't suit you, please let us know — or suggest a day that works better and we'll do our best to make it happen. Thank you for choosing G-Homz! 🛏️`;
+    const message = `Hi ${name}! 👋\n\nGood news — your G-Homz order ${order.name} is scheduled for delivery on *${dateStr}*.\n\nIf this date doesn't suit you, please let us know — or suggest a day that works better and we'll do our best to make it happen. Thank you for choosing G-Homz! 🛏️`;
     window.open(
       `${wa}?text=${encodeURIComponent(message)}`,
       "_blank",
