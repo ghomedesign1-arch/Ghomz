@@ -72,7 +72,7 @@ const styles = StyleSheet.create({
     paddingTop: 36,
     paddingBottom: 36,
     paddingHorizontal: 42,
-    fontFamily: "Amiri",
+    fontFamily: "Helvetica",
     fontSize: 10,
     color: BLACK,
   },
@@ -265,6 +265,35 @@ function invoiceDate(iso: string): string {
   return `${d.getDate()}/${d.getMonth() + 1}/${d.getFullYear()}`;
 }
 
+const ARABIC_RE = /[؀-ۿݐ-ݿࢠ-ࣿﭐ-﷿ﹰ-﻿]/;
+
+/**
+ * Text run that auto-switches to Amiri when the content contains any Arabic
+ * character. Keeps Helvetica for the common Latin case so numbers line up
+ * nicely and spacing matches the design template.
+ */
+function AutoText({
+  children,
+  style,
+}: {
+  children: React.ReactNode;
+  style?: object | object[];
+}) {
+  const str = React.Children.toArray(children).join("");
+  const isArabic = ARABIC_RE.test(str);
+  const stylesArr = Array.isArray(style) ? style : style ? [style] : [];
+  return (
+    <Text
+      style={[
+        ...stylesArr,
+        { fontFamily: isArabic ? "Amiri" : "Helvetica" },
+      ]}
+    >
+      {children}
+    </Text>
+  );
+}
+
 function customerName(o: ShopifyOrderSummary): string {
   return (
     [o.customer?.first_name, o.customer?.last_name]
@@ -345,7 +374,7 @@ export function GhomzInvoice({ order, meta, branding }: InvoiceInput) {
         <View style={styles.metaBlock}>
           <View style={styles.metaLine}>
             <Text style={styles.metaLabel}>Invoice No:</Text>
-            <Text style={styles.metaValue}> {invoiceNumber(order)} </Text>
+            <AutoText style={styles.metaValue}> {invoiceNumber(order)} </AutoText>
           </View>
           <View style={styles.metaLine}>
             <Text style={styles.metaLabel}>Date:</Text>
@@ -356,15 +385,15 @@ export function GhomzInvoice({ order, meta, branding }: InvoiceInput) {
           </View>
           <View style={styles.metaLine}>
             <Text style={styles.metaLabel}>Customer Name:</Text>
-            <Text style={styles.metaValue}> {customerName(order)} </Text>
+            <AutoText style={styles.metaValue}> {customerName(order)} </AutoText>
           </View>
           <View style={styles.metaLine}>
             <Text style={styles.metaLabel}>Phone:</Text>
-            <Text style={styles.metaValue}> {customerPhone(order)} </Text>
+            <AutoText style={styles.metaValue}> {customerPhone(order)} </AutoText>
           </View>
           <View style={styles.metaLine}>
             <Text style={styles.metaLabel}>Address:</Text>
-            <Text style={styles.metaValue}> {customerAddress(order)} </Text>
+            <AutoText style={styles.metaValue}> {customerAddress(order)} </AutoText>
           </View>
         </View>
 
@@ -382,10 +411,10 @@ export function GhomzInvoice({ order, meta, branding }: InvoiceInput) {
             const unit = num(li.price);
             return (
               <View key={li.id} style={styles.tr}>
-                <Text style={[styles.td, styles.colItem]}>{li.title}</Text>
-                <Text style={[styles.td, styles.colDesc]}>
+                <AutoText style={[styles.td, styles.colItem]}>{li.title}</AutoText>
+                <AutoText style={[styles.td, styles.colDesc]}>
                   {li.variant_title ?? ""}
-                </Text>
+                </AutoText>
                 <Text style={[styles.td, styles.colQty]}>{qty}</Text>
                 <Text style={[styles.td, styles.colUnit]}>{fmt(unit)}</Text>
                 <Text style={[styles.td, styles.colTotal]}>
