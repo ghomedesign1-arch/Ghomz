@@ -1,6 +1,8 @@
 import * as React from "react";
+import path from "path";
 import {
   Document,
+  Font,
   Page,
   Text,
   View,
@@ -17,6 +19,27 @@ import type {
   ShopifyOrderMeta,
   ShopifyOrderSummary,
 } from "@/lib/shopify";
+
+// ── Font registration ─────────────────────────────────────────
+// Cairo supports both Latin and Arabic so names and أرقام render on the
+// same invoice without garbled glyphs. Files live in /public/fonts/ and
+// are read off disk at render time — works both locally and on Vercel.
+let fontsRegistered = false;
+function ensureFonts(): void {
+  if (fontsRegistered) return;
+  const base = path.join(process.cwd(), "public", "fonts");
+  Font.register({
+    family: "Cairo",
+    fonts: [
+      { src: path.join(base, "Cairo-Regular.ttf") },
+      { src: path.join(base, "Cairo-Bold.ttf"), fontWeight: "bold" },
+    ],
+  });
+  // Avoid react-pdf's default hyphenation callback mangling long tokens
+  // (e.g. the long Arabic address lines).
+  Font.registerHyphenationCallback((word) => [word]);
+  fontsRegistered = true;
+}
 
 export interface InvoiceBranding {
   logoUrl: string | null;
@@ -44,7 +67,7 @@ const styles = StyleSheet.create({
     paddingTop: 36,
     paddingBottom: 36,
     paddingHorizontal: 42,
-    fontFamily: "Helvetica",
+    fontFamily: "Cairo",
     fontSize: 10,
     color: BLACK,
   },
@@ -53,7 +76,7 @@ const styles = StyleSheet.create({
   logoWord: {
     marginLeft: 8,
     fontSize: 22,
-    fontFamily: "Helvetica-Bold",
+    fontWeight: "bold",
     letterSpacing: 1,
   },
   thickRule: {
@@ -72,7 +95,7 @@ const styles = StyleSheet.create({
   },
   tagline: {
     fontSize: 30,
-    fontFamily: "Helvetica-Oblique",
+    fontStyle: "italic",
     fontWeight: 400,
     lineHeight: 1.05,
   },
@@ -86,7 +109,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "flex-end",
   },
-  metaLabel: { fontFamily: "Helvetica-Bold" },
+  metaLabel: { fontWeight: "bold" },
   metaValue: {
     marginLeft: 4,
     borderBottomWidth: 0.75,
@@ -114,7 +137,7 @@ const styles = StyleSheet.create({
     color: "#ffffff",
     paddingVertical: 6,
     paddingHorizontal: 8,
-    fontFamily: "Helvetica-Bold",
+    fontWeight: "bold",
     fontSize: 10,
   },
   td: {
@@ -137,13 +160,13 @@ const styles = StyleSheet.create({
   totalValue: {
     width: 90,
     textAlign: "right",
-    fontFamily: "Helvetica-Bold",
+    fontWeight: "bold",
   },
   totalEmphasis: { fontSize: 11 },
 
   // ── Notes ──────────────────────────────────────────────────
   notesBlock: { marginTop: "auto", marginBottom: 150 },
-  notesTitle: { fontFamily: "Helvetica-Bold", marginBottom: 4 },
+  notesTitle: { fontWeight: "bold", marginBottom: 4 },
   noteLine: { marginBottom: 2, fontSize: 10 },
 });
 
@@ -426,6 +449,7 @@ export function GhomzInvoice({ order, meta, branding }: InvoiceInput) {
 export async function renderInvoicePdf(
   input: InvoiceInput,
 ): Promise<Buffer> {
+  ensureFonts();
   return renderToBuffer(<GhomzInvoice {...input} />);
 }
 
