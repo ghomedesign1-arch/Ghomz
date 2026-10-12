@@ -184,13 +184,13 @@ function BottomCurve({ curveUrl }: { curveUrl: string | null }) {
           position: "absolute",
           right: 0,
           bottom: 0,
-          width: 300,
-          height: 140,
+          width: 520,
+          height: 220,
         }}
       >
         <Image
           src={curveUrl}
-          style={{ width: "100%", height: "100%", objectFit: "contain" }}
+          style={{ width: "100%", height: "100%", objectFit: "cover" }}
         />
       </View>
     );
@@ -412,9 +412,9 @@ export function GhomzInvoice({ order, meta, branding }: InvoiceInput) {
         {/* Notes ───────────────────────────────────────────── */}
         <View style={styles.notesBlock}>
           <Text style={styles.notesTitle}>Notes:</Text>
-          <Text style={styles.noteLine}>- Delivery within 10–15 days</Text>
+          <Text style={styles.noteLine}>- Delivery within 7–10 days</Text>
           <Text style={styles.noteLine}>- No returns on custom orders</Text>
-          <Text style={styles.noteLine}>- Warranty: 4 years</Text>
+          <Text style={styles.noteLine}>- Warranty: 5 year</Text>
         </View>
 
         <BottomCurve curveUrl={curveUrl} />
