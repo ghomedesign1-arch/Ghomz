@@ -167,6 +167,51 @@ export function ShopifyOrderRow({
     return `Hi ${name}! 👋\n\nThis is G-Homz confirming your order ${order.name}:\n\n${items}\n\n*Total:* ${total} ${order.currency}\n*Expected delivery:* by ${due}\n\nWe'll keep you updated as your bed moves through production. Thank you for choosing G-Homz! 🛏️`;
   }
 
+  async function sendCancellation() {
+    const phone =
+      order.customer?.phone ?? order.shipping_address?.phone ?? null;
+    const wa = whatsAppLink(phone);
+    if (!wa) {
+      toast.error("No phone number on this order");
+      return;
+    }
+    const name =
+      [order.customer?.first_name, order.customer?.last_name]
+        .filter(Boolean)
+        .join(" ")
+        .trim() || "there";
+    const message =
+`Hi ${name},
+
+We've tried to reach you several times about your G-Homz order ${order.name} to confirm the 50% deposit needed before we can begin production, but unfortunately we haven't heard back from you.
+
+Since we haven't received the deposit, we won't be able to hold your spot in our workshop any longer and your order will be *cancelled*.
+
+If you'd still like to go ahead, please reply within the next 24 hours and we'll be happy to reopen it. Otherwise, no further action is needed from your side.
+
+Thank you for your interest in G-Homz — we hope to serve you in the future! 🛏️`;
+    window.open(
+      `${wa}?text=${encodeURIComponent(message)}`,
+      "_blank",
+      "noopener,noreferrer",
+    );
+    setSaving("cancelSent");
+    try {
+      const res = await fetch(`/api/shopify/orders/${order.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ markCancellationSent: true }),
+      });
+      if (res.ok) {
+        const next = await res.json();
+        setMeta(next);
+        toast.success("Cancellation notice ready in WhatsApp — tap send");
+      }
+    } finally {
+      setSaving(null);
+    }
+  }
+
   async function sendDepositRequest() {
     const phone =
       order.customer?.phone ?? order.shipping_address?.phone ?? null;
@@ -637,6 +682,33 @@ Reply here as soon as you've sent it and we'll fire up the workshop! 🪚✨`;
                   ) : (
                     <>
                       <Send className="h-3 w-3" /> Ask for 50% deposit
+                    </>
+                  )}
+                </button>
+              )}
+              {(order.customer?.phone || order.shipping_address?.phone) && (
+                <button
+                  type="button"
+                  onClick={sendCancellation}
+                  disabled={saving === "cancelSent"}
+                  className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-medium transition-colors disabled:opacity-50 ${
+                    meta.cancellationSentAt
+                      ? "bg-rose-100 text-rose-700 hover:bg-rose-200"
+                      : "border border-rose-300 bg-rose-50 text-rose-700 hover:bg-rose-100"
+                  }`}
+                  title={
+                    meta.cancellationSentAt
+                      ? `Sent ${new Date(meta.cancellationSentAt).toLocaleDateString("en-GB")}`
+                      : "Send cancellation notice via WhatsApp"
+                  }
+                >
+                  {meta.cancellationSentAt ? (
+                    <>
+                      <Check className="h-3 w-3" /> Cancellation sent · resend
+                    </>
+                  ) : (
+                    <>
+                      <Send className="h-3 w-3" /> Send cancellation
                     </>
                   )}
                 </button>

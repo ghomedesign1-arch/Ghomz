@@ -234,6 +234,7 @@ export interface ShopifyOrderMeta {
   confirmationSentAt: string | null;
   deliveryDateSentAt: string | null;
   depositRequestSentAt: string | null;
+  cancellationSentAt: string | null;
 }
 
 export const DEFAULT_ORDER_META: ShopifyOrderMeta = {
@@ -252,6 +253,7 @@ export const DEFAULT_ORDER_META: ShopifyOrderMeta = {
   confirmationSentAt: null,
   deliveryDateSentAt: null,
   depositRequestSentAt: null,
+  cancellationSentAt: null,
 };
 
 /** YYYY-MM-DD for a date offset from today in the server's timezone. */

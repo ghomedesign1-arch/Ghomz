@@ -118,6 +118,11 @@ export const PATCH = withApi(async (
   } else if (body.markDepositRequestSent === false) {
     patch.depositRequestSentAt = null;
   }
+  if (body.markCancellationSent === true) {
+    patch.cancellationSentAt = new Date().toISOString();
+  } else if (body.markCancellationSent === false) {
+    patch.cancellationSentAt = null;
+  }
   if ("discount" in body) {
     const v = body.discount;
     if (v === null || v === "") {
