@@ -185,7 +185,7 @@ export function ShopifyOrderRow({
 
 We've tried to reach you several times about your G-Homz order ${order.name} to confirm the 50% deposit needed before we can begin production, but unfortunately we haven't heard back from you.
 
-Since we haven't received the deposit, we won't be able to hold your spot in our workshop any longer and your order will be *cancelled*.
+Since we haven't received the deposit, we won't be able to proceed with your order at the factory and your order will be *cancelled*.
 
 If you'd still like to go ahead, please reply within the next 24 hours and we'll be happy to reopen it. Otherwise, no further action is needed from your side.
 
