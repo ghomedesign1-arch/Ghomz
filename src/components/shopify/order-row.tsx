@@ -178,6 +178,50 @@ export function ShopifyOrderRow({
     return `Hi ${name}! 👋\n\nThis is G-Homz confirming your order ${order.name}:\n\n${items}\n\n*Total:* ${total} ${order.currency}\n*Expected delivery:* by ${due}\n\nWe'll keep you updated as your bed moves through production. Thank you for choosing G-Homz! 🛏️`;
   }
 
+  async function sendThanks() {
+    const phone =
+      order.customer?.phone ?? order.shipping_address?.phone ?? null;
+    const wa = whatsAppLink(phone);
+    if (!wa) {
+      toast.error("No phone number on this order");
+      return;
+    }
+    const name =
+      [order.customer?.first_name, order.customer?.last_name]
+        .filter(Boolean)
+        .join(" ")
+        .trim() || "there";
+    const message =
+`Hi ${name},
+
+Thank you for your order ${order.name} with G-Homz — we are delighted to welcome you to our community.
+
+Our team will begin preparing your piece shortly, with delivery typically within 10–14 days. We will be in touch with the next steps along the way, and if you have any questions, please don't hesitate to reply here.
+
+Kind regards,
+Team G-Homz`;
+    window.open(
+      `${wa}?text=${encodeURIComponent(message)}`,
+      "_blank",
+      "noopener,noreferrer",
+    );
+    setSaving("thanksSent");
+    try {
+      const res = await fetch(`/api/shopify/orders/${order.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ markThanksSent: true }),
+      });
+      if (res.ok) {
+        const next = await res.json();
+        setMeta(next);
+        toast.success("Thank-you message ready in WhatsApp — tap send");
+      }
+    } finally {
+      setSaving(null);
+    }
+  }
+
   async function sendCancellation() {
     const phone =
       order.customer?.phone ?? order.shipping_address?.phone ?? null;
@@ -648,6 +692,33 @@ Reply here as soon as you've sent it and we'll fire up the workshop! 🪚✨`;
                     <Send className="h-3 w-3" />
                   )}
                   Invoice → WhatsApp
+                </button>
+              )}
+              {(order.customer?.phone || order.shipping_address?.phone) && (
+                <button
+                  type="button"
+                  onClick={sendThanks}
+                  disabled={saving === "thanksSent"}
+                  className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-medium transition-colors disabled:opacity-50 ${
+                    meta.thanksSentAt
+                      ? "bg-pink-100 text-pink-700 hover:bg-pink-200"
+                      : "border border-pink-300 bg-pink-50 text-pink-700 hover:bg-pink-100"
+                  }`}
+                  title={
+                    meta.thanksSentAt
+                      ? `Sent ${new Date(meta.thanksSentAt).toLocaleDateString("en-GB")}`
+                      : "Send thanks-for-ordering message via WhatsApp"
+                  }
+                >
+                  {meta.thanksSentAt ? (
+                    <>
+                      <Check className="h-3 w-3" /> Thanked · resend
+                    </>
+                  ) : (
+                    <>
+                      <Send className="h-3 w-3" /> Send thanks
+                    </>
+                  )}
                 </button>
               )}
               {(() => {

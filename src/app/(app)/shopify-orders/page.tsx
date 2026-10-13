@@ -116,6 +116,7 @@ export default async function ShopifyOrdersPage({
       deliveryDateSentAt: null,
       depositRequestSentAt: null,
       cancellationSentAt: null,
+      thanksSentAt: null,
       lineOverrides: {},
     };
 

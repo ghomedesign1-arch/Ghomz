@@ -235,6 +235,7 @@ export interface ShopifyOrderMeta {
   deliveryDateSentAt: string | null;
   depositRequestSentAt: string | null;
   cancellationSentAt: string | null;
+  thanksSentAt: string | null;
   lineOverrides: Record<string, LineOverride>;
 }
 
@@ -269,6 +270,7 @@ export const DEFAULT_ORDER_META: ShopifyOrderMeta = {
   deliveryDateSentAt: null,
   depositRequestSentAt: null,
   cancellationSentAt: null,
+  thanksSentAt: null,
   lineOverrides: {},
 };
 

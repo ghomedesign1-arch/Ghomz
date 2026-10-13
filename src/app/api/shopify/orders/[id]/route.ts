@@ -123,6 +123,11 @@ export const PATCH = withApi(async (
   } else if (body.markCancellationSent === false) {
     patch.cancellationSentAt = null;
   }
+  if (body.markThanksSent === true) {
+    patch.thanksSentAt = new Date().toISOString();
+  } else if (body.markThanksSent === false) {
+    patch.thanksSentAt = null;
+  }
   if (body.setLineOverride && typeof body.setLineOverride === "object") {
     // { lineItemId: string, override: Partial<LineOverride> | null }
     const op = body.setLineOverride as {
