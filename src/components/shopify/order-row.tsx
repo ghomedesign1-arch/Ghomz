@@ -1133,7 +1133,17 @@ function resolvePayment(
   order: ShopifyOrderSummary,
   meta: ShopifyOrderMeta,
 ): { kind: "paid" | "deposit" | "unpaid" | "refunded"; paid: number; remaining: number } {
-  const raw = currentAmount(order.current_total_price, order.total_price);
+  const effLines = effectiveLineItems(order, meta);
+  const hasOverrides = effLines.some((li) => li.isCustom);
+  const shopifyRaw = currentAmount(order.current_total_price, order.total_price);
+  const shopifySubtotal = currentAmount(
+    order.current_subtotal_price,
+    order.subtotal_price,
+  );
+  const raw = hasOverrides
+    ? effectiveSubtotal(effLines.filter((l) => l.quantity > 0)) +
+      (shopifyRaw - shopifySubtotal)
+    : shopifyRaw;
   const discount = Math.max(0, Number(meta.discount ?? 0));
   const total = Math.max(0, raw - discount);
   const status = (order.financial_status ?? "").toLowerCase();
@@ -1191,13 +1201,26 @@ function PaymentBreakdown({
     setDepositDraft(meta.depositAmount != null ? String(meta.depositAmount) : "");
   }, [meta.depositAmount]);
 
-  const rawTotal = currentAmount(order.current_total_price, order.total_price);
+  const effLines = effectiveLineItems(order, meta);
+  const hasOverrides = effLines.some((li) => li.isCustom);
+  const shopifyRawTotal = currentAmount(order.current_total_price, order.total_price);
+  const shopifySubtotalRaw = currentAmount(
+    order.current_subtotal_price,
+    order.subtotal_price,
+  );
+  const subtotal = hasOverrides
+    ? effectiveSubtotal(effLines.filter((l) => l.quantity > 0))
+    : shopifySubtotalRaw;
+  const rawTotal = hasOverrides
+    ? subtotal + (shopifyRawTotal - shopifySubtotalRaw)
+    : shopifyRawTotal;
   const erpDiscount = Math.max(0, Number(meta.discount ?? 0));
   const total = Math.max(0, rawTotal - erpDiscount);
-  const subtotal = currentAmount(order.current_subtotal_price, order.subtotal_price);
   const shopifyDiscount = currentAmount(order.current_total_discounts, order.total_discounts);
   const tax = currentAmount(order.current_total_tax, order.total_tax);
-  const shipping = Math.max(0, rawTotal - subtotal - tax + shopifyDiscount);
+  // Shipping is derived from Shopify's own numbers (overrides don't change
+  // shipping) so it reconciles consistently with the ERP subtotal.
+  const shipping = Math.max(0, shopifyRawTotal - shopifySubtotalRaw - tax + shopifyDiscount);
   const { kind, paid, remaining } = resolvePayment(order, meta);
 
   const [discountDraft, setDiscountDraft] = React.useState<string>(
