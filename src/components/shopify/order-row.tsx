@@ -309,6 +309,9 @@ Reply here as soon as you've sent it and we'll fire up the workshop! 🪚✨`;
       toast.error("No phone number on this order");
       return;
     }
+    // Open the tab synchronously so the popup blocker treats it as a direct
+    // user gesture; we'll point it at WhatsApp once the PDF upload returns.
+    const win = window.open("about:blank", "_blank");
     setSaving("invoiceShare");
     try {
       const res = await fetch(
@@ -318,6 +321,11 @@ Reply here as soon as you've sent it and we'll fire up the workshop! 🪚✨`;
       const payload = await res.json().catch(() => ({}));
       if (!res.ok) {
         toast.error(payload.error ?? "Invoice upload failed");
+        try {
+          win?.close();
+        } catch {
+          /* ignore */
+        }
         return;
       }
       const name =
@@ -328,7 +336,11 @@ Reply here as soon as you've sent it and we'll fire up the workshop! 🪚✨`;
       const total = fmt(currentTotal);
       const message = `Hi ${name}! 👋\n\nHere's your G-Homz invoice ${order.name}:\n${payload.url}\n\n*Total:* ${total} ${order.currency}\n\nPlease let us know if anything needs changing. Thank you! 🛏️`;
       const link = `${wa}?text=${encodeURIComponent(message)}`;
-      window.open(link, "_blank", "noopener,noreferrer");
+      if (win && !win.closed) {
+        win.location.href = link;
+      } else {
+        window.open(link, "_blank", "noopener,noreferrer");
+      }
       toast.success("Invoice ready in WhatsApp — tap send");
     } finally {
       setSaving(null);
