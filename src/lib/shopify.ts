@@ -126,6 +126,8 @@ export interface ShopifyAddress {
   zip?: string | null;
   phone?: string | null;
   company?: string | null;
+  latitude?: number | null;
+  longitude?: number | null;
 }
 
 export interface ShopifyOrderSummary {

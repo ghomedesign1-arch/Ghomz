@@ -1698,11 +1698,56 @@ function AddressBlock({
     address.country,
   ].filter((s) => s && String(s).trim());
   const phone = address.phone ?? fallbackPhone;
+  const addressText = lines.join(", ");
+  const hasCoords =
+    typeof address.latitude === "number" &&
+    typeof address.longitude === "number";
+  // Google Maps opens coords when precise, falls back to address text.
+  const mapsHref = hasCoords
+    ? `https://www.google.com/maps/search/?api=1&query=${address.latitude},${address.longitude}`
+    : addressText
+      ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(addressText)}`
+      : null;
+  // Free static-tile map via OpenStreetMap's staticmap.openstreetmap.de —
+  // no API key needed. Only used when we have real coords.
+  const staticMapUrl = hasCoords
+    ? `https://staticmap.openstreetmap.de/staticmap.php?center=${address.latitude},${address.longitude}&zoom=14&size=400x200&maptype=mapnik&markers=${address.latitude},${address.longitude},red-pushpin`
+    : null;
+
   return (
     <div className="rounded-md border border-border bg-secondary/30 p-3 text-sm">
-      <div className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-        Shipping address
+      <div className="mb-2 flex items-center justify-between">
+        <div className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+          Shipping address
+        </div>
+        {mapsHref && (
+          <a
+            href={mapsHref}
+            target="_blank"
+            rel="noreferrer"
+            className="inline-flex items-center gap-1 rounded-full border border-blue-300 bg-blue-50 px-2 py-0.5 text-[10px] font-medium text-blue-700 hover:bg-blue-100"
+          >
+            📍 Open in Maps
+          </a>
+        )}
       </div>
+      {staticMapUrl && (
+        <a
+          href={mapsHref ?? "#"}
+          target="_blank"
+          rel="noreferrer"
+          className="mb-2 block overflow-hidden rounded-md border border-border"
+          title="Click to open full map"
+        >
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={staticMapUrl}
+            alt="Shipping address map"
+            className="h-28 w-full object-cover"
+            loading="lazy"
+          />
+        </a>
+      )}
       <div className="space-y-0.5">
         {lines.map((line, i) => (
           <div key={i}>{line}</div>
