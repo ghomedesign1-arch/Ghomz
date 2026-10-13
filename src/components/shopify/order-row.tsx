@@ -1708,10 +1708,16 @@ function AddressBlock({
     : addressText
       ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(addressText)}`
       : null;
-  // Free static-tile map via OpenStreetMap's staticmap.openstreetmap.de —
-  // no API key needed. Only used when we have real coords.
-  const staticMapUrl = hasCoords
-    ? `https://staticmap.openstreetmap.de/staticmap.php?center=${address.latitude},${address.longitude}&zoom=14&size=400x200&maptype=mapnik&markers=${address.latitude},${address.longitude},red-pushpin`
+  // OSM embed iframe — no API key, no cost, and renders a real interactive
+  // mini map. Build a tight bbox around the pin for a sensible zoom level.
+  const osmEmbedSrc = hasCoords
+    ? (() => {
+        const lat = address.latitude as number;
+        const lon = address.longitude as number;
+        const d = 0.004; // ≈ 450m box
+        const bbox = `${lon - d},${lat - d},${lon + d},${lat + d}`;
+        return `https://www.openstreetmap.org/export/embed.html?bbox=${bbox}&layer=mapnik&marker=${lat},${lon}`;
+      })()
     : null;
 
   return (
@@ -1731,22 +1737,15 @@ function AddressBlock({
           </a>
         )}
       </div>
-      {staticMapUrl && (
-        <a
-          href={mapsHref ?? "#"}
-          target="_blank"
-          rel="noreferrer"
-          className="mb-2 block overflow-hidden rounded-md border border-border"
-          title="Click to open full map"
-        >
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={staticMapUrl}
-            alt="Shipping address map"
-            className="h-28 w-full object-cover"
+      {osmEmbedSrc && (
+        <div className="mb-2 overflow-hidden rounded-md border border-border">
+          <iframe
+            src={osmEmbedSrc}
+            title="Shipping address map"
+            className="h-32 w-full border-0"
             loading="lazy"
           />
-        </a>
+        </div>
       )}
       <div className="space-y-0.5">
         {lines.map((line, i) => (
