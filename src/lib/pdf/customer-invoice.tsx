@@ -14,9 +14,11 @@ import {
   renderToBuffer,
 } from "@react-pdf/renderer";
 import { prisma } from "@/lib/prisma";
-import type {
-  ShopifyOrderMeta,
-  ShopifyOrderSummary,
+import {
+  effectiveLineItems,
+  effectiveSubtotal,
+  type ShopifyOrderMeta,
+  type ShopifyOrderSummary,
 } from "@/lib/shopify";
 
 // ── Font registration ─────────────────────────────────────────
@@ -325,15 +327,22 @@ function customerAddress(o: ShopifyOrderSummary): string {
 export function GhomzInvoice({ order, meta, branding }: InvoiceInput) {
   const logoUrl = branding?.logoUrl ?? null;
   const curveUrl = branding?.bottomCurveUrl ?? null;
-  const activeItems = order.line_items.filter((li) => {
-    const q = li.current_quantity ?? li.quantity ?? 0;
-    return q > 0;
-  });
-  const subtotal = num(order.current_subtotal_price ?? order.subtotal_price);
+  const effectiveLines = effectiveLineItems(order, meta);
+  const activeItems = effectiveLines.filter((li) => li.quantity > 0);
+  const hasOverrides = effectiveLines.some((li) => li.isCustom);
+  const shopifySubtotal = num(order.current_subtotal_price ?? order.subtotal_price);
+  const shopifyRawTotal = num(order.current_total_price ?? order.total_price);
+  const subtotal = hasOverrides
+    ? effectiveSubtotal(activeItems)
+    : shopifySubtotal;
   const shopifyDiscount = num(
     order.current_total_discounts ?? order.total_discounts,
   );
-  const rawTotal = num(order.current_total_price ?? order.total_price);
+  // When overrides change the subtotal, keep shipping+tax reconciliation
+  // relative to the override subtotal so the Total matches the ERP view.
+  const rawTotal = hasOverrides
+    ? subtotal + (shopifyRawTotal - shopifySubtotal)
+    : shopifyRawTotal;
   const erpDiscount = Math.max(0, num(meta.discount));
   const total = Math.max(0, rawTotal - erpDiscount);
 
@@ -350,7 +359,7 @@ export function GhomzInvoice({ order, meta, branding }: InvoiceInput) {
     paid = Math.min(total, paidFromShopify);
   }
   const remaining = Math.max(0, total - paid);
-  const shipping = Math.max(0, rawTotal - subtotal + shopifyDiscount - num(
+  const shipping = Math.max(0, shopifyRawTotal - shopifySubtotal + shopifyDiscount - num(
     order.current_total_tax ?? order.total_tax,
   ));
 
@@ -407,18 +416,16 @@ export function GhomzInvoice({ order, meta, branding }: InvoiceInput) {
             <Text style={[styles.th, styles.colTotal]}>Total (EGP)</Text>
           </View>
           {activeItems.map((li) => {
-            const qty = li.current_quantity ?? li.quantity;
-            const unit = num(li.price);
             return (
               <View key={li.id} style={styles.tr}>
                 <AutoText style={[styles.td, styles.colItem]}>{li.title}</AutoText>
                 <AutoText style={[styles.td, styles.colDesc]}>
-                  {li.variant_title ?? ""}
+                  {li.variantTitle ?? ""}
                 </AutoText>
-                <Text style={[styles.td, styles.colQty]}>{qty}</Text>
-                <Text style={[styles.td, styles.colUnit]}>{fmt(unit)}</Text>
+                <Text style={[styles.td, styles.colQty]}>{li.quantity}</Text>
+                <Text style={[styles.td, styles.colUnit]}>{fmt(li.unitPrice)}</Text>
                 <Text style={[styles.td, styles.colTotal]}>
-                  {fmt(unit * qty)}
+                  {fmt(li.lineTotal)}
                 </Text>
               </View>
             );

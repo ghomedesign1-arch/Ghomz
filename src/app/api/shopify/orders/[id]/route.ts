@@ -123,6 +123,62 @@ export const PATCH = withApi(async (
   } else if (body.markCancellationSent === false) {
     patch.cancellationSentAt = null;
   }
+  if (body.setLineOverride && typeof body.setLineOverride === "object") {
+    // { lineItemId: string, override: Partial<LineOverride> | null }
+    const op = body.setLineOverride as {
+      lineItemId?: unknown;
+      override?: unknown;
+    };
+    const lineItemId =
+      typeof op.lineItemId === "string" || typeof op.lineItemId === "number"
+        ? String(op.lineItemId)
+        : null;
+    if (!lineItemId) throw new HttpError(422, "setLineOverride.lineItemId required");
+    const current = await getOrderMeta(orderId);
+    const next = { ...(current.lineOverrides ?? {}) };
+    if (op.override === null) {
+      delete next[lineItemId];
+    } else if (op.override && typeof op.override === "object") {
+      const o = op.override as Record<string, unknown>;
+      const prev = next[lineItemId] ?? { editedAt: new Date().toISOString() };
+      next[lineItemId] = {
+        customTitle:
+          "customTitle" in o
+            ? o.customTitle === null || o.customTitle === ""
+              ? null
+              : String(o.customTitle)
+            : prev.customTitle ?? null,
+        customVariant:
+          "customVariant" in o
+            ? o.customVariant === null || o.customVariant === ""
+              ? null
+              : String(o.customVariant)
+            : prev.customVariant ?? null,
+        customPrice:
+          "customPrice" in o
+            ? o.customPrice === null || o.customPrice === ""
+              ? null
+              : Number(o.customPrice)
+            : prev.customPrice ?? null,
+        customQuantity:
+          "customQuantity" in o
+            ? o.customQuantity === null || o.customQuantity === ""
+              ? null
+              : Number(o.customQuantity)
+            : prev.customQuantity ?? null,
+        note:
+          "note" in o
+            ? o.note === null || o.note === ""
+              ? null
+              : String(o.note)
+            : prev.note ?? null,
+        editedAt: new Date().toISOString(),
+      };
+    } else {
+      throw new HttpError(422, "setLineOverride.override must be object or null");
+    }
+    patch.lineOverrides = next;
+  }
   if ("discount" in body) {
     const v = body.discount;
     if (v === null || v === "") {

@@ -235,6 +235,21 @@ export interface ShopifyOrderMeta {
   deliveryDateSentAt: string | null;
   depositRequestSentAt: string | null;
   cancellationSentAt: string | null;
+  lineOverrides: Record<string, LineOverride>;
+}
+
+/**
+ * ERP-side customisation of a single Shopify line item. Set only the fields
+ * you want to override; nulls / undefined fall back to the original Shopify
+ * value when the invoice, totals and production queue are computed.
+ */
+export interface LineOverride {
+  customTitle?: string | null;
+  customVariant?: string | null;
+  customPrice?: number | null;
+  customQuantity?: number | null;
+  note?: string | null;
+  editedAt: string;
 }
 
 export const DEFAULT_ORDER_META: ShopifyOrderMeta = {
@@ -254,7 +269,69 @@ export const DEFAULT_ORDER_META: ShopifyOrderMeta = {
   deliveryDateSentAt: null,
   depositRequestSentAt: null,
   cancellationSentAt: null,
+  lineOverrides: {},
 };
+
+/**
+ * Resolved line item: Shopify data merged with its ERP override so callers
+ * can treat it as a single uniform shape.
+ */
+export interface EffectiveLineItem {
+  id: number;
+  sku: string | null;
+  title: string;
+  variantTitle: string | null;
+  unitPrice: number;
+  quantity: number;
+  lineTotal: number;
+  note: string | null;
+  isCustom: boolean;
+  original: {
+    title: string;
+    variantTitle: string | null;
+    unitPrice: number;
+    quantity: number;
+  };
+}
+
+export function effectiveLineItems(
+  order: { line_items: ShopifyLineItem[] },
+  meta: ShopifyOrderMeta,
+): EffectiveLineItem[] {
+  return order.line_items.map((li) => {
+    const override = meta.lineOverrides?.[String(li.id)];
+    const originalQty = li.current_quantity ?? li.quantity ?? 0;
+    const originalPrice = Number(li.price ?? 0);
+    const quantity =
+      override?.customQuantity != null ? override.customQuantity : originalQty;
+    const unitPrice =
+      override?.customPrice != null ? override.customPrice : originalPrice;
+    const title = override?.customTitle?.trim() || li.title;
+    const variantTitle =
+      override?.customVariant?.trim() ?? li.variant_title ?? null;
+    return {
+      id: li.id,
+      sku: li.sku,
+      title,
+      variantTitle,
+      unitPrice,
+      quantity,
+      lineTotal: unitPrice * quantity,
+      note: override?.note ?? null,
+      isCustom: Boolean(override),
+      original: {
+        title: li.title,
+        variantTitle: li.variant_title,
+        unitPrice: originalPrice,
+        quantity: originalQty,
+      },
+    };
+  });
+}
+
+export function effectiveSubtotal(items: EffectiveLineItem[]): number {
+  return items.reduce((a, i) => a + (i.quantity > 0 ? i.lineTotal : 0), 0);
+}
 
 /** YYYY-MM-DD for a date offset from today in the server's timezone. */
 export function offsetIsoDate(dayOffset: number): string {

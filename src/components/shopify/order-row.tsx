@@ -36,15 +36,19 @@ import {
   DUE_SOON_WINDOW_DAYS,
   MAX_CALL_ATTEMPTS,
   effectiveDeliveryDate,
+  effectiveLineItems,
+  effectiveSubtotal,
   todayIsoDate,
   tomorrowIsoDate,
   type CallOutcome,
+  type EffectiveLineItem,
   type ShopifyOrderMeta,
   type ShopifyOrderPriority,
   type ShopifyOrderStatus,
   type ShopifyOrderSummary,
   type ShopifyPaymentMode,
 } from "@/lib/shopify";
+import { LineItemEditDialog } from "@/components/shopify/line-item-edit-dialog";
 
 const STATUS_OPTS: { value: ShopifyOrderStatus; label: string }[] = [
   { value: "NEW", label: "New" },
@@ -109,11 +113,18 @@ export function ShopifyOrderRow({
     month: "short",
     year: "numeric",
   });
-  const activeLineItems = order.line_items.filter(
-    (li) => effectiveQty(li) > 0,
-  );
-  const totalItems = activeLineItems.reduce((a, i) => a + effectiveQty(i), 0);
-  const rawTotal = currentAmount(order.current_total_price, order.total_price);
+  const effectiveLines = effectiveLineItems(order, meta);
+  const activeLineItems = effectiveLines.filter((li) => li.quantity > 0);
+  const totalItems = activeLineItems.reduce((a, i) => a + i.quantity, 0);
+  // Prefer sum of (overridden) line totals so edits flow through; fall back to
+  // Shopify's current total when no overrides touch things.
+  const hasOverrides = effectiveLines.some((li) => li.isCustom);
+  const shopifyTotal = currentAmount(order.current_total_price, order.total_price);
+  const rawTotal = hasOverrides
+    ? effectiveSubtotal(activeLineItems) +
+      (shopifyTotal -
+        currentAmount(order.current_subtotal_price, order.subtotal_price))
+    : shopifyTotal;
   const erpDiscount = Math.max(0, Number(meta.discount ?? 0));
   const currentTotal = Math.max(0, rawTotal - erpDiscount);
   const isTerminal = meta.status === "SHIPPED" || meta.status === "CANCELLED";
@@ -791,35 +802,67 @@ Reply here as soon as you've sent it and we'll fire up the workshop! 🪚✨`;
         )}
 
         <div className="divide-y divide-border border-y border-border">
-          {activeLineItems.map((li) => {
-            const qty = effectiveQty(li);
-            return (
-              <div
-                key={li.id}
-                className="flex items-start justify-between gap-3 py-2 text-sm"
-              >
-                <div className="min-w-0">
+          {activeLineItems.map((li) => (
+            <div
+              key={li.id}
+              className="flex items-start justify-between gap-3 py-2 text-sm"
+            >
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center gap-2">
                   <div className="truncate font-medium">{li.title}</div>
-                  {li.variant_title && (
-                    <div className="text-xs text-foreground/80">
-                      {li.variant_title}
-                    </div>
-                  )}
-                  {li.sku && (
-                    <div className="text-[11px] text-muted-foreground">
-                      SKU: {li.sku}
-                    </div>
+                  {li.isCustom && (
+                    <span className="rounded-full bg-slate-800 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-white">
+                      Custom
+                    </span>
                   )}
                 </div>
-                <div className="shrink-0 text-right text-sm">
-                  <div>×{qty}</div>
-                  <div className="text-xs text-muted-foreground">
-                    {fmt(li.price)} {order.currency}
+                {li.variantTitle && (
+                  <div className="text-xs text-foreground/80">
+                    {li.variantTitle}
                   </div>
+                )}
+                {li.sku && (
+                  <div className="text-[11px] text-muted-foreground">
+                    SKU: {li.sku}
+                  </div>
+                )}
+                {li.isCustom && (
+                  <div className="mt-1 text-[11px] italic text-muted-foreground">
+                    was {li.original.title}
+                    {li.original.variantTitle
+                      ? ` · ${li.original.variantTitle}`
+                      : ""}{" "}
+                    · {li.original.quantity} × {fmt(li.original.unitPrice)}{" "}
+                    {order.currency}
+                  </div>
+                )}
+                {li.note && (
+                  <div className="mt-1 text-[11px] text-amber-800">
+                    Note: {li.note}
+                  </div>
+                )}
+                <div className="mt-1">
+                  <LineItemEditDialog
+                    orderId={order.id}
+                    item={li}
+                    currency={order.currency}
+                    onSaved={(next) => setMeta(next)}
+                  />
                 </div>
               </div>
-            );
-          })}
+              <div className="shrink-0 text-right text-sm">
+                <div>×{li.quantity}</div>
+                <div className="text-xs text-muted-foreground">
+                  {fmt(li.unitPrice)} {order.currency}
+                </div>
+                {li.isCustom && (
+                  <div className="text-[10px] text-muted-foreground">
+                    = {fmt(li.lineTotal)} {order.currency}
+                  </div>
+                )}
+              </div>
+            </div>
+          ))}
         </div>
 
         {expanded && (
