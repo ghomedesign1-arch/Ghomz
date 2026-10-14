@@ -185,12 +185,18 @@ export function FactoryWorkOrder({
 <html>
 <head>
 <meta charset="utf-8" />
-<title>G-Homz · Factory Work Order</title>
+<title>G-Homz · Factory Work Order / أمر تشغيل للمصنع</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap" rel="stylesheet" />
 <style>
-  body { font-family: -apple-system, system-ui, "Segoe UI", sans-serif; padding: 32px; color: #111; }
+  body { font-family: "Cairo", -apple-system, system-ui, "Segoe UI", sans-serif; padding: 32px; color: #111; }
   h1 { font-size: 22px; margin: 0; }
-  .date { color: #666; font-size: 13px; margin: 4px 0 20px; }
-  .meta { font-size: 13px; color: #333; margin-bottom: 20px; }
+  h1 .ar { display: block; font-size: 18px; color: #333; font-weight: 600; margin-top: 2px; direction: rtl; text-align: left; }
+  .date { color: #666; font-size: 13px; margin: 4px 0 4px; }
+  .date .ar { display: block; direction: rtl; }
+  .meta { font-size: 13px; color: #333; margin: 10px 0 20px; }
+  .meta .ar { display: block; direction: rtl; color: #555; }
   .product { padding: 12px 0; border-top: 1px solid #e5e5e5; }
   .product:first-of-type { border-top: 2px solid #111; }
   .name { font-size: 16px; font-weight: 600; margin-bottom: 6px; }
@@ -199,20 +205,31 @@ export function FactoryWorkOrder({
   .chip { border: 1px solid #bbb; border-radius: 6px; padding: 6px 10px; font-size: 14px; }
   .chip strong { font-weight: 600; margin-left: 4px; }
   .total { margin-top: 20px; padding-top: 12px; border-top: 2px solid #111; font-size: 15px; font-weight: 600; }
+  .total .ar { display: block; direction: rtl; font-size: 14px; color: #333; margin-top: 2px; }
   @media print {
     body { padding: 20mm; }
+    a { color: inherit; text-decoration: none; }
   }
 </style>
 </head>
 <body>
-<h1>G-Homz · Factory Work Order</h1>
-<div class="date">${esc(today)}</div>
-<div class="meta">${breakdown.length} product${breakdown.length === 1 ? "" : "s"} · ${totalUnits} unit${totalUnits === 1 ? "" : "s"} · deposit-paid orders only</div>
+<h1>
+  G-Homz · Factory Work Order
+  <span class="ar">جي-هومز · أمر تشغيل للمصنع</span>
+</h1>
+<div class="date">
+  Date: ${esc(today)}
+  <span class="ar">التاريخ: ${esc(today)}</span>
+</div>
+<div class="meta">
+  ${breakdown.length} product${breakdown.length === 1 ? "" : "s"} · ${totalUnits} unit${totalUnits === 1 ? "" : "s"} · deposit-paid orders only
+  <span class="ar">${breakdown.length} ${breakdown.length === 1 ? "منتج" : "منتجات"} · ${totalUnits} ${totalUnits === 1 ? "وحدة" : "وحدة"} · طلبات دفعت العربون فقط</span>
+</div>
 ${breakdown
   .map(
     (row) => `
 <div class="product">
-  <div class="name">${esc(row.product)} <small>— total ${row.totalUnits}</small></div>
+  <div class="name">${esc(row.product)} <small>— total / الإجمالي ${row.totalUnits}</small></div>
   <div class="chips">
     ${row.sizes
       .map(
@@ -224,8 +241,11 @@ ${breakdown
 </div>`,
   )
   .join("")}
-<div class="total">Total units to produce: ${totalUnits}</div>
-<script>window.addEventListener("load",()=>{window.print();});window.onafterprint=()=>window.close();</script>
+<div class="total">
+  Total units to produce: ${totalUnits}
+  <span class="ar">إجمالي الوحدات للتصنيع: ${totalUnits}</span>
+</div>
+<script>window.addEventListener("load",()=>{setTimeout(()=>window.print(),400);});window.onafterprint=()=>window.close();</script>
 </body>
 </html>`;
     const w = window.open("", "_blank", "noopener,noreferrer");
