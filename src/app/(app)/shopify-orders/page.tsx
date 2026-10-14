@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma";
 import {
   DUE_SOON_WINDOW_DAYS,
   effectiveDeliveryDate,
+  effectiveLineItems,
   fetchRecentOrders,
   getOrdersMeta,
   getShopifyToken,
@@ -291,9 +292,11 @@ export default async function ShopifyOrdersPage({
   const productNameOrdersMap = new Map<string, Set<number>>();
   for (const o of factoryEligible) {
     const seen = new Set<string>();
-    for (const li of o.line_items) {
-      const qty = li.current_quantity ?? li.quantity ?? 0;
-      if (qty <= 0) continue;
+    // Use the ERP-effective (overridden) line items so custom edits (e.g.
+    // product renamed from "The Nest Bed" to "The Nest Bed XL") are picked
+    // up and the right order counts show on the tiles.
+    for (const li of effectiveLineItems(o, metaFor(o))) {
+      if (li.quantity <= 0) continue;
       if (seen.has(li.title)) continue;
       seen.add(li.title);
       if (!productNameOrdersMap.has(li.title))
@@ -332,14 +335,13 @@ export default async function ShopifyOrdersPage({
   };
   const breakdownMap = new Map<string, Map<string, number>>();
   for (const o of factoryEligible) {
-    for (const li of o.line_items) {
+    for (const li of effectiveLineItems(o, metaFor(o))) {
       if (!factorySelected.has(li.title)) continue;
-      const qty = li.current_quantity ?? li.quantity ?? 0;
-      if (qty <= 0) continue;
-      const { width, color } = parseVariant(li.variant_title);
+      if (li.quantity <= 0) continue;
+      const { width, color } = parseVariant(li.variantTitle);
       const key = `${width}||${color ?? ""}`;
       const bucket = breakdownMap.get(li.title) ?? new Map<string, number>();
-      bucket.set(key, (bucket.get(key) ?? 0) + qty);
+      bucket.set(key, (bucket.get(key) ?? 0) + li.quantity);
       breakdownMap.set(li.title, bucket);
     }
   }
