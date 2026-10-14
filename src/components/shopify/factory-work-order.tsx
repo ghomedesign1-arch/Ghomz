@@ -12,6 +12,11 @@ import {
   Printer,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import {
+  bilingualColor,
+  bilingualProduct,
+  bilingualWidth,
+} from "@/lib/translations";
 
 export interface ProductNameOption {
   /** Product title (used as the key too) */
@@ -107,10 +112,11 @@ export function FactoryWorkOrder({
     lines.push("Please produce / برجاء التصنيع:");
     for (const row of breakdown) {
       lines.push("");
-      lines.push(row.product);
+      lines.push(bilingualProduct(row.product));
       for (const s of row.sizes) {
-        const label = s.color ? `W${s.width} · ${s.color}` : `W${s.width}`;
-        lines.push(`  • ${label} × ${s.qty}`);
+        const widthLabel = bilingualWidth(s.width);
+        const colorLabel = s.color ? ` · ${bilingualColor(s.color)}` : "";
+        lines.push(`  • ${widthLabel}${colorLabel} × ${s.qty}`);
       }
       lines.push(`  (total / الإجمالي ${row.totalUnits})`);
     }
@@ -233,13 +239,14 @@ ${breakdown
   .map(
     (row) => `
 <div class="product">
-  <div class="name">${esc(row.product)} <small>— total / الإجمالي ${row.totalUnits}</small></div>
+  <div class="name">${esc(bilingualProduct(row.product))} <small>— total / الإجمالي ${row.totalUnits}</small></div>
   <div class="chips">
     ${row.sizes
-      .map(
-        (s) =>
-          `<span class="chip">W${esc(s.width)}${s.color ? " · " + esc(s.color) : ""} × <strong>${s.qty}</strong></span>`,
-      )
+      .map((s) => {
+        const w = bilingualWidth(s.width);
+        const c = s.color ? ` · ${bilingualColor(s.color)}` : "";
+        return `<span class="chip">${esc(w)}${esc(c)} × <strong>${s.qty}</strong></span>`;
+      })
       .join("")}
   </div>
 </div>`,
