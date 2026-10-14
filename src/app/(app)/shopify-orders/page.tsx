@@ -286,8 +286,7 @@ export default async function ShopifyOrdersPage({
   const factoryEligible = activeOrders.filter((o) => {
     const m = metaFor(o);
     if (m.status === "SHIPPED" || m.status === "CANCELLED") return false;
-    const kind = resolvePaymentKind(o, m);
-    return kind === "paid" || kind === "deposit";
+    return resolvePaymentKind(o, m) === "deposit";
   });
   const productNameOrdersMap = new Map<string, Set<number>>();
   for (const o of factoryEligible) {

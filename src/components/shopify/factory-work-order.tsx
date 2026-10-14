@@ -113,7 +113,7 @@ export function FactoryWorkOrder({
     }
     lines.push("");
     lines.push(`Total units: ${totalUnits}`);
-    lines.push("(Only orders with deposit or full payment are counted)");
+    lines.push("(Only orders with a deposit paid are counted)");
     return lines.join("\n");
   }, [breakdown, totalUnits]);
 
@@ -236,8 +236,7 @@ export function FactoryWorkOrder({
 
               {breakdown.length === 0 ? (
                 <div className="p-5 text-center text-sm text-muted-foreground">
-                  No deposit-paid or fully-paid orders for the selected
-                  products yet.
+                  No deposit-paid orders for the selected products yet.
                 </div>
               ) : (
                 <div className="divide-y divide-emerald-200">
