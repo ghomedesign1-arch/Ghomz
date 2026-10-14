@@ -333,7 +333,7 @@ Reply here as soon as you've sent it and we'll fire up the workshop! 🪚✨`;
       month: "long",
       year: "numeric",
     });
-    const message = `Hi ${name}! 👋\n\nGood news — your G-Homz order ${order.name} is scheduled for delivery on *${dateStr}*.\n\nIf this date doesn't suit you, please let us know — or suggest a day that works better and we'll do our best to make it happen. Thank you for choosing G-Homz! 🛏️`;
+    const message = `Hi ${name}! 👋\n\nGood news — your G-Homz order ${order.name} is scheduled for delivery on *${dateStr}*.\n\nPlease confirm with us if this date is suitable for you 🙏`;
     window.open(
       `${wa}?text=${encodeURIComponent(message)}`,
       "_blank",
