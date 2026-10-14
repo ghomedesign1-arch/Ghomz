@@ -364,8 +364,9 @@ Reply here as soon as you've sent it and we'll fire up the workshop! 🪚✨`;
       toast.error("No phone number on this order");
       return;
     }
-    // Open the tab synchronously so the popup blocker treats it as a direct
-    // user gesture; we'll point it at WhatsApp once the PDF upload returns.
+    // Open a blank tab synchronously (user-gesture) so popup blockers trust
+    // us; we'll redirect it once the Cloudinary upload comes back. On mobile
+    // this call may still return null — we handle that below.
     const win = window.open("about:blank", "_blank");
     setSaving("invoiceShare");
     try {
@@ -391,12 +392,51 @@ Reply here as soon as you've sent it and we'll fire up the workshop! 🪚✨`;
       const total = fmt(currentTotal);
       const message = `Hi ${name}! 👋\n\nHere's your G-Homz invoice ${order.name}:\n${payload.url}\n\n*Total:* ${total} ${order.currency}\n\nPlease let us know if anything needs changing. Thank you! 🛏️`;
       const link = `${wa}?text=${encodeURIComponent(message)}`;
+      // Try the pre-opened tab first; fall back to window.open; fall back to
+      // same-tab navigation so the user always ends up in WhatsApp.
+      let opened = false;
       if (win && !win.closed) {
-        win.location.href = link;
-      } else {
-        window.open(link, "_blank", "noopener,noreferrer");
+        try {
+          win.location.href = link;
+          opened = true;
+        } catch {
+          /* ignore */
+        }
       }
-      toast.success("Invoice ready in WhatsApp — tap send");
+      if (!opened) {
+        const popup = window.open(link, "_blank", "noopener,noreferrer");
+        opened = Boolean(popup);
+      }
+      if (!opened) {
+        // Last resort — show a persistent toast with a tappable link so the
+        // user can open WhatsApp even if popups are blocked.
+        toast(
+          <div className="space-y-2">
+            <div className="text-sm font-medium">
+              Invoice uploaded — open WhatsApp
+            </div>
+            <a
+              href={link}
+              target="_blank"
+              rel="noreferrer"
+              className="inline-block rounded-md bg-emerald-600 px-3 py-1 text-xs font-medium text-white hover:bg-emerald-700"
+            >
+              Tap to open WhatsApp
+            </a>
+          </div>,
+          { duration: 20_000 },
+        );
+      } else {
+        toast.success("Invoice ready in WhatsApp — tap send");
+      }
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Request failed";
+      toast.error(message);
+      try {
+        win?.close();
+      } catch {
+        /* ignore */
+      }
     } finally {
       setSaving(null);
     }
