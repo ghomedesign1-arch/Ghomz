@@ -24,6 +24,11 @@ import { OrdersSection } from "@/components/shopify/shipped-section";
 import { InvoiceBrandingDialog } from "@/components/shopify/invoice-branding-dialog";
 import { NewOrdersWatcher } from "@/components/shopify/new-orders-watcher";
 import type { ProductFilterOption } from "@/components/shopify/product-filter";
+import {
+  FactoryWorkOrder,
+  type ProductNameOption,
+  type ProductSizeBreakdownRow,
+} from "@/components/shopify/factory-work-order";
 import { ShopifyOrderRow } from "@/components/shopify/order-row";
 import { RevenueSummary } from "@/components/shopify/revenue-summary";
 import type { ProductionQueueItem } from "@/components/shopify/production-queue";
@@ -54,6 +59,7 @@ export default async function ShopifyOrdersPage({
     payment?: string;
     sort?: string;
     products?: string;
+    factoryProducts?: string;
   };
 }) {
   const connection = await getShopifyToken().catch(() => null);
@@ -270,6 +276,70 @@ export default async function ShopifyOrdersPage({
   const productOptions: ProductFilterOption[] = Array.from(
     productCountMap.values(),
   ).sort((a, b) => b.count - a.count || a.title.localeCompare(b.title));
+
+  // ── Factory work-order aggregation (product-name tiles + size breakdown).
+  // Only counts orders where the customer has paid at least a deposit.
+  const factoryProductsRaw = (searchParams?.factoryProducts ?? "").trim();
+  const factorySelected = new Set(
+    factoryProductsRaw ? factoryProductsRaw.split("|").filter(Boolean) : [],
+  );
+  const factoryEligible = activeOrders.filter((o) => {
+    const m = metaFor(o);
+    if (m.status === "SHIPPED" || m.status === "CANCELLED") return false;
+    const kind = resolvePaymentKind(o, m);
+    return kind === "paid" || kind === "deposit";
+  });
+  const productNameOrdersMap = new Map<string, Set<number>>();
+  for (const o of factoryEligible) {
+    const seen = new Set<string>();
+    for (const li of o.line_items) {
+      const qty = li.current_quantity ?? li.quantity ?? 0;
+      if (qty <= 0) continue;
+      if (seen.has(li.title)) continue;
+      seen.add(li.title);
+      if (!productNameOrdersMap.has(li.title))
+        productNameOrdersMap.set(li.title, new Set());
+      productNameOrdersMap.get(li.title)!.add(o.id);
+    }
+  }
+  const productNameOptions: ProductNameOption[] = Array.from(
+    productNameOrdersMap.entries(),
+  )
+    .map(([name, set]) => ({ name, orderCount: set.size }))
+    .sort((a, b) => b.orderCount - a.orderCount || a.name.localeCompare(b.name));
+
+  // Per selected product → width tally (W{n} → qty).
+  const widthRegex = /W\s*(\d+)/i;
+  const breakdownMap = new Map<string, Map<string, number>>();
+  for (const o of factoryEligible) {
+    for (const li of o.line_items) {
+      if (!factorySelected.has(li.title)) continue;
+      const qty = li.current_quantity ?? li.quantity ?? 0;
+      if (qty <= 0) continue;
+      const match = widthRegex.exec(li.variant_title ?? "");
+      const width = match ? match[1] : "—";
+      const widthMap =
+        breakdownMap.get(li.title) ?? new Map<string, number>();
+      widthMap.set(width, (widthMap.get(width) ?? 0) + qty);
+      breakdownMap.set(li.title, widthMap);
+    }
+  }
+  const factoryBreakdown: ProductSizeBreakdownRow[] = Array.from(
+    breakdownMap.entries(),
+  )
+    .map(([product, widths]) => {
+      const sizes = Array.from(widths.entries())
+        .map(([width, qty]) => ({ width, qty }))
+        .sort((a, b) => {
+          const na = Number(a.width);
+          const nb = Number(b.width);
+          if (!Number.isNaN(na) && !Number.isNaN(nb)) return na - nb;
+          return a.width.localeCompare(b.width);
+        });
+      const totalUnits = sizes.reduce((a, s) => a + s.qty, 0);
+      return { product, sizes, totalUnits };
+    })
+    .sort((a, b) => b.totalUnits - a.totalUnits || a.product.localeCompare(b.product));
 
   const filtered = orders.filter((o) => {
     const status = (o.financial_status ?? "").toLowerCase();
@@ -489,6 +559,11 @@ export default async function ShopifyOrdersPage({
           );
         })}
       </div>
+
+      <FactoryWorkOrder
+        options={productNameOptions}
+        breakdown={factoryBreakdown}
+      />
 
       <form className="flex flex-wrap items-center gap-2" method="get">
         <input
