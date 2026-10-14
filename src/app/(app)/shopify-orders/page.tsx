@@ -23,6 +23,10 @@ import {
 import { OrdersSection } from "@/components/shopify/shipped-section";
 import { InvoiceBrandingDialog } from "@/components/shopify/invoice-branding-dialog";
 import { NewOrdersWatcher } from "@/components/shopify/new-orders-watcher";
+import {
+  ProductFilter,
+  type ProductFilterOption,
+} from "@/components/shopify/product-filter";
 import { ShopifyOrderRow } from "@/components/shopify/order-row";
 import { RevenueSummary } from "@/components/shopify/revenue-summary";
 import type { ProductionQueueItem } from "@/components/shopify/production-queue";
@@ -52,6 +56,7 @@ export default async function ShopifyOrdersPage({
     q?: string;
     payment?: string;
     sort?: string;
+    products?: string;
   };
 }) {
   const connection = await getShopifyToken().catch(() => null);
@@ -236,6 +241,38 @@ export default async function ShopifyOrdersPage({
   const activeStatus = (searchParams?.status ?? "").toUpperCase();
   const activePayment = (searchParams?.payment ?? "").toUpperCase();
   const query = (searchParams?.q ?? "").trim().toLowerCase();
+  const productsRaw = (searchParams?.products ?? "").trim();
+  const selectedProducts = new Set(
+    productsRaw ? productsRaw.split("|").filter(Boolean) : [],
+  );
+  const productKey = (title: string, variant: string | null) =>
+    `${title}||${variant ?? ""}`;
+
+  // Aggregate every distinct {title + variant} across active orders for the
+  // product filter tiles. Count = how many orders include that variant.
+  const productCountMap = new Map<string, ProductFilterOption>();
+  for (const o of activeOrders) {
+    const seenInThisOrder = new Set<string>();
+    for (const li of o.line_items) {
+      const qty = li.current_quantity ?? li.quantity ?? 0;
+      if (qty <= 0) continue;
+      const key = productKey(li.title, li.variant_title);
+      if (seenInThisOrder.has(key)) continue;
+      seenInThisOrder.add(key);
+      const existing = productCountMap.get(key);
+      if (existing) existing.count++;
+      else
+        productCountMap.set(key, {
+          key,
+          title: li.title,
+          variant: li.variant_title,
+          count: 1,
+        });
+    }
+  }
+  const productOptions: ProductFilterOption[] = Array.from(
+    productCountMap.values(),
+  ).sort((a, b) => b.count - a.count || a.title.localeCompare(b.title));
 
   const filtered = orders.filter((o) => {
     const status = (o.financial_status ?? "").toLowerCase();
@@ -260,6 +297,14 @@ export default async function ShopifyOrdersPage({
       if (activePayment === "PAID" && kind !== "paid") return false;
       if (activePayment === "DEPOSIT" && kind !== "deposit") return false;
       if (activePayment === "UNPAID" && kind !== "unpaid") return false;
+    }
+    if (selectedProducts.size > 0) {
+      const hasMatch = o.line_items.some((li) => {
+        const qty = li.current_quantity ?? li.quantity ?? 0;
+        if (qty <= 0) return false;
+        return selectedProducts.has(productKey(li.title, li.variant_title));
+      });
+      if (!hasMatch) return false;
     }
     if (query) {
       const hay = [
@@ -379,6 +424,7 @@ export default async function ShopifyOrdersPage({
             query: {
               ...(query ? { q: query } : {}),
               ...(activePayment ? { payment: activePayment.toLowerCase() } : {}),
+              ...(productsRaw ? { products: productsRaw } : {}),
               ...(sort !== "default" ? { sort } : {}),
               ...(t.key === "ALL" ? {} : { status: t.key.toLowerCase() }),
             },
@@ -419,6 +465,7 @@ export default async function ShopifyOrdersPage({
             query: {
               ...(query ? { q: query } : {}),
               ...(activeStatus ? { status: activeStatus.toLowerCase() } : {}),
+              ...(productsRaw ? { products: productsRaw } : {}),
               ...(sort !== "default" ? { sort } : {}),
               ...(p.key === "ALL" ? {} : { payment: p.key.toLowerCase() }),
             },
@@ -446,6 +493,8 @@ export default async function ShopifyOrdersPage({
         })}
       </div>
 
+      <ProductFilter options={productOptions} />
+
       <form className="flex flex-wrap items-center gap-2" method="get">
         <input
           type="text"
@@ -459,6 +508,9 @@ export default async function ShopifyOrdersPage({
         )}
         {activePayment && (
           <input type="hidden" name="payment" value={activePayment.toLowerCase()} />
+        )}
+        {productsRaw && (
+          <input type="hidden" name="products" value={productsRaw} />
         )}
         <select
           name="sort"
@@ -479,7 +531,7 @@ export default async function ShopifyOrdersPage({
         >
           Apply
         </button>
-        {(query || activeStatus || activePayment || sort !== "default") && (
+        {(query || activeStatus || activePayment || productsRaw || sort !== "default") && (
           <Link
             href="/shopify-orders"
             className="h-9 rounded-md border border-input bg-background px-4 text-sm font-medium leading-9 text-muted-foreground hover:bg-secondary"
