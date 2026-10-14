@@ -58,3 +58,16 @@ export function bilingualWidth(width: string): string {
   if (!width || width === "—") return "";
   return `W${width} / عرض ${width} سم`;
 }
+
+/** "120" + "230" → "W120 × D230 / 120 × 230 سم" */
+export function bilingualDimension(
+  width: string | null | undefined,
+  depth: string | null | undefined,
+): string {
+  const hasW = width && width !== "—";
+  const hasD = depth && depth !== "—";
+  if (!hasW && !hasD) return "";
+  if (hasW && hasD) return `W${width} × D${depth} / ${width} × ${depth} سم`;
+  if (hasW) return `W${width} / عرض ${width} سم`;
+  return `D${depth} / عمق ${depth} سم`;
+}

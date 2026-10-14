@@ -314,22 +314,28 @@ export default async function ShopifyOrdersPage({
   // "W120 x D230 cm / Baby Blue / Without" so we split on "/" and parse
   // the width from the first part and the color from the second part.
   const widthRegex = /W\s*(\d+)/i;
+  const depthRegex = /D\s*(\d+)/i;
   // Shopify's variant string packs the option values in whatever order the
   // product defines them (e.g. "W120 x D230 cm / Baby Blue / Without" OR
   // "W120 x D230 cm / With / Light Beige"), so we can't rely on position.
   const WITH_WITHOUT = /^(with|without|yes|no|none)(\s|$)/i;
   const parseVariant = (
     variant: string | null,
-  ): { width: string; color: string | null } => {
-    if (!variant) return { width: "—", color: null };
+  ): { width: string; depth: string | null; color: string | null } => {
+    if (!variant) return { width: "—", depth: null, color: null };
     const parts = variant.split("/").map((s) => s.trim()).filter(Boolean);
-    const widthPart = parts.find((p) => widthRegex.test(p));
-    const match = widthPart ? widthRegex.exec(widthPart) : null;
+    const dimPart = parts.find(
+      (p) => widthRegex.test(p) || depthRegex.test(p),
+    );
+    const wMatch = dimPart ? widthRegex.exec(dimPart) : null;
+    const dMatch = dimPart ? depthRegex.exec(dimPart) : null;
     const colorPart = parts.find(
-      (p) => !widthRegex.test(p) && !WITH_WITHOUT.test(p),
+      (p) =>
+        !widthRegex.test(p) && !depthRegex.test(p) && !WITH_WITHOUT.test(p),
     );
     return {
-      width: match ? match[1] : "—",
+      width: wMatch ? wMatch[1] : "—",
+      depth: dMatch ? dMatch[1] : null,
       color: colorPart ?? null,
     };
   };
@@ -338,8 +344,8 @@ export default async function ShopifyOrdersPage({
     for (const li of effectiveLineItems(o, metaFor(o))) {
       if (!factorySelected.has(li.title)) continue;
       if (li.quantity <= 0) continue;
-      const { width, color } = parseVariant(li.variantTitle);
-      const key = `${width}||${color ?? ""}`;
+      const { width, depth, color } = parseVariant(li.variantTitle);
+      const key = `${width}||${depth ?? ""}||${color ?? ""}`;
       const bucket = breakdownMap.get(li.title) ?? new Map<string, number>();
       bucket.set(key, (bucket.get(key) ?? 0) + li.quantity);
       breakdownMap.set(li.title, bucket);
@@ -351,13 +357,21 @@ export default async function ShopifyOrdersPage({
     .map(([product, bucket]) => {
       const sizes = Array.from(bucket.entries())
         .map(([key, qty]) => {
-          const [width, color] = key.split("||");
-          return { width, color: color || null, qty };
+          const [width, depth, color] = key.split("||");
+          return {
+            width,
+            depth: depth || null,
+            color: color || null,
+            qty,
+          };
         })
         .sort((a, b) => {
           const na = Number(a.width);
           const nb = Number(b.width);
           if (!Number.isNaN(na) && !Number.isNaN(nb) && na !== nb) return na - nb;
+          const da = Number(a.depth ?? 0);
+          const db = Number(b.depth ?? 0);
+          if (da !== db) return da - db;
           return (a.color ?? "").localeCompare(b.color ?? "");
         });
       const totalUnits = sizes.reduce((a, s) => a + s.qty, 0);

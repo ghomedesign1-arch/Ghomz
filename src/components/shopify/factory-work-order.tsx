@@ -14,8 +14,8 @@ import {
 import { Button } from "@/components/ui/button";
 import {
   bilingualColor,
+  bilingualDimension,
   bilingualProduct,
-  bilingualWidth,
 } from "@/lib/translations";
 
 export interface ProductNameOption {
@@ -27,8 +27,13 @@ export interface ProductNameOption {
 
 export interface ProductSizeBreakdownRow {
   product: string;
-  /** [{ width, color, qty }, …] sorted by width asc then color alpha */
-  sizes: { width: string; color: string | null; qty: number }[];
+  /** [{ width, depth, color, qty }, …] sorted by width asc then color alpha */
+  sizes: {
+    width: string;
+    depth: string | null;
+    color: string | null;
+    qty: number;
+  }[];
   totalUnits: number;
 }
 
@@ -114,9 +119,9 @@ export function FactoryWorkOrder({
       lines.push("");
       lines.push(bilingualProduct(row.product));
       for (const s of row.sizes) {
-        const widthLabel = bilingualWidth(s.width);
+        const dim = bilingualDimension(s.width, s.depth);
         const colorLabel = s.color ? ` · ${bilingualColor(s.color)}` : "";
-        lines.push(`  • ${widthLabel}${colorLabel} × ${s.qty}`);
+        lines.push(`  • ${dim}${colorLabel} × ${s.qty}`);
       }
       lines.push(`  (total / الإجمالي ${row.totalUnits})`);
     }
@@ -243,9 +248,9 @@ ${breakdown
   <div class="chips">
     ${row.sizes
       .map((s) => {
-        const w = bilingualWidth(s.width);
+        const d = bilingualDimension(s.width, s.depth);
         const c = s.color ? ` · ${bilingualColor(s.color)}` : "";
-        return `<span class="chip">${esc(w)}${esc(c)} × <strong>${s.qty}</strong></span>`;
+        return `<span class="chip">${esc(d)}${esc(c)} × <strong>${s.qty}</strong></span>`;
       })
       .join("")}
   </div>
@@ -408,10 +413,13 @@ ${breakdown
                       <div className="flex flex-wrap gap-2">
                         {row.sizes.map((s, i) => (
                           <span
-                            key={`${s.width}|${s.color ?? ""}|${i}`}
+                            key={`${s.width}|${s.depth ?? ""}|${s.color ?? ""}|${i}`}
                             className="inline-flex items-baseline gap-1 rounded-md border border-emerald-300 bg-white px-2 py-1 text-sm"
                           >
-                            <span className="font-medium">W{s.width}</span>
+                            <span className="font-medium">
+                              W{s.width}
+                              {s.depth ? ` × D${s.depth}` : ""}
+                            </span>
                             {s.color && (
                               <span className="text-muted-foreground">
                                 · {s.color}
