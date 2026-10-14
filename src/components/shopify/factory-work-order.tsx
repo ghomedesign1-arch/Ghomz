@@ -136,7 +136,72 @@ export function FactoryWorkOrder({
   }
 
   function print() {
-    window.print();
+    if (breakdown.length === 0) return;
+    const today = new Date().toLocaleDateString("en-GB", {
+      weekday: "long",
+      day: "numeric",
+      month: "long",
+      year: "numeric",
+    });
+    const esc = (s: string) =>
+      s.replace(/[&<>"]/g, (c) =>
+        c === "&" ? "&amp;" : c === "<" ? "&lt;" : c === ">" ? "&gt;" : "&quot;",
+      );
+    const html = `<!doctype html>
+<html>
+<head>
+<meta charset="utf-8" />
+<title>G-Homz · Factory Work Order</title>
+<style>
+  body { font-family: -apple-system, system-ui, "Segoe UI", sans-serif; padding: 32px; color: #111; }
+  h1 { font-size: 22px; margin: 0; }
+  .date { color: #666; font-size: 13px; margin: 4px 0 20px; }
+  .meta { font-size: 13px; color: #333; margin-bottom: 20px; }
+  .product { padding: 12px 0; border-top: 1px solid #e5e5e5; }
+  .product:first-of-type { border-top: 2px solid #111; }
+  .name { font-size: 16px; font-weight: 600; margin-bottom: 6px; }
+  .name small { color: #666; font-weight: 400; }
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; }
+  .chip { border: 1px solid #bbb; border-radius: 6px; padding: 6px 10px; font-size: 14px; }
+  .chip strong { font-weight: 600; margin-left: 4px; }
+  .total { margin-top: 20px; padding-top: 12px; border-top: 2px solid #111; font-size: 15px; font-weight: 600; }
+  @media print {
+    body { padding: 20mm; }
+  }
+</style>
+</head>
+<body>
+<h1>G-Homz · Factory Work Order</h1>
+<div class="date">${esc(today)}</div>
+<div class="meta">${breakdown.length} product${breakdown.length === 1 ? "" : "s"} · ${totalUnits} unit${totalUnits === 1 ? "" : "s"} · deposit-paid orders only</div>
+${breakdown
+  .map(
+    (row) => `
+<div class="product">
+  <div class="name">${esc(row.product)} <small>— total ${row.totalUnits}</small></div>
+  <div class="chips">
+    ${row.sizes
+      .map(
+        (s) =>
+          `<span class="chip">W${esc(s.width)}${s.color ? " · " + esc(s.color) : ""} × <strong>${s.qty}</strong></span>`,
+      )
+      .join("")}
+  </div>
+</div>`,
+  )
+  .join("")}
+<div class="total">Total units to produce: ${totalUnits}</div>
+<script>window.addEventListener("load",()=>{window.print();});window.onafterprint=()=>window.close();</script>
+</body>
+</html>`;
+    const w = window.open("", "_blank", "noopener,noreferrer");
+    if (!w) {
+      toast.error("Popup blocked — allow popups to print");
+      return;
+    }
+    w.document.open();
+    w.document.write(html);
+    w.document.close();
   }
 
   if (options.length === 0) return null;
