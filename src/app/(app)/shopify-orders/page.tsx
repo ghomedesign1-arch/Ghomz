@@ -23,10 +23,7 @@ import {
 import { OrdersSection } from "@/components/shopify/shipped-section";
 import { InvoiceBrandingDialog } from "@/components/shopify/invoice-branding-dialog";
 import { NewOrdersWatcher } from "@/components/shopify/new-orders-watcher";
-import {
-  ProductFilter,
-  type ProductFilterOption,
-} from "@/components/shopify/product-filter";
+import type { ProductFilterOption } from "@/components/shopify/product-filter";
 import { ShopifyOrderRow } from "@/components/shopify/order-row";
 import { RevenueSummary } from "@/components/shopify/revenue-summary";
 import type { ProductionQueueItem } from "@/components/shopify/production-queue";
@@ -492,8 +489,6 @@ export default async function ShopifyOrdersPage({
           );
         })}
       </div>
-
-      <ProductFilter options={productOptions} />
 
       <form className="flex flex-wrap items-center gap-2" method="get">
         <input
