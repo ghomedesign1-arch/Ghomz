@@ -307,38 +307,56 @@ export default async function ShopifyOrdersPage({
     .map(([name, set]) => ({ name, orderCount: set.size }))
     .sort((a, b) => b.orderCount - a.orderCount || a.name.localeCompare(b.name));
 
-  // Per selected product → width tally (W{n} → qty).
+  // Per selected product → (width, color) tally. Variant titles come as
+  // "W120 x D230 cm / Baby Blue / Without" so we split on "/" and parse
+  // the width from the first part and the color from the second part.
   const widthRegex = /W\s*(\d+)/i;
+  const parseVariant = (
+    variant: string | null,
+  ): { width: string; color: string | null } => {
+    if (!variant) return { width: "—", color: null };
+    const parts = variant.split("/").map((s) => s.trim());
+    const match = widthRegex.exec(parts[0] ?? "");
+    return {
+      width: match ? match[1] : "—",
+      color: parts[1] && parts[1].length > 0 ? parts[1] : null,
+    };
+  };
   const breakdownMap = new Map<string, Map<string, number>>();
   for (const o of factoryEligible) {
     for (const li of o.line_items) {
       if (!factorySelected.has(li.title)) continue;
       const qty = li.current_quantity ?? li.quantity ?? 0;
       if (qty <= 0) continue;
-      const match = widthRegex.exec(li.variant_title ?? "");
-      const width = match ? match[1] : "—";
-      const widthMap =
-        breakdownMap.get(li.title) ?? new Map<string, number>();
-      widthMap.set(width, (widthMap.get(width) ?? 0) + qty);
-      breakdownMap.set(li.title, widthMap);
+      const { width, color } = parseVariant(li.variant_title);
+      const key = `${width}||${color ?? ""}`;
+      const bucket = breakdownMap.get(li.title) ?? new Map<string, number>();
+      bucket.set(key, (bucket.get(key) ?? 0) + qty);
+      breakdownMap.set(li.title, bucket);
     }
   }
   const factoryBreakdown: ProductSizeBreakdownRow[] = Array.from(
     breakdownMap.entries(),
   )
-    .map(([product, widths]) => {
-      const sizes = Array.from(widths.entries())
-        .map(([width, qty]) => ({ width, qty }))
+    .map(([product, bucket]) => {
+      const sizes = Array.from(bucket.entries())
+        .map(([key, qty]) => {
+          const [width, color] = key.split("||");
+          return { width, color: color || null, qty };
+        })
         .sort((a, b) => {
           const na = Number(a.width);
           const nb = Number(b.width);
-          if (!Number.isNaN(na) && !Number.isNaN(nb)) return na - nb;
-          return a.width.localeCompare(b.width);
+          if (!Number.isNaN(na) && !Number.isNaN(nb) && na !== nb) return na - nb;
+          return (a.color ?? "").localeCompare(b.color ?? "");
         });
       const totalUnits = sizes.reduce((a, s) => a + s.qty, 0);
       return { product, sizes, totalUnits };
     })
-    .sort((a, b) => b.totalUnits - a.totalUnits || a.product.localeCompare(b.product));
+    .sort(
+      (a, b) =>
+        b.totalUnits - a.totalUnits || a.product.localeCompare(b.product),
+    );
 
   const filtered = orders.filter((o) => {
     const status = (o.financial_status ?? "").toLowerCase();

@@ -22,8 +22,8 @@ export interface ProductNameOption {
 
 export interface ProductSizeBreakdownRow {
   product: string;
-  /** [{ width: "120", qty: 5 }, …] sorted by width desc then alpha */
-  sizes: { width: string; qty: number }[];
+  /** [{ width, color, qty }, …] sorted by width asc then color alpha */
+  sizes: { width: string; color: string | null; qty: number }[];
   totalUnits: number;
 }
 
@@ -107,7 +107,8 @@ export function FactoryWorkOrder({
     for (const row of breakdown) {
       lines.push(`${row.product}`);
       for (const s of row.sizes) {
-        lines.push(`  • W${s.width} × ${s.qty}`);
+        const label = s.color ? `W${s.width} · ${s.color}` : `W${s.width}`;
+        lines.push(`  • ${label} × ${s.qty}`);
       }
       lines.push(`  (total ${row.totalUnits})`);
     }
@@ -249,12 +250,17 @@ export function FactoryWorkOrder({
                         </span>
                       </div>
                       <div className="flex flex-wrap gap-2">
-                        {row.sizes.map((s) => (
+                        {row.sizes.map((s, i) => (
                           <span
-                            key={s.width}
+                            key={`${s.width}|${s.color ?? ""}|${i}`}
                             className="inline-flex items-baseline gap-1 rounded-md border border-emerald-300 bg-white px-2 py-1 text-sm"
                           >
                             <span className="font-medium">W{s.width}</span>
+                            {s.color && (
+                              <span className="text-muted-foreground">
+                                · {s.color}
+                              </span>
+                            )}
                             <span className="text-muted-foreground">×</span>
                             <span className="font-display text-lg font-semibold">
                               {s.qty}
