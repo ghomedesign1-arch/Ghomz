@@ -128,11 +128,45 @@ export function FactoryWorkOrder({
   }
 
   function whatsApp() {
-    window.open(
-      `https://wa.me/?text=${encodeURIComponent(workOrderText)}`,
-      "_blank",
-      "noopener,noreferrer",
-    );
+    const link = `https://wa.me/?text=${encodeURIComponent(workOrderText)}`;
+    const ua = typeof navigator !== "undefined" ? navigator.userAgent : "";
+    const isIOS =
+      /iPad|iPhone|iPod/.test(ua) ||
+      (ua.includes("Mac") && "ontouchend" in document);
+    if (isIOS) {
+      toast(
+        <div className="space-y-2">
+          <div className="text-sm font-medium">Work order ready</div>
+          <a
+            href={link}
+            target="_blank"
+            rel="noreferrer"
+            className="inline-block rounded-md bg-emerald-600 px-3 py-1 text-xs font-medium text-white hover:bg-emerald-700"
+          >
+            Tap to open WhatsApp
+          </a>
+        </div>,
+        { duration: 30_000 },
+      );
+      return;
+    }
+    const w = window.open(link, "_blank", "noopener,noreferrer");
+    if (!w) {
+      toast(
+        <div className="space-y-2">
+          <div className="text-sm font-medium">Popup blocked</div>
+          <a
+            href={link}
+            target="_blank"
+            rel="noreferrer"
+            className="inline-block rounded-md bg-emerald-600 px-3 py-1 text-xs font-medium text-white hover:bg-emerald-700"
+          >
+            Tap to open WhatsApp
+          </a>
+        </div>,
+        { duration: 30_000 },
+      );
+    }
   }
 
   function print() {
