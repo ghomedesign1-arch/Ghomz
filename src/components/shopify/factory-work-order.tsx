@@ -98,23 +98,27 @@ export function FactoryWorkOrder({
       month: "long",
       year: "numeric",
     });
-    const lines = [
-      "G-Homz Factory Work Order",
-      `Date: ${today}`,
-      "",
-      "Please produce:",
-    ];
+    const lines: string[] = [];
+    lines.push("G-Homz · Factory Work Order");
+    lines.push("جي-هومز · أمر تشغيل للمصنع");
+    lines.push("");
+    lines.push(`Date / التاريخ: ${today}`);
+    lines.push("");
+    lines.push("Please produce / برجاء التصنيع:");
     for (const row of breakdown) {
-      lines.push(`${row.product}`);
+      lines.push("");
+      lines.push(row.product);
       for (const s of row.sizes) {
         const label = s.color ? `W${s.width} · ${s.color}` : `W${s.width}`;
         lines.push(`  • ${label} × ${s.qty}`);
       }
-      lines.push(`  (total ${row.totalUnits})`);
+      lines.push(`  (total / الإجمالي ${row.totalUnits})`);
     }
     lines.push("");
-    lines.push(`Total units: ${totalUnits}`);
-    lines.push("(Only orders with a deposit paid are counted)");
+    lines.push(`Total units / إجمالي الوحدات: ${totalUnits}`);
+    lines.push(
+      "(Only deposit-paid orders counted / فقط الطلبات المدفوع عربونها)",
+    );
     return lines.join("\n");
   }, [breakdown, totalUnits]);
 
@@ -248,14 +252,40 @@ ${breakdown
 <script>window.addEventListener("load",()=>{setTimeout(()=>window.print(),400);});window.onafterprint=()=>window.close();</script>
 </body>
 </html>`;
-    const w = window.open("", "_blank", "noopener,noreferrer");
-    if (!w) {
-      toast.error("Popup blocked — allow popups to print");
-      return;
-    }
-    w.document.open();
-    w.document.write(html);
-    w.document.close();
+    // Prefer a hidden iframe — works on both Mac Safari/Chrome and iOS
+    // Safari (which blocks window.open popups entirely for print). The
+    // iframe's own print() dialog contains only our HTML, so the ERP's
+    // sidebar + chrome don't leak into the printout.
+    const iframe = document.createElement("iframe");
+    iframe.style.position = "fixed";
+    iframe.style.right = "0";
+    iframe.style.bottom = "0";
+    iframe.style.width = "0";
+    iframe.style.height = "0";
+    iframe.style.border = "0";
+    iframe.setAttribute("aria-hidden", "true");
+    iframe.srcdoc = html;
+    const onLoad = () => {
+      try {
+        iframe.contentWindow?.focus();
+        iframe.contentWindow?.print();
+      } catch {
+        // iOS Safari sometimes refuses iframe.print — fall back to a new
+        // tab the user can print from the share sheet.
+        const w = window.open("", "_blank");
+        if (w) {
+          w.document.open();
+          w.document.write(html);
+          w.document.close();
+        } else {
+          toast.error("Browser blocked the print window");
+        }
+      } finally {
+        setTimeout(() => iframe.remove(), 5000);
+      }
+    };
+    iframe.addEventListener("load", onLoad, { once: true });
+    document.body.appendChild(iframe);
   }
 
   if (options.length === 0) return null;
