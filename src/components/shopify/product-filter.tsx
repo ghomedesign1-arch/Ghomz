@@ -1,8 +1,9 @@
 "use client";
 
 import * as React from "react";
+import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Boxes, ChevronDown, ChevronUp } from "lucide-react";
+import { Boxes, ChevronDown, ChevronUp, FileSpreadsheet } from "lucide-react";
 
 export interface ProductFilterOption {
   /** Stable key: `${title}||${variant ?? ""}` */
@@ -97,8 +98,29 @@ export function ProductFilter({ options }: { options: ProductFilterOption[] }) {
 
       {visible && (
         <div className="space-y-2">
-          {selected.size > 0 && (
-            <div className="flex items-center justify-end">
+          <div className="flex items-center justify-between">
+            <Link
+              href={`/shopify-orders/work-order${
+                selected.size > 0
+                  ? `?products=${Array.from(selected).join("|")}`
+                  : ""
+              }`}
+              className="inline-flex items-center gap-1 rounded-md border border-emerald-300 bg-emerald-50 px-3 py-1 text-xs font-medium text-emerald-700 hover:bg-emerald-100"
+              title={
+                selected.size > 0
+                  ? "Open a printable factory work order for the selected products"
+                  : "Opens a printable factory work order for all products in production"
+              }
+            >
+              <FileSpreadsheet className="h-3.5 w-3.5" />
+              Generate factory work order
+              {selected.size > 0 && (
+                <span className="rounded-full bg-emerald-200 px-1.5 py-0.5 text-[9px] font-semibold text-emerald-900">
+                  {selected.size}
+                </span>
+              )}
+            </Link>
+            {selected.size > 0 && (
               <button
                 type="button"
                 onClick={clear}
@@ -106,8 +128,8 @@ export function ProductFilter({ options }: { options: ProductFilterOption[] }) {
               >
                 Clear product filter
               </button>
-            </div>
-          )}
+            )}
+          </div>
           <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4">
             {options.map((o) => {
               const active = selected.has(o.key);
