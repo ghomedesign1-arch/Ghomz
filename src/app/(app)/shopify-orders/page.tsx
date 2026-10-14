@@ -311,15 +311,23 @@ export default async function ShopifyOrdersPage({
   // "W120 x D230 cm / Baby Blue / Without" so we split on "/" and parse
   // the width from the first part and the color from the second part.
   const widthRegex = /W\s*(\d+)/i;
+  // Shopify's variant string packs the option values in whatever order the
+  // product defines them (e.g. "W120 x D230 cm / Baby Blue / Without" OR
+  // "W120 x D230 cm / With / Light Beige"), so we can't rely on position.
+  const WITH_WITHOUT = /^(with|without|yes|no|none)(\s|$)/i;
   const parseVariant = (
     variant: string | null,
   ): { width: string; color: string | null } => {
     if (!variant) return { width: "—", color: null };
-    const parts = variant.split("/").map((s) => s.trim());
-    const match = widthRegex.exec(parts[0] ?? "");
+    const parts = variant.split("/").map((s) => s.trim()).filter(Boolean);
+    const widthPart = parts.find((p) => widthRegex.test(p));
+    const match = widthPart ? widthRegex.exec(widthPart) : null;
+    const colorPart = parts.find(
+      (p) => !widthRegex.test(p) && !WITH_WITHOUT.test(p),
+    );
     return {
       width: match ? match[1] : "—",
-      color: parts[1] && parts[1].length > 0 ? parts[1] : null,
+      color: colorPart ?? null,
     };
   };
   const breakdownMap = new Map<string, Map<string, number>>();
