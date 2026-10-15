@@ -191,6 +191,7 @@ export default async function ShopifyOrdersPage({
   const tomorrow = tomorrowIsoDate();
   const todayScheduled: TomorrowOrderEntry[] = [];
   const tomorrowScheduled: TomorrowOrderEntry[] = [];
+  const allScheduled: (TomorrowOrderEntry & { scheduledFor: string })[] = [];
   for (const o of activeOrders) {
     const m = metaFor(o);
     if (
@@ -219,7 +220,7 @@ export default async function ShopifyOrdersPage({
       }
       productionUnits += qty;
     }
-    if (m.scheduledFor === today || m.scheduledFor === tomorrow) {
+    if (m.scheduledFor) {
       const items = o.line_items
         .map((li) => ({
           title: li.title,
@@ -236,8 +237,9 @@ export default async function ShopifyOrdersPage({
         "Guest"
       ).trim();
       const entry = { id: o.id, name: o.name, customer, items };
+      allScheduled.push({ ...entry, scheduledFor: m.scheduledFor });
       if (m.scheduledFor === today) todayScheduled.push(entry);
-      else tomorrowScheduled.push(entry);
+      else if (m.scheduledFor === tomorrow) tomorrowScheduled.push(entry);
     }
   }
   const productionItems = Array.from(productionAcc.values()).sort(
@@ -665,6 +667,7 @@ export default async function ShopifyOrdersPage({
         tomorrowDate={tomorrow}
         todayOrders={todayScheduled}
         tomorrowOrders={tomorrowScheduled}
+        allScheduledOrders={allScheduled}
       />
 
       {(() => {

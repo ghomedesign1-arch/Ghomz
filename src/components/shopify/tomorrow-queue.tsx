@@ -18,27 +18,57 @@ export interface TomorrowOrderEntry {
 
 const STORAGE_KEY = "shopify-orders.tomorrow-visible";
 
+const CUSTOM_DATE_KEY = "shopify-orders.custom-date";
+
 export function TomorrowQueue({
   todayDate,
   tomorrowDate,
   todayOrders,
   tomorrowOrders,
+  allScheduledOrders,
 }: {
   todayDate: string;
   tomorrowDate: string;
   todayOrders: TomorrowOrderEntry[];
   tomorrowOrders: TomorrowOrderEntry[];
+  /** Every order with a scheduledFor set, so the client can filter to a
+   *  user-picked custom date without a round-trip. Each entry carries its
+   *  scheduledFor ISO date so we can bucket them client-side. */
+  allScheduledOrders: (TomorrowOrderEntry & { scheduledFor: string })[];
 }) {
   const [visible, setVisible] = React.useState(true);
   const [removing, setRemoving] = React.useState<number | null>(null);
+  const [customDate, setCustomDate] = React.useState<string>("");
   React.useEffect(() => {
     try {
       const v = localStorage.getItem(STORAGE_KEY);
       if (v === "0") setVisible(false);
+      const stored = localStorage.getItem(CUSTOM_DATE_KEY) ?? "";
+      if (stored && stored !== todayDate && stored !== tomorrowDate) {
+        setCustomDate(stored);
+      }
     } catch {
       /* ignore */
     }
-  }, []);
+  }, [todayDate, tomorrowDate]);
+
+  function updateCustomDate(iso: string) {
+    setCustomDate(iso);
+    try {
+      if (iso) localStorage.setItem(CUSTOM_DATE_KEY, iso);
+      else localStorage.removeItem(CUSTOM_DATE_KEY);
+    } catch {
+      /* ignore */
+    }
+  }
+
+  const customOrders = React.useMemo(
+    () =>
+      customDate
+        ? allScheduledOrders.filter((o) => o.scheduledFor === customDate)
+        : [],
+    [allScheduledOrders, customDate],
+  );
 
   const toggle = () => {
     setVisible((v) => {
@@ -72,9 +102,10 @@ export function TomorrowQueue({
     }
   }
 
-  const totalOrders = todayOrders.length + tomorrowOrders.length;
+  const totalOrders =
+    todayOrders.length + tomorrowOrders.length + customOrders.length;
   const totalUnits =
-    sumUnits(todayOrders) + sumUnits(tomorrowOrders);
+    sumUnits(todayOrders) + sumUnits(tomorrowOrders) + sumUnits(customOrders);
 
   return (
     <div className="space-y-3">
@@ -100,21 +131,30 @@ export function TomorrowQueue({
       </button>
 
       {visible && (
-        <div className="grid gap-3 md:grid-cols-2">
-          <DayBucket
-            dateIso={todayDate}
-            title="Today"
-            orders={todayOrders}
-            removing={removing}
-            onRemove={remove}
-          />
-          <DayBucket
-            dateIso={tomorrowDate}
-            title="Tomorrow"
-            orders={tomorrowOrders}
-            removing={removing}
-            onRemove={remove}
-          />
+        <div className="space-y-3">
+          <div className="grid gap-3 md:grid-cols-3">
+            <DayBucket
+              dateIso={todayDate}
+              title="Today"
+              orders={todayOrders}
+              removing={removing}
+              onRemove={remove}
+            />
+            <DayBucket
+              dateIso={tomorrowDate}
+              title="Tomorrow"
+              orders={tomorrowOrders}
+              removing={removing}
+              onRemove={remove}
+            />
+            <CustomBucket
+              date={customDate}
+              onDateChange={updateCustomDate}
+              orders={customOrders}
+              removing={removing}
+              onRemove={remove}
+            />
+          </div>
         </div>
       )}
     </div>
@@ -155,6 +195,111 @@ function DayBucket({
       {orders.length === 0 ? (
         <div className="p-4 text-center text-xs text-muted-foreground">
           Nothing scheduled for {title.toLowerCase()}.
+        </div>
+      ) : (
+        <div className="divide-y divide-amber-200">
+          {orders.map((o) => (
+            <div
+              key={o.id}
+              className="flex items-start justify-between gap-3 p-3"
+            >
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center gap-2 text-sm font-semibold">
+                  <span>{o.name}</span>
+                  <span className="text-muted-foreground">
+                    · {o.customer}
+                  </span>
+                </div>
+                <div className="mt-1 space-y-0.5">
+                  {o.items.map((it, i) => (
+                    <div key={i} className="text-sm">
+                      <span className="font-medium">×{it.quantity}</span>{" "}
+                      <span>{it.title}</span>
+                      {it.variant && (
+                        <span className="text-muted-foreground">
+                          {" "}
+                          — {it.variant}
+                        </span>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => onRemove(o.id)}
+                disabled={removing === o.id}
+                className="shrink-0 rounded-full p-1 text-amber-700 hover:bg-amber-200 disabled:opacity-50"
+                aria-label="Remove"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function CustomBucket({
+  date,
+  onDateChange,
+  orders,
+  removing,
+  onRemove,
+}: {
+  date: string;
+  onDateChange: (iso: string) => void;
+  orders: TomorrowOrderEntry[];
+  removing: number | null;
+  onRemove: (id: number) => void;
+}) {
+  const pretty = date
+    ? new Date(date).toLocaleDateString("en-GB", {
+        weekday: "short",
+        day: "numeric",
+        month: "short",
+      })
+    : "Pick a date";
+  const units = sumUnits(orders);
+  return (
+    <div className="rounded-xl border border-amber-200 bg-amber-50/40">
+      <div className="flex items-baseline justify-between border-b border-amber-200 px-3 py-2">
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center gap-2 text-sm font-semibold text-amber-900">
+            <span>Custom date</span>
+            {date && (
+              <span className="text-xs font-normal text-amber-700">
+                · {pretty}
+              </span>
+            )}
+          </div>
+          <input
+            type="date"
+            value={date}
+            onChange={(e) => onDateChange(e.target.value)}
+            className="mt-1 h-7 w-full rounded-md border border-amber-300 bg-white px-2 text-xs"
+          />
+        </div>
+        <div className="pl-3 text-right text-[11px] font-medium text-amber-800">
+          {date && (
+            <>
+              {orders.length} order{orders.length === 1 ? "" : "s"} · {units}
+              {" "}
+              unit{units === 1 ? "" : "s"}
+            </>
+          )}
+        </div>
+      </div>
+
+      {!date ? (
+        <div className="p-4 text-center text-xs text-muted-foreground">
+          Pick a date to see what&apos;s scheduled.
+        </div>
+      ) : orders.length === 0 ? (
+        <div className="p-4 text-center text-xs text-muted-foreground">
+          Nothing scheduled for {pretty}.
         </div>
       ) : (
         <div className="divide-y divide-amber-200">
