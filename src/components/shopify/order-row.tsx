@@ -1116,6 +1116,7 @@ function ScheduleDropdown({
   onSchedule: (iso: string | null) => void;
 }) {
   const [open, setOpen] = React.useState(false);
+  const [customDraft, setCustomDraft] = React.useState("");
   const popRef = React.useRef<HTMLDivElement>(null);
 
   React.useEffect(() => {
@@ -1144,6 +1145,12 @@ function ScheduleDropdown({
             month: "short",
           })}`
     : "+ Schedule";
+
+  // Reset the draft each time the menu opens so the saved value isn't
+  // accidentally committed on partial interaction.
+  React.useEffect(() => {
+    if (open) setCustomDraft(isOther ? scheduledFor!.slice(0, 10) : "");
+  }, [open, isOther, scheduledFor]);
 
   return (
     <div ref={popRef} className="relative inline-block">
@@ -1207,17 +1214,26 @@ function ScheduleDropdown({
           <label className="block px-2 py-1 text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
             Custom date
           </label>
-          <input
-            type="date"
-            value={isOther ? scheduledFor!.slice(0, 10) : ""}
-            onChange={(e) => {
-              if (e.target.value) {
-                onSchedule(e.target.value);
+          <div className="flex gap-1 px-1 pb-1">
+            <input
+              type="date"
+              value={customDraft}
+              onChange={(e) => setCustomDraft(e.target.value)}
+              className="h-8 flex-1 rounded-md border border-input bg-background px-2 text-xs"
+            />
+            <button
+              type="button"
+              onClick={() => {
+                if (!customDraft) return;
+                onSchedule(customDraft);
                 setOpen(false);
-              }
-            }}
-            className="h-8 w-full rounded-md border border-input bg-background px-2 text-xs"
-          />
+              }}
+              disabled={!customDraft || customDraft === scheduledFor?.slice(0, 10)}
+              className="h-8 rounded-md bg-amber-600 px-2 text-[11px] font-semibold text-white hover:bg-amber-700 disabled:opacity-40"
+            >
+              Set
+            </button>
+          </div>
           {scheduledFor && (
             <>
               <div className="my-1 border-t border-border" />
