@@ -658,52 +658,13 @@ Reply here as soon as you've sent it and we'll fire up the workshop! 🪚✨`;
               >
                 Change
               </button>
-              {(() => {
-                const today = todayIsoDate();
-                const tomorrow = tomorrowIsoDate();
-                const onToday = meta.scheduledFor === today;
-                const onTomorrow = meta.scheduledFor === tomorrow;
-                return (
-                  <>
-                    <button
-                      type="button"
-                      onClick={() =>
-                        save(
-                          { scheduledFor: onToday ? null : today },
-                          "scheduledFor",
-                        )
-                      }
-                      disabled={saving === "scheduledFor"}
-                      className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-medium transition-colors ${
-                        onToday
-                          ? "bg-amber-200 text-amber-900 hover:bg-amber-300"
-                          : "border border-amber-300 bg-amber-50 text-amber-800 hover:bg-amber-100"
-                      } disabled:opacity-50`}
-                    >
-                      <CalendarClock className="h-3 w-3" />
-                      {onToday ? "On today's list" : "+ Today"}
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() =>
-                        save(
-                          { scheduledFor: onTomorrow ? null : tomorrow },
-                          "scheduledFor",
-                        )
-                      }
-                      disabled={saving === "scheduledFor"}
-                      className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-medium transition-colors ${
-                        onTomorrow
-                          ? "bg-amber-200 text-amber-900 hover:bg-amber-300"
-                          : "border border-amber-300 bg-amber-50 text-amber-800 hover:bg-amber-100"
-                      } disabled:opacity-50`}
-                    >
-                      <CalendarClock className="h-3 w-3" />
-                      {onTomorrow ? "On tomorrow's list" : "+ Tomorrow"}
-                    </button>
-                  </>
-                );
-              })()}
+              <ScheduleDropdown
+                scheduledFor={meta.scheduledFor}
+                saving={saving === "scheduledFor"}
+                onSchedule={(iso) =>
+                  save({ scheduledFor: iso }, "scheduledFor")
+                }
+              />
               <a
                 href={`/api/shopify/orders/${order.id}/invoice`}
                 target="_blank"
@@ -1142,6 +1103,139 @@ Reply here as soon as you've sent it and we'll fire up the workshop! 🪚✨`;
         )}
       </CardContent>
     </Card>
+  );
+}
+
+function ScheduleDropdown({
+  scheduledFor,
+  saving,
+  onSchedule,
+}: {
+  scheduledFor: string | null;
+  saving: boolean;
+  onSchedule: (iso: string | null) => void;
+}) {
+  const [open, setOpen] = React.useState(false);
+  const popRef = React.useRef<HTMLDivElement>(null);
+
+  React.useEffect(() => {
+    if (!open) return;
+    function onDocClick(e: MouseEvent) {
+      if (popRef.current && !popRef.current.contains(e.target as Node)) {
+        setOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", onDocClick);
+    return () => document.removeEventListener("mousedown", onDocClick);
+  }, [open]);
+
+  const today = todayIsoDate();
+  const tomorrow = tomorrowIsoDate();
+  const isToday = scheduledFor === today;
+  const isTomorrow = scheduledFor === tomorrow;
+  const isOther = Boolean(scheduledFor) && !isToday && !isTomorrow;
+  const label = scheduledFor
+    ? isToday
+      ? "On today's list"
+      : isTomorrow
+        ? "On tomorrow's list"
+        : `On ${new Date(scheduledFor).toLocaleDateString("en-GB", {
+            day: "numeric",
+            month: "short",
+          })}`
+    : "+ Schedule";
+
+  return (
+    <div ref={popRef} className="relative inline-block">
+      <button
+        type="button"
+        onClick={() => setOpen((s) => !s)}
+        disabled={saving}
+        className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-medium transition-colors disabled:opacity-50 ${
+          scheduledFor
+            ? "bg-amber-200 text-amber-900 hover:bg-amber-300"
+            : "border border-amber-300 bg-amber-50 text-amber-800 hover:bg-amber-100"
+        }`}
+      >
+        <CalendarClock className="h-3 w-3" />
+        {label}
+        <ChevronDown className="h-3 w-3 opacity-70" />
+      </button>
+
+      {open && (
+        <div
+          className="absolute left-0 top-full z-20 mt-1 w-56 rounded-md border border-border bg-white p-2 shadow-md"
+          role="menu"
+        >
+          <button
+            type="button"
+            onClick={() => {
+              onSchedule(isToday ? null : today);
+              setOpen(false);
+            }}
+            className={`flex w-full items-center justify-between rounded-md px-2 py-1 text-left text-xs hover:bg-secondary ${
+              isToday ? "bg-amber-50 font-semibold text-amber-900" : ""
+            }`}
+          >
+            <span>Today</span>
+            <span className="text-muted-foreground">
+              {new Date(today).toLocaleDateString("en-GB", {
+                day: "numeric",
+                month: "short",
+              })}
+            </span>
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              onSchedule(isTomorrow ? null : tomorrow);
+              setOpen(false);
+            }}
+            className={`flex w-full items-center justify-between rounded-md px-2 py-1 text-left text-xs hover:bg-secondary ${
+              isTomorrow ? "bg-amber-50 font-semibold text-amber-900" : ""
+            }`}
+          >
+            <span>Tomorrow</span>
+            <span className="text-muted-foreground">
+              {new Date(tomorrow).toLocaleDateString("en-GB", {
+                day: "numeric",
+                month: "short",
+              })}
+            </span>
+          </button>
+          <div className="my-1 border-t border-border" />
+          <label className="block px-2 py-1 text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
+            Custom date
+          </label>
+          <input
+            type="date"
+            value={isOther ? scheduledFor!.slice(0, 10) : ""}
+            onChange={(e) => {
+              if (e.target.value) {
+                onSchedule(e.target.value);
+                setOpen(false);
+              }
+            }}
+            className="h-8 w-full rounded-md border border-input bg-background px-2 text-xs"
+          />
+          {scheduledFor && (
+            <>
+              <div className="my-1 border-t border-border" />
+              <button
+                type="button"
+                onClick={() => {
+                  onSchedule(null);
+                  setOpen(false);
+                }}
+                className="block w-full rounded-md px-2 py-1 text-left text-xs text-rose-600 hover:bg-rose-50"
+              >
+                Remove from plan
+              </button>
+            </>
+          )}
+        </div>
+      )}
+    </div>
   );
 }
 
