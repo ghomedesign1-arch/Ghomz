@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import {
   CalendarClock,
   CalendarDays,
@@ -89,6 +90,7 @@ export function ShopifyOrderRow({
   shopUrl: string;
   users: { id: string; name: string }[];
 }) {
+  const router = useRouter();
   const [meta, setMeta] = React.useState<ShopifyOrderMeta>(initialMeta);
   const [notesDraft, setNotesDraft] = React.useState(initialMeta.notes ?? "");
   const [showNotes, setShowNotes] = React.useState(
@@ -150,6 +152,12 @@ export function ShopifyOrderRow({
       }
       const next: ShopifyOrderMeta = await res.json();
       setMeta(next);
+      // Changes that affect the server-rendered sections (Scheduled production
+      // custom-date column, factory sheet totals, tiles, etc.) need a page
+      // refresh — React server components don't see client-side state updates.
+      if ("scheduledFor" in patch || "status" in patch) {
+        router.refresh();
+      }
     } finally {
       setSaving(null);
     }
