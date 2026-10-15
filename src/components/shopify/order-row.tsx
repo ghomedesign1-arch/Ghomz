@@ -674,160 +674,16 @@ Reply here as soon as you've sent it and we'll fire up the workshop! 🪚✨`;
                 Invoice PDF
               </a>
               {(order.customer?.phone || order.shipping_address?.phone) && (
-                <button
-                  type="button"
-                  onClick={sendInvoiceOnWhatsApp}
-                  disabled={saving === "invoiceShare"}
-                  className="inline-flex items-center gap-1 rounded-full border border-emerald-300 bg-emerald-50 px-2 py-0.5 text-[11px] font-medium text-emerald-700 hover:bg-emerald-100 disabled:opacity-50"
-                  title="Upload invoice and open WhatsApp with the link"
-                >
-                  {saving === "invoiceShare" ? (
-                    <Loader2 className="h-3 w-3 animate-spin" />
-                  ) : (
-                    <Send className="h-3 w-3" />
-                  )}
-                  Invoice → WhatsApp
-                </button>
-              )}
-              {(order.customer?.phone || order.shipping_address?.phone) && (
-                <button
-                  type="button"
-                  onClick={sendThanks}
-                  disabled={saving === "thanksSent"}
-                  className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-medium transition-colors disabled:opacity-50 ${
-                    meta.thanksSentAt
-                      ? "bg-pink-100 text-pink-700 hover:bg-pink-200"
-                      : "border border-pink-300 bg-pink-50 text-pink-700 hover:bg-pink-100"
-                  }`}
-                  title={
-                    meta.thanksSentAt
-                      ? `Sent ${new Date(meta.thanksSentAt).toLocaleDateString("en-GB")}`
-                      : "Send thanks-for-ordering message via WhatsApp"
-                  }
-                >
-                  {meta.thanksSentAt ? (
-                    <>
-                      <Check className="h-3 w-3" /> Thanked · resend
-                    </>
-                  ) : (
-                    <>
-                      <Send className="h-3 w-3" /> Send thanks
-                    </>
-                  )}
-                </button>
-              )}
-              {(() => {
-                const phone =
-                  order.customer?.phone ??
-                  order.shipping_address?.phone ??
-                  null;
-                if (!phone) return null;
-                if (meta.confirmationSentAt) {
-                  return (
-                    <button
-                      type="button"
-                      onClick={sendConfirmation}
-                      disabled={saving === "confirmation"}
-                      className="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2 py-0.5 text-[11px] font-medium text-emerald-700 hover:bg-emerald-200"
-                      title={`Sent ${new Date(meta.confirmationSentAt).toLocaleDateString("en-GB")}`}
-                    >
-                      <Check className="h-3 w-3" />
-                      Confirmed · resend
-                    </button>
-                  );
-                }
-                return (
-                  <button
-                    type="button"
-                    onClick={sendConfirmation}
-                    disabled={saving === "confirmation"}
-                    className="inline-flex items-center gap-1 rounded-full border border-emerald-300 bg-emerald-50 px-2 py-0.5 text-[11px] font-medium text-emerald-700 hover:bg-emerald-100"
-                  >
-                    <Send className="h-3 w-3" />
-                    Send confirmation
-                  </button>
-                );
-              })()}
-              {(order.customer?.phone || order.shipping_address?.phone) && (
-                <button
-                  type="button"
-                  onClick={sendDepositRequest}
-                  disabled={saving === "depositSent"}
-                  className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-medium transition-colors disabled:opacity-50 ${
-                    meta.depositRequestSentAt
-                      ? "bg-amber-100 text-amber-800 hover:bg-amber-200"
-                      : "border border-amber-300 bg-amber-50 text-amber-800 hover:bg-amber-100"
-                  }`}
-                  title={
-                    meta.depositRequestSentAt
-                      ? `Sent ${new Date(meta.depositRequestSentAt).toLocaleDateString("en-GB")}`
-                      : "Send 50% deposit request via WhatsApp"
-                  }
-                >
-                  {meta.depositRequestSentAt ? (
-                    <>
-                      <Check className="h-3 w-3" /> Deposit asked · resend
-                    </>
-                  ) : (
-                    <>
-                      <Send className="h-3 w-3" /> Ask for 50% deposit
-                    </>
-                  )}
-                </button>
-              )}
-              {(order.customer?.phone || order.shipping_address?.phone) && (
-                <button
-                  type="button"
-                  onClick={sendCancellation}
-                  disabled={saving === "cancelSent"}
-                  className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-medium transition-colors disabled:opacity-50 ${
-                    meta.cancellationSentAt
-                      ? "bg-rose-100 text-rose-700 hover:bg-rose-200"
-                      : "border border-rose-300 bg-rose-50 text-rose-700 hover:bg-rose-100"
-                  }`}
-                  title={
-                    meta.cancellationSentAt
-                      ? `Sent ${new Date(meta.cancellationSentAt).toLocaleDateString("en-GB")}`
-                      : "Send cancellation notice via WhatsApp"
-                  }
-                >
-                  {meta.cancellationSentAt ? (
-                    <>
-                      <Check className="h-3 w-3" /> Cancellation sent · resend
-                    </>
-                  ) : (
-                    <>
-                      <Send className="h-3 w-3" /> Send cancellation
-                    </>
-                  )}
-                </button>
-              )}
-              {(order.customer?.phone || order.shipping_address?.phone) && (
-                <button
-                  type="button"
-                  onClick={sendDeliveryDate}
-                  disabled={saving === "deliverySent"}
-                  className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-medium transition-colors disabled:opacity-50 ${
-                    meta.deliveryDateSentAt
-                      ? "bg-emerald-100 text-emerald-700 hover:bg-emerald-200"
-                      : "border border-emerald-300 bg-emerald-50 text-emerald-700 hover:bg-emerald-100"
-                  }`}
-                  title={
-                    meta.deliveryDateSentAt
-                      ? `Sent ${new Date(meta.deliveryDateSentAt).toLocaleDateString("en-GB")}`
-                      : "Send delivery date via WhatsApp"
-                  }
-                >
-                  {meta.deliveryDateSentAt ? (
-                    <>
-                      <Check className="h-3 w-3" /> Delivery date sent · resend
-                    </>
-                  ) : (
-                    <>
-                      <Send className="h-3 w-3" /> Send delivery date
-                    </>
-                  )}
-                </button>
+                <CustomerConfirmationDropdown
+                  meta={meta}
+                  saving={saving}
+                  onInvoice={sendInvoiceOnWhatsApp}
+                  onThanks={sendThanks}
+                  onConfirmation={sendConfirmation}
+                  onDeposit={sendDepositRequest}
+                  onCancellation={sendCancellation}
+                  onDelivery={sendDeliveryDate}
+                />
               )}
             </div>
           </div>
@@ -1101,6 +957,164 @@ Reply here as soon as you've sent it and we'll fire up the workshop! 🪚✨`;
         )}
       </CardContent>
     </Card>
+  );
+}
+
+function CustomerConfirmationDropdown({
+  meta,
+  saving,
+  onInvoice,
+  onThanks,
+  onConfirmation,
+  onDeposit,
+  onCancellation,
+  onDelivery,
+}: {
+  meta: ShopifyOrderMeta;
+  saving: string | null;
+  onInvoice: () => void;
+  onThanks: () => void;
+  onConfirmation: () => void;
+  onDeposit: () => void;
+  onCancellation: () => void;
+  onDelivery: () => void;
+}) {
+  const [open, setOpen] = React.useState(false);
+  const popRef = React.useRef<HTMLDivElement>(null);
+  React.useEffect(() => {
+    if (!open) return;
+    function onDocClick(e: MouseEvent) {
+      if (popRef.current && !popRef.current.contains(e.target as Node)) {
+        setOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", onDocClick);
+    return () => document.removeEventListener("mousedown", onDocClick);
+  }, [open]);
+
+  const sentCount = [
+    meta.thanksSentAt,
+    meta.confirmationSentAt,
+    meta.depositRequestSentAt,
+    meta.cancellationSentAt,
+    meta.deliveryDateSentAt,
+  ].filter(Boolean).length;
+
+  const items = [
+    {
+      key: "invoice",
+      label: "Invoice → WhatsApp",
+      onClick: onInvoice,
+      sentAt: null,
+      busy: saving === "invoiceShare",
+      tone: "emerald",
+    },
+    {
+      key: "thanks",
+      label: "Send thanks",
+      doneLabel: "Thanked",
+      onClick: onThanks,
+      sentAt: meta.thanksSentAt,
+      busy: saving === "thanksSent",
+      tone: "pink",
+    },
+    {
+      key: "confirmation",
+      label: "Send confirmation",
+      doneLabel: "Confirmed",
+      onClick: onConfirmation,
+      sentAt: meta.confirmationSentAt,
+      busy: saving === "confirmation",
+      tone: "emerald",
+    },
+    {
+      key: "deposit",
+      label: "Ask for 50% deposit",
+      doneLabel: "Deposit asked",
+      onClick: onDeposit,
+      sentAt: meta.depositRequestSentAt,
+      busy: saving === "depositSent",
+      tone: "amber",
+    },
+    {
+      key: "delivery",
+      label: "Send delivery date",
+      doneLabel: "Delivery date sent",
+      onClick: onDelivery,
+      sentAt: meta.deliveryDateSentAt,
+      busy: saving === "deliverySent",
+      tone: "emerald",
+    },
+    {
+      key: "cancel",
+      label: "Send cancellation",
+      doneLabel: "Cancellation sent",
+      onClick: onCancellation,
+      sentAt: meta.cancellationSentAt,
+      busy: saving === "cancelSent",
+      tone: "rose",
+    },
+  ] as const;
+
+  return (
+    <div ref={popRef} className="relative inline-block">
+      <button
+        type="button"
+        onClick={() => setOpen((s) => !s)}
+        className="inline-flex items-center gap-1 rounded-full border border-emerald-300 bg-emerald-50 px-2 py-0.5 text-[11px] font-medium text-emerald-700 hover:bg-emerald-100"
+      >
+        <Send className="h-3 w-3" />
+        Customer confirmation
+        {sentCount > 0 && (
+          <span className="rounded-full bg-emerald-200 px-1.5 py-0.5 text-[9px] font-semibold text-emerald-900">
+            {sentCount}
+          </span>
+        )}
+        <ChevronDown className="h-3 w-3 opacity-70" />
+      </button>
+
+      {open && (
+        <div
+          className="absolute left-0 top-full z-20 mt-1 w-64 rounded-md border border-border bg-white p-1 shadow-md"
+          role="menu"
+        >
+          {items.map((it) => {
+            const sent = Boolean(it.sentAt);
+            return (
+              <button
+                key={it.key}
+                type="button"
+                onClick={() => {
+                  it.onClick();
+                  setOpen(false);
+                }}
+                disabled={it.busy}
+                className="flex w-full items-center justify-between gap-2 rounded-md px-2 py-1.5 text-left text-xs hover:bg-secondary disabled:opacity-50"
+              >
+                <span className="inline-flex items-center gap-2">
+                  {it.busy ? (
+                    <Loader2 className="h-3 w-3 animate-spin" />
+                  ) : sent ? (
+                    <Check className="h-3 w-3 text-emerald-600" />
+                  ) : (
+                    <Send className="h-3 w-3 text-muted-foreground" />
+                  )}
+                  <span>{sent && "doneLabel" in it ? `${it.doneLabel} — resend` : it.label}</span>
+                </span>
+                {it.sentAt && (
+                  <span className="text-[10px] text-muted-foreground">
+                    {new Date(it.sentAt).toLocaleDateString("en-GB", {
+                      day: "numeric",
+                      month: "short",
+                    })}
+                  </span>
+                )}
+              </button>
+            );
+          })}
+        </div>
+      )}
+    </div>
   );
 }
 
