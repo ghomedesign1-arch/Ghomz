@@ -102,10 +102,8 @@ export function TomorrowQueue({
     }
   }
 
-  const totalOrders =
-    todayOrders.length + tomorrowOrders.length + customOrders.length;
-  const totalUnits =
-    sumUnits(todayOrders) + sumUnits(tomorrowOrders) + sumUnits(customOrders);
+  const totalOrders = customOrders.length;
+  const totalUnits = sumUnits(customOrders);
 
   return (
     <div className="space-y-3">
@@ -117,7 +115,7 @@ export function TomorrowQueue({
       >
         <span className="inline-flex items-center gap-2">
           <CalendarClock className="h-4 w-4 text-amber-700" />
-          Today &amp; tomorrow&apos;s production
+          Scheduled production
           <span className="rounded-full bg-amber-200 px-2 py-0.5 text-[10px] font-semibold text-amber-900">
             {totalOrders} order{totalOrders === 1 ? "" : "s"} · {totalUnits}{" "}
             unit{totalUnits === 1 ? "" : "s"}
@@ -131,31 +129,13 @@ export function TomorrowQueue({
       </button>
 
       {visible && (
-        <div className="space-y-3">
-          <div className="grid gap-3 md:grid-cols-3">
-            <DayBucket
-              dateIso={todayDate}
-              title="Today"
-              orders={todayOrders}
-              removing={removing}
-              onRemove={remove}
-            />
-            <DayBucket
-              dateIso={tomorrowDate}
-              title="Tomorrow"
-              orders={tomorrowOrders}
-              removing={removing}
-              onRemove={remove}
-            />
-            <CustomBucket
-              date={customDate}
-              onDateChange={updateCustomDate}
-              orders={customOrders}
-              removing={removing}
-              onRemove={remove}
-            />
-          </div>
-        </div>
+        <CustomBucket
+          date={customDate}
+          onDateChange={updateCustomDate}
+          orders={customOrders}
+          removing={removing}
+          onRemove={remove}
+        />
       )}
     </div>
   );

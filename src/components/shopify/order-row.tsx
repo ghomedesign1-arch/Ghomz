@@ -38,8 +38,6 @@ import {
   effectiveDeliveryDate,
   effectiveLineItems,
   effectiveSubtotal,
-  todayIsoDate,
-  tomorrowIsoDate,
   type CallOutcome,
   type EffectiveLineItem,
   type ShopifyOrderMeta,
@@ -1130,27 +1128,18 @@ function ScheduleDropdown({
     return () => document.removeEventListener("mousedown", onDocClick);
   }, [open]);
 
-  const today = todayIsoDate();
-  const tomorrow = tomorrowIsoDate();
-  const isToday = scheduledFor === today;
-  const isTomorrow = scheduledFor === tomorrow;
-  const isOther = Boolean(scheduledFor) && !isToday && !isTomorrow;
   const label = scheduledFor
-    ? isToday
-      ? "On today's list"
-      : isTomorrow
-        ? "On tomorrow's list"
-        : `On ${new Date(scheduledFor).toLocaleDateString("en-GB", {
-            day: "numeric",
-            month: "short",
-          })}`
+    ? `On ${new Date(scheduledFor).toLocaleDateString("en-GB", {
+        day: "numeric",
+        month: "short",
+      })}`
     : "+ Schedule";
 
   // Reset the draft each time the menu opens so the saved value isn't
   // accidentally committed on partial interaction.
   React.useEffect(() => {
-    if (open) setCustomDraft(isOther ? scheduledFor!.slice(0, 10) : "");
-  }, [open, isOther, scheduledFor]);
+    if (open) setCustomDraft(scheduledFor ? scheduledFor.slice(0, 10) : "");
+  }, [open, scheduledFor]);
 
   return (
     <div ref={popRef} className="relative inline-block">
@@ -1174,45 +1163,8 @@ function ScheduleDropdown({
           className="absolute left-0 top-full z-20 mt-1 w-56 rounded-md border border-border bg-white p-2 shadow-md"
           role="menu"
         >
-          <button
-            type="button"
-            onClick={() => {
-              onSchedule(isToday ? null : today);
-              setOpen(false);
-            }}
-            className={`flex w-full items-center justify-between rounded-md px-2 py-1 text-left text-xs hover:bg-secondary ${
-              isToday ? "bg-amber-50 font-semibold text-amber-900" : ""
-            }`}
-          >
-            <span>Today</span>
-            <span className="text-muted-foreground">
-              {new Date(today).toLocaleDateString("en-GB", {
-                day: "numeric",
-                month: "short",
-              })}
-            </span>
-          </button>
-          <button
-            type="button"
-            onClick={() => {
-              onSchedule(isTomorrow ? null : tomorrow);
-              setOpen(false);
-            }}
-            className={`flex w-full items-center justify-between rounded-md px-2 py-1 text-left text-xs hover:bg-secondary ${
-              isTomorrow ? "bg-amber-50 font-semibold text-amber-900" : ""
-            }`}
-          >
-            <span>Tomorrow</span>
-            <span className="text-muted-foreground">
-              {new Date(tomorrow).toLocaleDateString("en-GB", {
-                day: "numeric",
-                month: "short",
-              })}
-            </span>
-          </button>
-          <div className="my-1 border-t border-border" />
           <label className="block px-2 py-1 text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
-            Custom date
+            Schedule for date
           </label>
           <div className="flex gap-1 px-1 pb-1">
             <input
