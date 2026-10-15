@@ -616,52 +616,6 @@ export default async function ShopifyOrdersPage({
         breakdown={factoryBreakdown}
       />
 
-      <form className="flex flex-wrap items-center gap-2" method="get">
-        <input
-          type="text"
-          name="q"
-          defaultValue={query}
-          placeholder="Search order # · customer name · phone…"
-          className="h-9 min-w-[220px] flex-1 rounded-md border border-input bg-background px-3 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-ring"
-        />
-        {activeStatus && (
-          <input type="hidden" name="status" value={activeStatus.toLowerCase()} />
-        )}
-        {activePayment && (
-          <input type="hidden" name="payment" value={activePayment.toLowerCase()} />
-        )}
-        {productsRaw && (
-          <input type="hidden" name="products" value={productsRaw} />
-        )}
-        <select
-          name="sort"
-          defaultValue={sort}
-          className="h-9 rounded-md border border-input bg-background px-2 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-ring"
-        >
-          <option value="default">Sort: Priority + due date</option>
-          <option value="newest">Newest first</option>
-          <option value="oldest">Oldest first</option>
-          <option value="due">Earliest due date</option>
-          <option value="value">Highest total first</option>
-          <option value="unpaid">Unpaid first</option>
-          <option value="customer">Customer A → Z</option>
-        </select>
-        <button
-          type="submit"
-          className="h-9 rounded-md border border-input bg-secondary px-4 text-sm font-medium hover:bg-secondary/80"
-        >
-          Apply
-        </button>
-        {(query || activeStatus || activePayment || productsRaw || sort !== "default") && (
-          <Link
-            href="/shopify-orders"
-            className="h-9 rounded-md border border-input bg-background px-4 text-sm font-medium leading-9 text-muted-foreground hover:bg-secondary"
-          >
-            Clear
-          </Link>
-        )}
-      </form>
-
       <TomorrowQueue
         todayDate={today}
         tomorrowDate={tomorrow}
@@ -730,6 +684,52 @@ export default async function ShopifyOrdersPage({
                 ))}
               </OrdersSection>
             )}
+
+            <form className="flex flex-wrap items-center gap-2" method="get">
+              <input
+                type="text"
+                name="q"
+                defaultValue={query}
+                placeholder="Search order # · customer name · phone…"
+                className="h-9 min-w-[220px] flex-1 rounded-md border border-input bg-background px-3 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-ring"
+              />
+              {activeStatus && (
+                <input type="hidden" name="status" value={activeStatus.toLowerCase()} />
+              )}
+              {activePayment && (
+                <input type="hidden" name="payment" value={activePayment.toLowerCase()} />
+              )}
+              {productsRaw && (
+                <input type="hidden" name="products" value={productsRaw} />
+              )}
+              <select
+                name="sort"
+                defaultValue={sort}
+                className="h-9 rounded-md border border-input bg-background px-2 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-ring"
+              >
+                <option value="default">Sort: Priority + due date</option>
+                <option value="newest">Newest first</option>
+                <option value="oldest">Oldest first</option>
+                <option value="due">Earliest due date</option>
+                <option value="value">Highest total first</option>
+                <option value="unpaid">Unpaid first</option>
+                <option value="customer">Customer A → Z</option>
+              </select>
+              <button
+                type="submit"
+                className="h-9 rounded-md border border-input bg-secondary px-4 text-sm font-medium hover:bg-secondary/80"
+              >
+                Apply
+              </button>
+              {(query || activeStatus || activePayment || productsRaw || sort !== "default") && (
+                <Link
+                  href="/shopify-orders"
+                  className="h-9 rounded-md border border-input bg-background px-4 text-sm font-medium leading-9 text-muted-foreground hover:bg-secondary"
+                >
+                  Clear
+                </Link>
+              )}
+            </form>
 
             {activeList.length > 0 && (
               <div className="space-y-3">
