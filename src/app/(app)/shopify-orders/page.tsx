@@ -164,6 +164,8 @@ export default async function ShopifyOrdersPage({
     revenueExpected += total;
     if (m.paymentMode === "FULL") {
       revenueCollected += total;
+    } else if (m.paymentMode === "UNPAID") {
+      // Nothing collected — ERP override says customer hasn't paid.
     } else if (m.paymentMode === "DEPOSIT") {
       revenueCollected += Math.min(total, Math.max(0, Number(m.depositAmount ?? 0)));
     } else {

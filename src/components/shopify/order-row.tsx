@@ -1257,6 +1257,9 @@ function resolvePayment(
   if (meta.paymentMode === "FULL") {
     return { kind: "paid", paid: total, remaining: 0 };
   }
+  if (meta.paymentMode === "UNPAID") {
+    return { kind: "unpaid", paid: 0, remaining: total };
+  }
   if (meta.paymentMode === "DEPOSIT") {
     const deposit = Math.max(0, Number(meta.depositAmount ?? 0));
     const remaining = Math.max(0, total - deposit);
@@ -1403,6 +1406,7 @@ function PaymentBreakdown({
               <SelectItem value="AUTO">Auto (from Shopify)</SelectItem>
               <SelectItem value="FULL">Full payment</SelectItem>
               <SelectItem value="DEPOSIT">Deposit</SelectItem>
+              <SelectItem value="UNPAID">Unpaid</SelectItem>
             </SelectContent>
           </Select>
         </div>

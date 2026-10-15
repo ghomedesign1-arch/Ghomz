@@ -201,7 +201,7 @@ export type ShopifyOrderStatus =
 
 export type ShopifyOrderPriority = "LOW" | "NORMAL" | "URGENT";
 
-export type ShopifyPaymentMode = "AUTO" | "FULL" | "DEPOSIT";
+export type ShopifyPaymentMode = "AUTO" | "FULL" | "DEPOSIT" | "UNPAID";
 
 export type CallOutcome = "no_answer" | "answered" | "promised";
 
@@ -366,6 +366,7 @@ export function resolvePaymentKind(
   const total = Math.max(0, raw - Math.max(0, Number(meta.discount ?? 0)));
   const status = (order.financial_status ?? "").toLowerCase();
   if (meta.paymentMode === "FULL") return "paid";
+  if (meta.paymentMode === "UNPAID") return "unpaid";
   if (meta.paymentMode === "DEPOSIT") {
     const deposit = Math.max(0, Number(meta.depositAmount ?? 0));
     if (total - deposit <= 0.009) return "paid";

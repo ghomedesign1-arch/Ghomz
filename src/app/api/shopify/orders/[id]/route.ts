@@ -24,7 +24,12 @@ const VALID_STATUS: ShopifyOrderStatus[] = [
   "CANCELLED",
 ];
 const VALID_PRIORITY: ShopifyOrderPriority[] = ["LOW", "NORMAL", "URGENT"];
-const VALID_PAYMENT_MODE: ShopifyPaymentMode[] = ["AUTO", "FULL", "DEPOSIT"];
+const VALID_PAYMENT_MODE: ShopifyPaymentMode[] = [
+  "AUTO",
+  "FULL",
+  "DEPOSIT",
+  "UNPAID",
+];
 const VALID_CALL_OUTCOME: CallOutcome[] = ["no_answer", "answered", "promised"];
 
 export const PATCH = withApi(async (
