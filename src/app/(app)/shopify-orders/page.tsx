@@ -341,15 +341,20 @@ export default async function ShopifyOrdersPage({
       color: colorPart ?? null,
     };
   };
-  const breakdownMap = new Map<string, Map<string, number>>();
+  // Per product → per size-key → { qty, orders: order-name set }.
+  type SizeAgg = { qty: number; orders: Set<string> };
+  const breakdownMap = new Map<string, Map<string, SizeAgg>>();
   for (const o of factoryEligible) {
     for (const li of effectiveLineItems(o, metaFor(o))) {
       if (!factorySelected.has(li.title)) continue;
       if (li.quantity <= 0) continue;
       const { width, depth, color } = parseVariant(li.variantTitle);
       const key = `${width}||${depth ?? ""}||${color ?? ""}`;
-      const bucket = breakdownMap.get(li.title) ?? new Map<string, number>();
-      bucket.set(key, (bucket.get(key) ?? 0) + li.quantity);
+      const bucket = breakdownMap.get(li.title) ?? new Map<string, SizeAgg>();
+      const agg = bucket.get(key) ?? { qty: 0, orders: new Set<string>() };
+      agg.qty += li.quantity;
+      agg.orders.add(o.name);
+      bucket.set(key, agg);
       breakdownMap.set(li.title, bucket);
     }
   }
@@ -358,13 +363,14 @@ export default async function ShopifyOrdersPage({
   )
     .map(([product, bucket]) => {
       const sizes = Array.from(bucket.entries())
-        .map(([key, qty]) => {
+        .map(([key, agg]) => {
           const [width, depth, color] = key.split("||");
           return {
             width,
             depth: depth || null,
             color: color || null,
-            qty,
+            qty: agg.qty,
+            orders: Array.from(agg.orders).sort(),
           };
         })
         .sort((a, b) => {

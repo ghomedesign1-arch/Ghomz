@@ -27,12 +27,13 @@ export interface ProductNameOption {
 
 export interface ProductSizeBreakdownRow {
   product: string;
-  /** [{ width, depth, color, qty }, …] sorted by width asc then color alpha */
+  /** [{ width, depth, color, qty, orders }, …] sorted by width asc then color alpha */
   sizes: {
     width: string;
     depth: string | null;
     color: string | null;
     qty: number;
+    orders: string[];
   }[];
   totalUnits: number;
 }
@@ -121,7 +122,8 @@ export function FactoryWorkOrder({
       for (const s of row.sizes) {
         const dim = bilingualDimension(s.width, s.depth);
         const colorLabel = s.color ? ` · ${bilingualColor(s.color)}` : "";
-        lines.push(`  • ${dim}${colorLabel} × ${s.qty}`);
+        const orderLabel = s.orders.length ? `  (${s.orders.join(", ")})` : "";
+        lines.push(`  • ${dim}${colorLabel} × ${s.qty}${orderLabel}`);
       }
       lines.push(`  (total / الإجمالي ${row.totalUnits})`);
     }
@@ -219,6 +221,7 @@ export function FactoryWorkOrder({
   .chips { display: flex; flex-wrap: wrap; gap: 6px; }
   .chip { border: 1px solid #bbb; border-radius: 6px; padding: 6px 10px; font-size: 14px; }
   .chip strong { font-weight: 600; margin-left: 4px; }
+  .chip .orders { margin-top: 2px; font-size: 11px; color: #555; }
   .total { margin-top: 20px; padding-top: 12px; border-top: 2px solid #111; font-size: 15px; font-weight: 600; }
   .total .ar { display: block; direction: rtl; font-size: 14px; color: #333; margin-top: 2px; }
   @media print {
@@ -250,7 +253,10 @@ ${breakdown
       .map((s) => {
         const d = bilingualDimension(s.width, s.depth);
         const c = s.color ? ` · ${bilingualColor(s.color)}` : "";
-        return `<span class="chip">${esc(d)}${esc(c)} × <strong>${s.qty}</strong></span>`;
+        const orders = s.orders.length
+          ? `<div class="orders">${esc(s.orders.join(" · "))}</div>`
+          : "";
+        return `<div class="chip"><div>${esc(d)}${esc(c)} × <strong>${s.qty}</strong></div>${orders}</div>`;
       })
       .join("")}
   </div>
@@ -412,24 +418,31 @@ ${breakdown
                       </div>
                       <div className="flex flex-wrap gap-2">
                         {row.sizes.map((s, i) => (
-                          <span
+                          <div
                             key={`${s.width}|${s.depth ?? ""}|${s.color ?? ""}|${i}`}
-                            className="inline-flex items-baseline gap-1 rounded-md border border-emerald-300 bg-white px-2 py-1 text-sm"
+                            className="rounded-md border border-emerald-300 bg-white px-2 py-1 text-sm"
                           >
-                            <span className="font-medium">
-                              W{s.width}
-                              {s.depth ? ` × D${s.depth}` : ""}
-                            </span>
-                            {s.color && (
-                              <span className="text-muted-foreground">
-                                · {s.color}
+                            <div className="inline-flex items-baseline gap-1">
+                              <span className="font-medium">
+                                W{s.width}
+                                {s.depth ? ` × D${s.depth}` : ""}
                               </span>
+                              {s.color && (
+                                <span className="text-muted-foreground">
+                                  · {s.color}
+                                </span>
+                              )}
+                              <span className="text-muted-foreground">×</span>
+                              <span className="font-display text-lg font-semibold">
+                                {s.qty}
+                              </span>
+                            </div>
+                            {s.orders.length > 0 && (
+                              <div className="mt-0.5 text-[10px] text-muted-foreground">
+                                {s.orders.join(" · ")}
+                              </div>
                             )}
-                            <span className="text-muted-foreground">×</span>
-                            <span className="font-display text-lg font-semibold">
-                              {s.qty}
-                            </span>
-                          </span>
+                          </div>
                         ))}
                       </div>
                     </div>
