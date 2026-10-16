@@ -25,6 +25,7 @@ import { OrdersSection } from "@/components/shopify/shipped-section";
 import { InvoiceBrandingDialog } from "@/components/shopify/invoice-branding-dialog";
 import { NewOrdersWatcher } from "@/components/shopify/new-orders-watcher";
 import type { ProductFilterOption } from "@/components/shopify/product-filter";
+import { ProductSelectDropdown } from "@/components/shopify/product-select-dropdown";
 import {
   FactoryWorkOrder,
   type ProductNameOption,
@@ -248,7 +249,10 @@ export default async function ShopifyOrdersPage({
   const activeStatus = (searchParams?.status ?? "").toUpperCase();
   const activePayment = (searchParams?.payment ?? "").toUpperCase();
   const query = (searchParams?.q ?? "").trim().toLowerCase();
-  const activeProduct = (searchParams?.product ?? "").trim();
+  const activeProductRaw = (searchParams?.product ?? "").trim();
+  const activeProducts = new Set(
+    activeProductRaw ? activeProductRaw.split("|").filter(Boolean) : [],
+  );
   const productsRaw = (searchParams?.products ?? "").trim();
   const selectedProducts = new Set(
     productsRaw ? productsRaw.split("|").filter(Boolean) : [],
@@ -438,10 +442,10 @@ export default async function ShopifyOrdersPage({
       if (activePayment === "DEPOSIT" && kind !== "deposit") return false;
       if (activePayment === "UNPAID" && kind !== "unpaid") return false;
     }
-    if (activeProduct) {
+    if (activeProducts.size > 0) {
       const hasProduct = o.line_items.some((li) => {
         const qty = li.current_quantity ?? li.quantity ?? 0;
-        return qty > 0 && li.title === activeProduct;
+        return qty > 0 && activeProducts.has(li.title);
       });
       if (!hasProduct) return false;
     }
@@ -727,18 +731,10 @@ export default async function ShopifyOrdersPage({
                   className="h-9 min-w-[220px] flex-1 rounded-md border border-input bg-background px-3 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-ring"
                 />
               </div>
-              <select
-                name="product"
-                defaultValue={activeProduct}
-                className="h-9 rounded-md border border-input bg-background px-2 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-ring"
-              >
-                <option value="">All products</option>
-                {allProductsList.map((p) => (
-                  <option key={p.name} value={p.name}>
-                    {p.name} ({p.orderCount})
-                  </option>
-                ))}
-              </select>
+              <ProductSelectDropdown
+                options={allProductsList}
+                activeNames={Array.from(activeProducts)}
+              />
               {activeStatus && (
                 <input type="hidden" name="status" value={activeStatus.toLowerCase()} />
               )}
@@ -767,7 +763,7 @@ export default async function ShopifyOrdersPage({
               >
                 Apply
               </button>
-              {(query || activeStatus || activePayment || productsRaw || activeProduct || sort !== "default") && (
+              {(query || activeStatus || activePayment || productsRaw || activeProductRaw || sort !== "default") && (
                 <Link
                   href="/shopify-orders"
                   className="h-9 rounded-md border border-input bg-background px-4 text-sm font-medium leading-9 text-muted-foreground hover:bg-secondary"
