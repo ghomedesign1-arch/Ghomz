@@ -61,6 +61,7 @@ export default async function ShopifyOrdersPage({
     sort?: string;
     products?: string;
     factoryProducts?: string;
+    product?: string;
   };
 }) {
   const connection = await getShopifyToken().catch(() => null);
@@ -247,6 +248,7 @@ export default async function ShopifyOrdersPage({
   const activeStatus = (searchParams?.status ?? "").toUpperCase();
   const activePayment = (searchParams?.payment ?? "").toUpperCase();
   const query = (searchParams?.q ?? "").trim().toLowerCase();
+  const activeProduct = (searchParams?.product ?? "").trim();
   const productsRaw = (searchParams?.products ?? "").trim();
   const selectedProducts = new Set(
     productsRaw ? productsRaw.split("|").filter(Boolean) : [],
@@ -341,6 +343,28 @@ export default async function ShopifyOrdersPage({
       color: colorPart ?? null,
     };
   };
+  // Distinct product names (any payment status) for the search dropdown.
+  const allProductsSet = new Set<string>();
+  for (const o of activeOrders) {
+    for (const li of o.line_items) {
+      const qty = li.current_quantity ?? li.quantity ?? 0;
+      if (qty > 0) allProductsSet.add(li.title);
+    }
+  }
+  const allProductsList: { name: string; orderCount: number }[] = Array.from(
+    allProductsSet,
+  )
+    .map((name) => ({
+      name,
+      orderCount: activeOrders.filter((o) =>
+        o.line_items.some(
+          (li) =>
+            (li.current_quantity ?? li.quantity ?? 0) > 0 && li.title === name,
+        ),
+      ).length,
+    }))
+    .sort((a, b) => b.orderCount - a.orderCount || a.name.localeCompare(b.name));
+
   // Per product → per size-key → { qty, orders: order-name set }.
   type SizeAgg = { qty: number; orders: Set<string> };
   const breakdownMap = new Map<string, Map<string, SizeAgg>>();
@@ -413,6 +437,13 @@ export default async function ShopifyOrdersPage({
       if (activePayment === "PAID" && kind !== "paid") return false;
       if (activePayment === "DEPOSIT" && kind !== "deposit") return false;
       if (activePayment === "UNPAID" && kind !== "unpaid") return false;
+    }
+    if (activeProduct) {
+      const hasProduct = o.line_items.some((li) => {
+        const qty = li.current_quantity ?? li.quantity ?? 0;
+        return qty > 0 && li.title === activeProduct;
+      });
+      if (!hasProduct) return false;
     }
     if (selectedProducts.size > 0) {
       const hasMatch = o.line_items.some((li) => {
@@ -683,14 +714,31 @@ export default async function ShopifyOrdersPage({
               </OrdersSection>
             )}
 
-            <form className="flex flex-wrap items-center gap-2" method="get">
-              <input
-                type="text"
-                name="q"
-                defaultValue={query}
-                placeholder="Search order # · customer name · phone…"
-                className="h-9 min-w-[220px] flex-1 rounded-md border border-input bg-background px-3 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-ring"
-              />
+            <form
+              className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center"
+              method="get"
+            >
+              <div className="flex items-center gap-2 sm:flex-1">
+                <input
+                  type="text"
+                  name="q"
+                  defaultValue={query}
+                  placeholder="Search order # · customer name · phone…"
+                  className="h-9 min-w-[220px] flex-1 rounded-md border border-input bg-background px-3 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                />
+              </div>
+              <select
+                name="product"
+                defaultValue={activeProduct}
+                className="h-9 rounded-md border border-input bg-background px-2 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-ring"
+              >
+                <option value="">All products</option>
+                {allProductsList.map((p) => (
+                  <option key={p.name} value={p.name}>
+                    {p.name} ({p.orderCount})
+                  </option>
+                ))}
+              </select>
               {activeStatus && (
                 <input type="hidden" name="status" value={activeStatus.toLowerCase()} />
               )}
@@ -719,7 +767,7 @@ export default async function ShopifyOrdersPage({
               >
                 Apply
               </button>
-              {(query || activeStatus || activePayment || productsRaw || sort !== "default") && (
+              {(query || activeStatus || activePayment || productsRaw || activeProduct || sort !== "default") && (
                 <Link
                   href="/shopify-orders"
                   className="h-9 rounded-md border border-input bg-background px-4 text-sm font-medium leading-9 text-muted-foreground hover:bg-secondary"
