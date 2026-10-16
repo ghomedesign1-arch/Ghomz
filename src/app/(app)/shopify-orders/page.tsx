@@ -194,11 +194,9 @@ export default async function ShopifyOrdersPage({
   const allScheduled: (TomorrowOrderEntry & { scheduledFor: string })[] = [];
   for (const o of activeOrders) {
     const m = metaFor(o);
-    if (
-      m.status !== "NEW" &&
-      m.status !== "SCHEDULED" &&
-      m.status !== "IN_PRODUCTION"
-    ) {
+    // Shipped / cancelled orders don't need production work; everything else
+    // (NEW, SCHEDULED, IN_PRODUCTION, READY) is fair game for scheduling.
+    if (m.status === "SHIPPED" || m.status === "CANCELLED") {
       continue;
     }
     for (const li of o.line_items) {

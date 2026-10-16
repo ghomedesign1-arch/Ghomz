@@ -155,7 +155,14 @@ export function ShopifyOrderRow({
       // Changes that affect the server-rendered sections (Scheduled production
       // custom-date column, factory sheet totals, tiles, etc.) need a page
       // refresh — React server components don't see client-side state updates.
-      if ("scheduledFor" in patch || "status" in patch) {
+      if ("scheduledFor" in patch) {
+        // scheduledFor flows into TomorrowQueue's allScheduledOrders prop; a
+        // hard reload is the simplest way to guarantee the planner picks it
+        // up without race conditions.
+        window.location.reload();
+        return;
+      }
+      if ("status" in patch) {
         router.refresh();
       }
     } finally {
