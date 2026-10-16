@@ -39,18 +39,40 @@ export function TomorrowQueue({
   const [visible, setVisible] = React.useState(true);
   const [removing, setRemoving] = React.useState<number | null>(null);
   const [customDate, setCustomDate] = React.useState<string>("");
+
+  // Distinct dates that currently have scheduled orders, sorted ascending.
+  const scheduledDates = React.useMemo(() => {
+    const map = new Map<string, number>();
+    for (const o of allScheduledOrders) {
+      map.set(o.scheduledFor, (map.get(o.scheduledFor) ?? 0) + 1);
+    }
+    return Array.from(map.entries())
+      .map(([date, orderCount]) => ({ date, orderCount }))
+      .sort((a, b) => a.date.localeCompare(b.date));
+  }, [allScheduledOrders]);
+
   React.useEffect(() => {
     try {
       const v = localStorage.getItem(STORAGE_KEY);
       if (v === "0") setVisible(false);
       const stored = localStorage.getItem(CUSTOM_DATE_KEY) ?? "";
-      if (stored && stored !== todayDate && stored !== tomorrowDate) {
+      if (stored) {
         setCustomDate(stored);
+        return;
       }
     } catch {
       /* ignore */
     }
-  }, [todayDate, tomorrowDate]);
+    // No stored date — default to the nearest upcoming scheduled date (or
+    // the earliest one if everything is already in the past) so users
+    // immediately see what's scheduled without having to pick a date.
+    if (scheduledDates.length > 0) {
+      const todayStr = new Date().toISOString().slice(0, 10);
+      const upcoming =
+        scheduledDates.find((d) => d.date >= todayStr) ?? scheduledDates[0];
+      setCustomDate(upcoming.date);
+    }
+  }, [scheduledDates]);
 
   function updateCustomDate(iso: string) {
     setCustomDate(iso);
@@ -129,13 +151,45 @@ export function TomorrowQueue({
       </button>
 
       {visible && (
-        <CustomBucket
-          date={customDate}
-          onDateChange={updateCustomDate}
-          orders={customOrders}
-          removing={removing}
-          onRemove={remove}
-        />
+        <div className="space-y-2">
+          {scheduledDates.length > 0 && (
+            <div className="flex flex-wrap gap-2">
+              {scheduledDates.map((d) => {
+                const active = d.date === customDate;
+                const pretty = new Date(d.date).toLocaleDateString("en-GB", {
+                  weekday: "short",
+                  day: "numeric",
+                  month: "short",
+                });
+                return (
+                  <button
+                    key={d.date}
+                    type="button"
+                    onClick={() => updateCustomDate(d.date)}
+                    className={`inline-flex items-center gap-1 rounded-full border px-2 py-1 text-[11px] font-medium ${
+                      active
+                        ? "border-amber-500 bg-amber-200 text-amber-900"
+                        : "border-amber-300 bg-amber-50 text-amber-800 hover:bg-amber-100"
+                    }`}
+                  >
+                    <CalendarClock className="h-3 w-3" />
+                    {pretty}
+                    <span className="rounded-full bg-amber-300 px-1.5 py-0.5 text-[9px] font-semibold text-amber-900">
+                      {d.orderCount}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          )}
+          <CustomBucket
+            date={customDate}
+            onDateChange={updateCustomDate}
+            orders={customOrders}
+            removing={removing}
+            onRemove={remove}
+          />
+        </div>
       )}
     </div>
   );
