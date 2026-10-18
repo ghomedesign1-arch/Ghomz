@@ -2,7 +2,15 @@
 
 import * as React from "react";
 import { toast } from "sonner";
-import { CalendarClock, ChevronDown, ChevronUp, X } from "lucide-react";
+import {
+  CalendarClock,
+  ChevronDown,
+  ChevronUp,
+  Copy,
+  MessageCircle,
+  X,
+} from "lucide-react";
+import { bilingualProduct } from "@/lib/translations";
 
 export interface TomorrowOrderEntry {
   id: number;
@@ -297,6 +305,78 @@ function CustomBucket({
       })
     : "Pick a date";
   const units = sumUnits(orders);
+
+  const workOrderText = React.useMemo(() => {
+    if (!orders.length) return "";
+    const lines: string[] = [];
+    lines.push(`G-Homz Production — ${pretty}`);
+    lines.push(`جدول الإنتاج — ${pretty}`);
+    lines.push("");
+    lines.push("Please produce / برجاء التصنيع:");
+    for (const o of orders) {
+      lines.push("");
+      lines.push(`Order ${o.name} · ${o.customer}`);
+      for (const it of o.items) {
+        const name = bilingualProduct(it.title);
+        const variant = it.variant ? ` — ${it.variant}` : "";
+        lines.push(`  • ${it.quantity}× ${name}${variant}`);
+      }
+    }
+    lines.push("");
+    lines.push(`Total units / إجمالي الوحدات: ${units}`);
+    return lines.join("\n");
+  }, [orders, pretty, units]);
+
+  async function copy() {
+    try {
+      await navigator.clipboard.writeText(workOrderText);
+      toast.success("Production list copied");
+    } catch {
+      toast.error("Copy failed");
+    }
+  }
+
+  function whatsApp() {
+    const link = `https://wa.me/?text=${encodeURIComponent(workOrderText)}`;
+    const ua = typeof navigator !== "undefined" ? navigator.userAgent : "";
+    const isIOS =
+      /iPad|iPhone|iPod/.test(ua) ||
+      (ua.includes("Mac") && "ontouchend" in document);
+    if (isIOS) {
+      toast(
+        <div className="space-y-2">
+          <div className="text-sm font-medium">Production list ready</div>
+          <a
+            href={link}
+            target="_blank"
+            rel="noreferrer"
+            className="inline-block rounded-md bg-emerald-600 px-3 py-1 text-xs font-medium text-white"
+          >
+            Tap to open WhatsApp
+          </a>
+        </div>,
+        { duration: 30_000 },
+      );
+      return;
+    }
+    const w = window.open(link, "_blank", "noopener,noreferrer");
+    if (!w) {
+      toast(
+        <div className="space-y-2">
+          <div className="text-sm font-medium">Popup blocked</div>
+          <a
+            href={link}
+            target="_blank"
+            rel="noreferrer"
+            className="inline-block rounded-md bg-emerald-600 px-3 py-1 text-xs font-medium text-white"
+          >
+            Tap to open WhatsApp
+          </a>
+        </div>,
+        { duration: 30_000 },
+      );
+    }
+  }
   return (
     <div className="rounded-xl border border-amber-200 bg-amber-50/40">
       <div className="flex items-baseline justify-between border-b border-amber-200 px-3 py-2">
@@ -326,6 +406,27 @@ function CustomBucket({
           )}
         </div>
       </div>
+
+      {date && orders.length > 0 && (
+        <div className="flex flex-wrap items-center justify-end gap-2 border-b border-amber-200 px-3 py-2">
+          <button
+            type="button"
+            onClick={copy}
+            className="inline-flex items-center gap-1 rounded-md border border-amber-300 bg-white px-2 py-1 text-[11px] font-medium text-amber-800 hover:bg-amber-100"
+          >
+            <Copy className="h-3 w-3" />
+            Copy
+          </button>
+          <button
+            type="button"
+            onClick={whatsApp}
+            className="inline-flex items-center gap-1 rounded-md border border-emerald-400 bg-emerald-50 px-2 py-1 text-[11px] font-medium text-emerald-700 hover:bg-emerald-100"
+          >
+            <MessageCircle className="h-3 w-3" />
+            WhatsApp
+          </button>
+        </div>
+      )}
 
       {!date ? (
         <div className="p-4 text-center text-xs text-muted-foreground">
