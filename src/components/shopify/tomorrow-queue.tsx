@@ -306,6 +306,24 @@ function CustomBucket({
     : "Pick a date";
   const units = sumUnits(orders);
 
+  const [lang, setLang] = React.useState<"both" | "en" | "ar">("both");
+  React.useEffect(() => {
+    try {
+      const v = localStorage.getItem("shopify-orders.workorder-lang");
+      if (v === "en" || v === "ar" || v === "both") setLang(v);
+    } catch {
+      /* ignore */
+    }
+  }, []);
+  function setLangPersist(v: "both" | "en" | "ar") {
+    setLang(v);
+    try {
+      localStorage.setItem("shopify-orders.workorder-lang", v);
+    } catch {
+      /* ignore */
+    }
+  }
+
   const workOrderText = React.useMemo(() => {
     if (!orders.length) return "";
     const d = new Date(date);
@@ -317,26 +335,67 @@ function CustomBucket({
           month: "long",
           year: "numeric",
         }).format(d);
+
+    // Pull the English half (before " / ") or the Arabic half (after) from a
+    // bilingual label depending on current mode. Falls back to the raw value.
+    const slice = (bi: string): string => {
+      if (lang === "both") return bi;
+      const sep = bi.indexOf(" / ");
+      if (sep < 0) return bi;
+      const en = bi.slice(0, sep);
+      const ar = bi.slice(sep + 3);
+      return lang === "en" ? en : ar;
+    };
+
+    // For variants, slice each ·-joined segment individually.
+    const sliceVariant = (variant: string | null): string => {
+      if (!variant) return "";
+      const bi = bilingualVariant(variant);
+      if (lang === "both") return bi;
+      return bi
+        .split(" · ")
+        .map((seg) => slice(seg))
+        .join(" · ");
+    };
+
     const lines: string[] = [];
-    lines.push(`G-Homz Production — ${pretty}`);
-    lines.push(`جدول الإنتاج — ${prettyAr}`);
-    lines.push("");
-    lines.push(`Scheduled date / تاريخ الإنتاج: ${pretty} / ${prettyAr}`);
-    lines.push("");
-    lines.push("Please produce / برجاء التصنيع:");
+    if (lang === "en") {
+      lines.push(`G-Homz Production — ${pretty}`);
+      lines.push("");
+      lines.push(`Scheduled date: ${pretty}`);
+      lines.push("");
+      lines.push("Please produce:");
+    } else if (lang === "ar") {
+      lines.push(`جدول الإنتاج — ${prettyAr}`);
+      lines.push("");
+      lines.push(`تاريخ الإنتاج: ${prettyAr}`);
+      lines.push("");
+      lines.push("برجاء التصنيع:");
+    } else {
+      lines.push(`G-Homz Production — ${pretty}`);
+      lines.push(`جدول الإنتاج — ${prettyAr}`);
+      lines.push("");
+      lines.push(`Scheduled date / تاريخ الإنتاج: ${pretty} / ${prettyAr}`);
+      lines.push("");
+      lines.push("Please produce / برجاء التصنيع:");
+    }
     for (const o of orders) {
       lines.push("");
-      lines.push(`Order ${o.name} · ${o.customer}`);
+      const orderLabel =
+        lang === "ar" ? `طلب ${o.name} · ${o.customer}` : `Order ${o.name} · ${o.customer}`;
+      lines.push(orderLabel);
       for (const it of o.items) {
-        const name = bilingualProduct(it.title);
-        const variant = it.variant ? ` — ${bilingualVariant(it.variant)}` : "";
+        const name = slice(bilingualProduct(it.title));
+        const variant = it.variant ? ` — ${sliceVariant(it.variant)}` : "";
         lines.push(`  • ${it.quantity}× ${name}${variant}`);
       }
     }
     lines.push("");
-    lines.push(`Total units / إجمالي الوحدات: ${units}`);
+    if (lang === "en") lines.push(`Total units: ${units}`);
+    else if (lang === "ar") lines.push(`إجمالي الوحدات: ${units}`);
+    else lines.push(`Total units / إجمالي الوحدات: ${units}`);
     return lines.join("\n");
-  }, [orders, pretty, units]);
+  }, [orders, pretty, units, date, lang]);
 
   async function copy() {
     try {
@@ -419,23 +478,41 @@ function CustomBucket({
       </div>
 
       {date && orders.length > 0 && (
-        <div className="flex flex-wrap items-center justify-end gap-2 border-b border-amber-200 px-3 py-2">
-          <button
-            type="button"
-            onClick={copy}
-            className="inline-flex items-center gap-1 rounded-md border border-amber-300 bg-white px-2 py-1 text-[11px] font-medium text-amber-800 hover:bg-amber-100"
-          >
-            <Copy className="h-3 w-3" />
-            Copy
-          </button>
-          <button
-            type="button"
-            onClick={whatsApp}
-            className="inline-flex items-center gap-1 rounded-md border border-emerald-400 bg-emerald-50 px-2 py-1 text-[11px] font-medium text-emerald-700 hover:bg-emerald-100"
-          >
-            <MessageCircle className="h-3 w-3" />
-            WhatsApp
-          </button>
+        <div className="flex flex-wrap items-center justify-between gap-2 border-b border-amber-200 px-3 py-2">
+          <div className="inline-flex overflow-hidden rounded-md border border-amber-300 bg-white text-[11px] font-medium">
+            {(["en", "ar", "both"] as const).map((v) => (
+              <button
+                key={v}
+                type="button"
+                onClick={() => setLangPersist(v)}
+                className={`px-2 py-1 ${
+                  lang === v
+                    ? "bg-amber-600 text-white"
+                    : "text-amber-800 hover:bg-amber-100"
+                }`}
+              >
+                {v === "en" ? "EN" : v === "ar" ? "AR" : "EN+AR"}
+              </button>
+            ))}
+          </div>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={copy}
+              className="inline-flex items-center gap-1 rounded-md border border-amber-300 bg-white px-2 py-1 text-[11px] font-medium text-amber-800 hover:bg-amber-100"
+            >
+              <Copy className="h-3 w-3" />
+              Copy
+            </button>
+            <button
+              type="button"
+              onClick={whatsApp}
+              className="inline-flex items-center gap-1 rounded-md border border-emerald-400 bg-emerald-50 px-2 py-1 text-[11px] font-medium text-emerald-700 hover:bg-emerald-100"
+            >
+              <MessageCircle className="h-3 w-3" />
+              WhatsApp
+            </button>
+          </div>
         </div>
       )}
 
