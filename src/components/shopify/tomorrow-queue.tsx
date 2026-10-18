@@ -308,9 +308,20 @@ function CustomBucket({
 
   const workOrderText = React.useMemo(() => {
     if (!orders.length) return "";
+    const d = new Date(date);
+    const prettyAr = isNaN(d.getTime())
+      ? pretty
+      : new Intl.DateTimeFormat("ar-EG", {
+          weekday: "long",
+          day: "numeric",
+          month: "long",
+          year: "numeric",
+        }).format(d);
     const lines: string[] = [];
     lines.push(`G-Homz Production — ${pretty}`);
-    lines.push(`جدول الإنتاج — ${pretty}`);
+    lines.push(`جدول الإنتاج — ${prettyAr}`);
+    lines.push("");
+    lines.push(`Scheduled date / تاريخ الإنتاج: ${pretty} / ${prettyAr}`);
     lines.push("");
     lines.push("Please produce / برجاء التصنيع:");
     for (const o of orders) {
