@@ -10,7 +10,7 @@ import {
   MessageCircle,
   X,
 } from "lucide-react";
-import { bilingualProduct } from "@/lib/translations";
+import { bilingualProduct, bilingualVariant } from "@/lib/translations";
 
 export interface TomorrowOrderEntry {
   id: number;
@@ -318,7 +318,7 @@ function CustomBucket({
       lines.push(`Order ${o.name} · ${o.customer}`);
       for (const it of o.items) {
         const name = bilingualProduct(it.title);
-        const variant = it.variant ? ` — ${it.variant}` : "";
+        const variant = it.variant ? ` — ${bilingualVariant(it.variant)}` : "";
         lines.push(`  • ${it.quantity}× ${name}${variant}`);
       }
     }

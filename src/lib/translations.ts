@@ -71,3 +71,49 @@ export function bilingualDimension(
   if (hasW) return `W${width} / عرض ${width} سم`;
   return `D${depth} / عمق ${depth} سم`;
 }
+
+const WITH_WITHOUT_AR: Record<string, string> = {
+  with: "مع",
+  without: "بدون",
+  yes: "نعم",
+  no: "لا",
+  none: "بدون",
+};
+
+export function bilingualFlag(flag: string): string | null {
+  const ar = WITH_WITHOUT_AR[flag.toLowerCase().trim()];
+  return ar ? `${flag} / ${ar}` : null;
+}
+
+/**
+ * Translate a full Shopify variant string like
+ * "W120 x D230 cm / Baby Blue / Without" into a bilingual form:
+ * "W120 x D230 cm / 120 × 230 سم · Baby Blue / أزرق سماوي · Without / بدون"
+ */
+export function bilingualVariant(variant: string | null | undefined): string {
+  if (!variant) return "";
+  const parts = variant.split("/").map((s) => s.trim()).filter(Boolean);
+  const widthRegex = /W\s*(\d+)/i;
+  const depthRegex = /D\s*(\d+)/i;
+  const out: string[] = [];
+  for (const p of parts) {
+    const wMatch = widthRegex.exec(p);
+    const dMatch = depthRegex.exec(p);
+    if (wMatch || dMatch) {
+      const dim = bilingualDimension(
+        wMatch ? wMatch[1] : null,
+        dMatch ? dMatch[1] : null,
+      );
+      if (dim) out.push(dim);
+      continue;
+    }
+    const flag = bilingualFlag(p);
+    if (flag) {
+      out.push(flag);
+      continue;
+    }
+    const color = bilingualColor(p);
+    out.push(color);
+  }
+  return out.join(" · ");
+}
