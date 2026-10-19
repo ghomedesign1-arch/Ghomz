@@ -18,13 +18,35 @@ import {
  *     in the cutting plan.
  *   - Otherwise we fall back to per-product allocation with waste factor.
  */
+type ResolveResult = {
+  product: NonNullable<Awaited<ReturnType<typeof loadProduct>>>;
+  breakdown: ProductCostBreakdown;
+};
+
 export async function resolveProductCost(
   productId: string,
   visited: Set<string> = new Set(),
-): Promise<{
-  product: NonNullable<Awaited<ReturnType<typeof loadProduct>>>;
-  breakdown: ProductCostBreakdown;
-}> {
+  cache: Map<string, Promise<ResolveResult>> = new Map(),
+): Promise<ResolveResult> {
+  // Share partial results across sibling calls in the same request so a
+  // list page with 123 products that all inherit from 7 parents loads 7
+  // parent BOMs instead of 123. Massive speedup after the "variants
+  // inherit from parent" change.
+  const cached = cache.get(productId);
+  if (cached) return cached;
+
+  const promise = (async (): Promise<ResolveResult> => {
+    return doResolve(productId, visited, cache);
+  })();
+  cache.set(productId, promise);
+  return promise;
+}
+
+async function doResolve(
+  productId: string,
+  visited: Set<string>,
+  cache: Map<string, Promise<ResolveResult>>,
+): Promise<ResolveResult> {
   if (visited.has(productId)) {
     throw new Error(`Composition cycle detected at product ${productId}`);
   }
@@ -131,7 +153,7 @@ export async function resolveProductCost(
   if ((product.compositions ?? []).length > 0) {
     const childResults = await Promise.all(
       product.compositions.map((c) =>
-        resolveProductCost(c.childProductId, new Set(visited)).then((res) => ({
+        resolveProductCost(c.childProductId, new Set(visited), cache).then((res) => ({
           totalCost: res.breakdown.totalCost,
           quantity: c.quantity,
         })),
@@ -214,6 +236,7 @@ export async function resolveProductCost(
       const { breakdown: parentBreakdown } = await resolveProductCost(
         product.parentId,
         visited,
+        cache,
       );
       const inheritedTotal = parentBreakdown.totalCost;
       breakdown = {

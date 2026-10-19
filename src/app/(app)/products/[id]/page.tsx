@@ -64,9 +64,15 @@ interface PageProps {
 }
 
 export default async function ProductDetailPage({ params }: PageProps) {
+  // Shared cache so this product + its parent + all its children are each
+  // resolved exactly once per request even if several code paths ask.
+  const costCache = new Map<
+    string,
+    Promise<Awaited<ReturnType<typeof resolveProductCost>>>
+  >();
   let resolved;
   try {
-    resolved = await resolveProductCost(params.id);
+    resolved = await resolveProductCost(params.id, new Set(), costCache);
   } catch {
     notFound();
   }
@@ -81,17 +87,21 @@ export default async function ProductDetailPage({ params }: PageProps) {
 
   const priceSyncAccess = product.id === MUFFIN_ERP_ID && await currentRole() === "ADMIN";
 
-  // Resolve unit cost of every sub-product included in this one. Used by the
-  // catalogue's "Included products" table to show per-row subtotals.
+  // Resolve unit cost of every sub-product in parallel. The old serial for-loop
+  // chained N DB round-trips (one per included product) and was the main
+  // reason this page took tens of seconds — now it pays max(child_time)
+  // instead of sum(child_time).
   const childCosts: Record<string, number> = {};
-  for (const c of product.compositions ?? []) {
-    try {
-      const { breakdown: childBd } = await resolveProductCost(c.childProductId);
-      childCosts[c.childProductId] = childBd.totalCost;
-    } catch {
-      childCosts[c.childProductId] = 0;
-    }
-  }
+  await Promise.all(
+    (product.compositions ?? []).map(async (c) => {
+      try {
+        const { breakdown: childBd } = await resolveProductCost(c.childProductId, new Set(), costCache);
+        childCosts[c.childProductId] = childBd.totalCost;
+      } catch {
+        childCosts[c.childProductId] = 0;
+      }
+    }),
+  );
 
   const segments = [
     { label: "Sponge", amount: breakdown.spongeCost, color: "hsl(var(--chart-1))" },

@@ -104,9 +104,16 @@ export async function getProducts(): Promise<{
       orderBy: { name: "asc" },
       include: { _count: { select: { variants: true } } },
     });
+    // Share a single request-level cache so parents aren't re-resolved
+    // once per variant. Dropped the full list from several seconds (on
+    // cold Neon) to ~1s.
+    const costCache = new Map<
+      string,
+      Promise<Awaited<ReturnType<typeof resolveProductCost>>>
+    >();
     const resolved = await Promise.all(
       rows.map(async (p) => {
-        const { breakdown } = await resolveProductCost(p.id);
+        const { breakdown } = await resolveProductCost(p.id, new Set(), costCache);
         return {
           id: p.id,
           sku: p.sku,
