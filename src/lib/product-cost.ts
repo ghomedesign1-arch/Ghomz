@@ -175,7 +175,7 @@ export async function resolveProductCost(
 
   // Add yield-based sponge contributions on top.
   const yieldExtra = yieldSpongeCosts.reduce((a, b) => a + b, 0);
-  const breakdown: ProductCostBreakdown = {
+  let breakdown: ProductCostBreakdown = {
     ...baseBreakdown,
     spongeCost: round(baseBreakdown.spongeCost + yieldExtra),
     totalCost: round(baseBreakdown.totalCost + yieldExtra),
@@ -200,6 +200,47 @@ export async function resolveProductCost(
           )
         : 0,
   };
+
+  // ── Inherit from parent when this is a variant with no BOM of its own.
+  // Keeps the whole family at the parent's cost unless the variant explicitly
+  // defines its own materials — zero manual work for 33 identical colour
+  // variants of the same bed.
+  if (
+    breakdown.totalCost === 0 &&
+    product.parentId &&
+    !visited.has(product.parentId)
+  ) {
+    try {
+      const { breakdown: parentBreakdown } = await resolveProductCost(
+        product.parentId,
+        visited,
+      );
+      const inheritedTotal = parentBreakdown.totalCost;
+      breakdown = {
+        ...parentBreakdown,
+        totalCost: inheritedTotal,
+        retailProfit: round(product.retailPrice - inheritedTotal),
+        retailMarginPct:
+          product.retailPrice > 0
+            ? round(
+                ((product.retailPrice - inheritedTotal) / product.retailPrice) *
+                  100,
+              )
+            : 0,
+        wholesaleProfit: round(product.wholesalePrice - inheritedTotal),
+        wholesaleMarginPct:
+          product.wholesalePrice > 0
+            ? round(
+                ((product.wholesalePrice - inheritedTotal) /
+                  product.wholesalePrice) *
+                  100,
+              )
+            : 0,
+      };
+    } catch {
+      /* parent missing / cycle — fall back to the variant's own 0 cost */
+    }
+  }
 
   return { product, breakdown };
 }
