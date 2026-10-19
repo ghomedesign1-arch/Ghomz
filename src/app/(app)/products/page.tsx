@@ -122,6 +122,11 @@ export default async function ProductsPage() {
                 Export catalog
               </a>
             </Button>
+            {writeAccess && (
+              <Button asChild variant="outline">
+                <a href="/products/dedupe">Dedupe variants</a>
+              </Button>
+            )}
             {writeAccess && <AddProductButton />}
           </>
         }
