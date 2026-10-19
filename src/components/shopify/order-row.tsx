@@ -16,6 +16,7 @@ import {
   Loader2,
   MessageCircle,
   Paperclip,
+  Phone,
   Send,
   X,
 } from "lucide-react";
@@ -624,6 +625,13 @@ Reply here as soon as you've sent it and we'll fire up the workshop! 🪚✨`;
                 return (
                   <span className="inline-flex items-center gap-1">
                     <span>· {phone}</span>
+                    <a
+                      href={`tel:${phone.replace(/\s+/g, "")}`}
+                      className="inline-flex items-center gap-1 rounded-full bg-blue-100 px-2 py-0.5 text-[10px] font-medium text-blue-700 hover:bg-blue-200"
+                      aria-label="Call customer"
+                    >
+                      <Phone className="h-3 w-3" /> Call
+                    </a>
                     {waLink && (
                       <a
                         href={waLink}
@@ -1883,8 +1891,14 @@ function AddressBlock({
           <div key={i}>{line}</div>
         ))}
         {phone && (
-          <div className="mt-1 flex items-center gap-2 text-muted-foreground">
+          <div className="mt-1 flex flex-wrap items-center gap-2 text-muted-foreground">
             <span>📞 {phone}</span>
+            <a
+              href={`tel:${phone.replace(/\s+/g, "")}`}
+              className="inline-flex items-center gap-1 rounded-full bg-blue-100 px-2 py-0.5 text-[10px] font-medium text-blue-700 hover:bg-blue-200"
+            >
+              <Phone className="h-3 w-3" /> Call
+            </a>
             {whatsAppLink(phone) && (
               <a
                 href={whatsAppLink(phone)!}
