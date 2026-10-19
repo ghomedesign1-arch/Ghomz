@@ -127,6 +127,11 @@ export default async function ProductsPage() {
                 <a href="/products/dedupe">Dedupe variants</a>
               </Button>
             )}
+            {writeAccess && (
+              <Button asChild variant="outline">
+                <a href="/products/color-merge">Merge colours</a>
+              </Button>
+            )}
             {writeAccess && <AddProductButton />}
           </>
         }

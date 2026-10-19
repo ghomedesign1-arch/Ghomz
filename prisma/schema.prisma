@@ -298,6 +298,11 @@ model Product {
   retailPrice     Float           @default(0)
   wholesalePrice  Float           @default(0)
   stockQty        Int             @default(0)
+  /// Additional SKUs that resolve to this same product (e.g. colour-only
+  /// Shopify duplicates that were merged into this canonical variant). The
+  /// Shopify order lookup checks the primary `sku` first then falls back
+  /// to any match inside this array.
+  aliasSkus       String[]        @default([])
   active          Boolean         @default(true)
   /// Free-form note about this product's sponge cutting work — shown on the
   /// cutting-lists page so production can capture details like "use 7cm

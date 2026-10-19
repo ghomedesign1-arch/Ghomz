@@ -256,11 +256,24 @@ async function promoteOrder(orderId: number): Promise<ShopifyOrderMeta> {
       "No SKUs on the order's line items — can't match an internal product",
     );
   }
+  // Match by primary SKU or by any alias SKU (set via /products/color-merge)
+  // so colour-only Shopify variants still find their canonical ERP product.
   const products = await prisma.product.findMany({
-    where: { sku: { in: skuSet } },
-    select: { id: true, sku: true, name: true },
+    where: {
+      OR: [
+        { sku: { in: skuSet } },
+        { aliasSkus: { hasSome: skuSet } },
+      ],
+    },
+    select: { id: true, sku: true, name: true, aliasSkus: true },
   });
-  const bySku = new Map(products.map((p) => [p.sku, p]));
+  const bySku = new Map<string, { id: string; sku: string; name: string }>();
+  for (const p of products) {
+    bySku.set(p.sku, { id: p.id, sku: p.sku, name: p.name });
+    for (const alias of p.aliasSkus) {
+      bySku.set(alias, { id: p.id, sku: p.sku, name: p.name });
+    }
+  }
   const grouped = new Map<string, number>();
   for (const li of order.line_items) {
     if (!li.sku) continue;
