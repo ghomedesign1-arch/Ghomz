@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { HttpError, requireRole, withApi } from "@/lib/rbac";
-import { nonColorKey, isColorValue } from "@/lib/variant-detect";
+import { colorMergeKey } from "@/lib/variant-detect";
 
 /**
  * Collapse colour-only variants under each parent into one canonical variant
@@ -35,13 +35,15 @@ async function buildGroups(): Promise<PreviewGroup[]> {
       id: true,
       name: true,
       variants: {
-        where: { active: true },
+        // Load every variant — if some were already deactivated by an earlier
+        // merge pass we still want to see them when previewing / re-running.
         select: {
           id: true,
           sku: true,
           variantName: true,
           retailPrice: true,
           createdAt: true,
+          active: true,
         },
         orderBy: { createdAt: "asc" },
       },
@@ -51,17 +53,21 @@ async function buildGroups(): Promise<PreviewGroup[]> {
   for (const p of parents) {
     const byKey = new Map<string, typeof p.variants>();
     for (const v of p.variants) {
-      // Skip variants whose name has no colour — nothing to merge.
-      const hasColor = (v.variantName ?? "")
-        .split("/")
-        .some((seg) => isColorValue(seg));
-      if (!hasColor) continue;
-      const key = nonColorKey(v.variantName);
+      if (!v.active) continue;
+      // Try the title first; fall back to SKU-pattern grouping so variants
+      // whose variantName was rewritten by an earlier dedupe pass still
+      // group correctly.
+      const { key } = colorMergeKey({
+        variantName: v.variantName,
+        sku: v.sku,
+      });
       const bucket = byKey.get(key) ?? [];
       bucket.push(v);
       byKey.set(key, bucket);
     }
-    for (const [key, bucket] of Array.from(byKey.entries())) {
+    for (const entry of Array.from(byKey.entries())) {
+      const key = entry[0];
+      const bucket = entry[1];
       if (bucket.length < 2) continue;
       const [canonical, ...rest] = bucket;
       groups.push({
