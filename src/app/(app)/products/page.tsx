@@ -1,3 +1,4 @@
+import * as React from "react";
 import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -169,9 +170,9 @@ export default async function ProductsPage() {
                 const isFamily = variants.length > 0;
 
                 return (
-                  <>
+                  <React.Fragment key={p.id}>
                     {/* ── Parent / standalone row ── */}
-                    <TableRow key={p.id} className={isFamily ? "bg-muted/20 border-b-0" : undefined}>
+                    <TableRow className={isFamily ? "bg-muted/20" : undefined}>
                       <TableCell>
                         <div className="inline-flex items-center gap-3">
                           <ProductImageUpload
@@ -244,62 +245,10 @@ export default async function ProductsPage() {
                       </TableCell>
                     </TableRow>
 
-                    {/* ── Variant sub-rows ── */}
-                    {variants.map((v, vi) => (
-                      <TableRow
-                        key={v.id}
-                        className={`bg-muted/10 ${vi === variants.length - 1 ? "" : "border-b-0"}`}
-                      >
-                        <TableCell className="pl-8 sm:pl-16">
-                          <div className="inline-flex items-start gap-2">
-                            <span className="text-muted-foreground text-xs mt-0.5">└</span>
-                            <Link href={`/products/${v.id}`} className="group">
-                              <div>
-                                <span className="text-sm font-medium group-hover:underline">
-                                  {v.variantName}
-                                </span>
-                                <span className="ml-2 text-xs text-muted-foreground">{v.sku}</span>
-                              </div>
-                              {/* Mobile-only secondary line for variants. */}
-                              <div className="mt-0.5 flex flex-wrap gap-x-2 text-[11px] text-muted-foreground sm:hidden">
-                                <span className="tabular-nums">
-                                  {v.widthCm}×{v.depthCm}×{v.heightCm} cm
-                                </span>
-                                <span>·</span>
-                                <span className="tabular-nums">Cost {formatLE(v.unitCost)}</span>
-                                <span>·</span>
-                                <span className="tabular-nums">Stock {v.stockQty}</span>
-                              </div>
-                            </Link>
-                          </div>
-                        </TableCell>
-                        <TableCell className="hidden sm:table-cell" />
-                        <TableCell className="hidden text-right tabular-nums text-sm text-muted-foreground md:table-cell">
-                          {v.widthCm} × {v.depthCm} × {v.heightCm} cm
-                        </TableCell>
-                        <TableCell className="hidden text-right tabular-nums text-muted-foreground text-sm md:table-cell">
-                          {formatLE(v.unitCost)}
-                        </TableCell>
-                        <TableCell className="text-right tabular-nums font-medium text-sm">
-                          {formatLE(v.retailPrice)}
-                        </TableCell>
-                        <TableCell className="text-right">
-                          <MarginCell unitCost={v.unitCost} retailPrice={v.retailPrice} retailMarginPct={v.retailMarginPct} />
-                        </TableCell>
-                        <TableCell className="hidden text-right tabular-nums text-sm sm:table-cell">
-                          {v.stockQty}
-                        </TableCell>
-                        <TableCell className="text-right">
-                          {writeAccess && (
-                            <ProductRowActions
-                              product={{ id: v.id, name: `${v.name} · ${v.variantName}` }}
-                              canDelete={adminAccess}
-                            />
-                          )}
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </>
+                    {/* Variants are hidden from the catalog list to keep it
+                     *  clean — the "N variants" badge above links to the
+                     *  parent's detail page where every variant is listed. */}
+                  </React.Fragment>
                 );
               })}
             </TableBody>
