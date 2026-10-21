@@ -24,19 +24,21 @@ export async function fastUnitCost(product: {
         : 0;
     return { unitCost, retailMarginPct };
   }
-  // Miss — compute live and write back.
+  // Miss — compute live and (best-effort) write back. The update is
+  // wrapped so a DB that hasn't been migrated yet (new column missing)
+  // never breaks the caller.
   const { breakdown } = await resolveProductCost(product.id);
-  await prisma.product
-    .update({
+  try {
+    await prisma.product.update({
       where: { id: product.id },
       data: {
         cachedUnitCost: breakdown.totalCost,
         cachedUnitCostAt: new Date(),
       },
-    })
-    .catch(() => {
-      /* best-effort — a concurrent delete isn't fatal here */
     });
+  } catch {
+    /* column may not exist yet right after a deploy — ignore */
+  }
   return {
     unitCost: breakdown.totalCost,
     retailMarginPct: breakdown.retailMarginPct,

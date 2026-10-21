@@ -82,17 +82,24 @@ export default async function ProductDetailPage({ params }: PageProps) {
 
   // Opportunistically write the freshly-computed cost back to the cache
   // column so the catalog list and any future resolver call go through the
-  // fast path. Best-effort — a concurrent delete is not fatal.
-  if (product.cachedUnitCost !== breakdown.totalCost) {
-    void prisma.product
-      .update({
-        where: { id: product.id },
-        data: {
-          cachedUnitCost: breakdown.totalCost,
-          cachedUnitCostAt: new Date(),
-        },
-      })
-      .catch(() => {});
+  // fast path. Best-effort and completely wrapped: a schema-not-yet-migrated
+  // DB (first few seconds after a deploy) must not break the detail render.
+  try {
+    const current = (product as { cachedUnitCost?: number | null })
+      .cachedUnitCost;
+    if (current !== breakdown.totalCost) {
+      void prisma.product
+        .update({
+          where: { id: product.id },
+          data: {
+            cachedUnitCost: breakdown.totalCost,
+            cachedUnitCostAt: new Date(),
+          },
+        })
+        .catch(() => {});
+    }
+  } catch {
+    /* new field absent at runtime — ignore */
   }
 
   const [runOptions, fabrics, writeAccess, adminAccess] = await Promise.all([
