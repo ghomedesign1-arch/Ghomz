@@ -311,6 +311,14 @@ model Product {
   createdAt       DateTime        @default(now())
   updatedAt       DateTime        @updatedAt
 
+  /// Cached BOM-derived unit cost so the product/catalog pages don't have
+  /// to walk the entire bill of materials on every page view. Recomputed
+  /// when the product's own BOM, a raw-material price, or a composition
+  /// changes, and refreshable from the UI via the Recalculate button.
+  /// `null` means "never been computed — fall back to live resolve".
+  cachedUnitCost   Float?
+  cachedUnitCostAt DateTime?
+
   /// Variant system — a product family (e.g. "Butter Chair 80") can have
   /// multiple variants (Classic, Premium…). Each variant is a full Product
   /// with its own BOM, SKU, and pricing. The parent product acts as the

@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { spongeInput } from "@/lib/validators";
 import { spongeBlockCost } from "@/lib/costing";
 import { HttpError, requireRole, withApi } from "@/lib/rbac";
+import { invalidateAllProductCosts } from "@/lib/product-cost-cache";
 
 export async function GET(
   _req: NextRequest,
@@ -66,6 +67,7 @@ export const PATCH = withApi(async (
     return sponge;
   });
 
+  await invalidateAllProductCosts();
   return NextResponse.json(updated);
 });
 

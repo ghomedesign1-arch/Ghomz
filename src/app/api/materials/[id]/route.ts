@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { bulkInput } from "@/lib/validators";
 import { HttpError, requireRole, withApi } from "@/lib/rbac";
+import { invalidateAllProductCosts } from "@/lib/product-cost-cache";
 
 export async function GET(
   _req: NextRequest,
@@ -27,6 +28,9 @@ export const PATCH = withApi(async (
     where: { id: params.id },
     data: parsed.data,
   });
+  // Material price feeds every product that uses it — safest to blow away
+  // the cache rather than walk the usage graph here.
+  await invalidateAllProductCosts();
   return NextResponse.json(updated);
 });
 

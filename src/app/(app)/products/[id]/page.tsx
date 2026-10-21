@@ -40,7 +40,9 @@ import {
 } from "@/components/ui/table";
 import { CostBar } from "@/components/dashboard/cost-bar";
 import { CatalogueBreakdown } from "@/components/products/catalogue-breakdown";
+import { RecalcCostButton } from "@/components/products/recalc-cost-button";
 import { resolveProductCost } from "@/lib/product-cost";
+import { fastUnitCost } from "@/lib/product-cost-cache";
 import {
   cutVolumeCm3,
   formatLE,
@@ -78,6 +80,21 @@ export default async function ProductDetailPage({ params }: PageProps) {
   }
   const { product, breakdown } = resolved;
 
+  // Opportunistically write the freshly-computed cost back to the cache
+  // column so the catalog list and any future resolver call go through the
+  // fast path. Best-effort — a concurrent delete is not fatal.
+  if (product.cachedUnitCost !== breakdown.totalCost) {
+    void prisma.product
+      .update({
+        where: { id: product.id },
+        data: {
+          cachedUnitCost: breakdown.totalCost,
+          cachedUnitCostAt: new Date(),
+        },
+      })
+      .catch(() => {});
+  }
+
   const [runOptions, fabrics, writeAccess, adminAccess] = await Promise.all([
     getProductionRunOptions(),
     prisma.fabric.findMany({ select: { id: true, name: true, costPerMeter: true }, orderBy: { name: "asc" } }),
@@ -87,21 +104,28 @@ export default async function ProductDetailPage({ params }: PageProps) {
 
   const priceSyncAccess = product.id === MUFFIN_ERP_ID && await currentRole() === "ADMIN";
 
-  // Resolve unit cost of every sub-product in parallel. The old serial for-loop
-  // chained N DB round-trips (one per included product) and was the main
-  // reason this page took tens of seconds — now it pays max(child_time)
-  // instead of sum(child_time).
+  // Resolve unit cost of every sub-product via the cached fast path — most
+  // children have been computed already, so this is one SELECT instead of
+  // N recursive BOM walks. Cache misses still fall back to a live resolve
+  // and write the result back.
   const childCosts: Record<string, number> = {};
-  await Promise.all(
-    (product.compositions ?? []).map(async (c) => {
-      try {
-        const { breakdown: childBd } = await resolveProductCost(c.childProductId, new Set(), costCache);
-        childCosts[c.childProductId] = childBd.totalCost;
-      } catch {
-        childCosts[c.childProductId] = 0;
-      }
-    }),
-  );
+  const compositionChildIds = (product.compositions ?? []).map((c) => c.childProductId);
+  if (compositionChildIds.length > 0) {
+    const childRows = await prisma.product.findMany({
+      where: { id: { in: compositionChildIds } },
+      select: { id: true, retailPrice: true, cachedUnitCost: true },
+    });
+    await Promise.all(
+      childRows.map(async (child) => {
+        try {
+          const { unitCost } = await fastUnitCost(child);
+          childCosts[child.id] = unitCost;
+        } catch {
+          childCosts[child.id] = 0;
+        }
+      }),
+    );
+  }
 
   const segments = [
     { label: "Sponge", amount: breakdown.spongeCost, color: "hsl(var(--chart-1))" },
@@ -230,6 +254,7 @@ export default async function ProductDetailPage({ params }: PageProps) {
               </Link>
             </Button>
           )}
+          {writeAccess && <RecalcCostButton productId={product.id} />}
           <Button asChild variant="outline">
             <a
               href={`/api/products/${product.id}/invoice`}

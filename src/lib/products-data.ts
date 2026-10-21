@@ -1,5 +1,5 @@
 import { prisma } from "./prisma";
-import { resolveProductCost } from "./product-cost";
+import { fastUnitCost } from "./product-cost-cache";
 
 export type ProductListItem = {
   id: string;
@@ -104,16 +104,12 @@ export async function getProducts(): Promise<{
       orderBy: { name: "asc" },
       include: { _count: { select: { variants: true } } },
     });
-    // Share a single request-level cache so parents aren't re-resolved
-    // once per variant. Dropped the full list from several seconds (on
-    // cold Neon) to ~1s.
-    const costCache = new Map<
-      string,
-      Promise<Awaited<ReturnType<typeof resolveProductCost>>>
-    >();
+    // Read every row's cost from the persistent cache column; only rows
+    // that have never been computed trigger a live resolve + write-back.
+    // Steady-state this turns the whole list into a single SELECT.
     const resolved = await Promise.all(
       rows.map(async (p) => {
-        const { breakdown } = await resolveProductCost(p.id, new Set(), costCache);
+        const { unitCost, retailMarginPct } = await fastUnitCost(p);
         return {
           id: p.id,
           sku: p.sku,
@@ -125,8 +121,8 @@ export async function getProducts(): Promise<{
           stockQty: p.stockQty,
           retailPrice: p.retailPrice,
           wholesalePrice: p.wholesalePrice,
-          unitCost: breakdown.totalCost,
-          retailMarginPct: breakdown.retailMarginPct,
+          unitCost,
+          retailMarginPct,
           imageUrl: p.imageUrl ?? null,
           parentId: p.parentId ?? null,
           variantName: p.variantName ?? null,

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { fabricInput } from "@/lib/validators";
 import { HttpError, requireRole, withApi } from "@/lib/rbac";
+import { invalidateAllProductCosts } from "@/lib/product-cost-cache";
 
 export async function GET(
   _req: NextRequest,
@@ -28,6 +29,7 @@ export const PATCH = withApi(async (
     where: { id: params.id },
     data: parsed.data,
   });
+  await invalidateAllProductCosts();
   return NextResponse.json(updated);
 });
 

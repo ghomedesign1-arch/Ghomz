@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { bomInput } from "@/lib/validators";
 import { HttpError, requireRole, withApi } from "@/lib/rbac";
+import { invalidateProductCosts } from "@/lib/product-cost-cache";
 
 /**
  * Replaces the full bill-of-materials for a product. Destructive — wipes
@@ -85,6 +86,8 @@ export const PUT = withApi(async (
       })),
     }),
   ]);
+
+  await invalidateProductCosts([productId]);
 
   return NextResponse.json({ ok: true });
 });
