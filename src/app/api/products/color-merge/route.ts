@@ -99,9 +99,21 @@ async function buildGroups(): Promise<PreviewGroup[]> {
 export const GET = withApi(async () => {
   await requireRole("ADMIN", "MANAGER");
   const groups = await buildGroups();
+  // Quick diagnostics: how many parents + variants did we actually see?
+  // Helps distinguish "really nothing to merge" from "my query misses them".
+  const parentCount = await prisma.product.count({
+    where: { parentId: null, variants: { some: {} } },
+  });
+  const variantCount = await prisma.product.count({
+    where: { parentId: { not: null }, active: true },
+  });
   return NextResponse.json({
     groupCount: groups.length,
     duplicateCount: groups.reduce((a, g) => a + g.duplicates.length, 0),
+    diagnostics: {
+      parentsScanned: parentCount,
+      activeVariantsScanned: variantCount,
+    },
     groups,
   });
 });

@@ -18,9 +18,14 @@ interface Group {
   canonical: PreviewVariant;
   duplicates: PreviewVariant[];
 }
+interface Diagnostics {
+  parentsScanned: number;
+  activeVariantsScanned: number;
+}
 
 export function ColorMergePreview() {
   const [groups, setGroups] = React.useState<Group[] | null>(null);
+  const [diagnostics, setDiagnostics] = React.useState<Diagnostics | null>(null);
   const [loading, setLoading] = React.useState(true);
   const [accepted, setAccepted] = React.useState<Set<string>>(new Set());
   const [applying, setApplying] = React.useState(false);
@@ -33,8 +38,12 @@ export function ColorMergePreview() {
         toast.error("Failed to load preview");
         return;
       }
-      const data = (await res.json()) as { groups: Group[] };
+      const data = (await res.json()) as {
+        groups: Group[];
+        diagnostics?: Diagnostics;
+      };
       setGroups(data.groups);
+      setDiagnostics(data.diagnostics ?? null);
       setAccepted(new Set(data.groups.map((g) => g.canonical.id)));
     } finally {
       setLoading(false);
@@ -92,8 +101,19 @@ export function ColorMergePreview() {
 
   if (!groups || groups.length === 0) {
     return (
-      <div className="rounded-md border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-900">
-        No colour-only variant groups found — nothing to merge.
+      <div className="space-y-2 rounded-md border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-900">
+        <div>No colour-only variant groups found — nothing to merge.</div>
+        {diagnostics && (
+          <div className="text-xs text-emerald-800">
+            Scanned {diagnostics.parentsScanned} parent product
+            {diagnostics.parentsScanned === 1 ? "" : "s"} and{" "}
+            {diagnostics.activeVariantsScanned} active variant
+            {diagnostics.activeVariantsScanned === 1 ? "" : "s"}. If you&apos;re
+            sure duplicates exist, double-check that the variants&apos; SKU
+            colour code is in the known list (
+            <code>src/lib/variant-detect.ts</code> → SKU_COLOR_CODES).
+          </div>
+        )}
       </div>
     );
   }
