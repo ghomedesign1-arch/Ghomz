@@ -18,6 +18,10 @@ export type ProductListItem = {
   parentId: string | null;
   variantName: string | null;
   variantCount: number; // number of child variants (0 = standalone)
+  /** true when unitCost came from the persistent cache. Rows where this
+   *  is false are showing a placeholder (0) because the live BOM walk
+   *  was skipped to keep the list page from timing out on a cold DB. */
+  cached?: boolean;
 };
 
 const DEMO_PRODUCTS: ProductListItem[] = [
@@ -104,12 +108,17 @@ export async function getProducts(): Promise<{
       orderBy: { name: "asc" },
       include: { _count: { select: { variants: true } } },
     });
-    // Read every row's cost from the persistent cache column; only rows
-    // that have never been computed trigger a live resolve + write-back.
-    // Steady-state this turns the whole list into a single SELECT.
-    const resolved = await Promise.all(
+    // Catalog list reads the cached cost column ONLY — no live fallback.
+    // On a cold Neon pool, resolving every row's BOM in parallel was
+    // dropping the connection; capped concurrency still blew the Vercel
+    // 10 s function timeout. Rows without a cached cost render as `null`
+    // (shown as "—" in the UI) and get warmed when the admin triggers
+    // the Warm cache action or opens the product's detail page.
+    const resolved: ProductListItem[] = await Promise.all(
       rows.map(async (p) => {
-        const { unitCost, retailMarginPct } = await fastUnitCost(p);
+        const { unitCost, retailMarginPct } = await fastUnitCost(p, {
+          allowLiveFallback: false,
+        });
         return {
           id: p.id,
           sku: p.sku,
@@ -127,6 +136,7 @@ export async function getProducts(): Promise<{
           parentId: p.parentId ?? null,
           variantName: p.variantName ?? null,
           variantCount: p._count.variants,
+          cached: p.cachedUnitCost !== null,
         };
       }),
     );

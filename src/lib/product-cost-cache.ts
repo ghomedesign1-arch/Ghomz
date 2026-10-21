@@ -11,11 +11,19 @@ import { resolveProductCost } from "./product-cost";
  * product detail page still uses the live resolver because it renders the
  * full breakdown.
  */
-export async function fastUnitCost(product: {
-  id: string;
-  retailPrice: number;
-  cachedUnitCost: number | null;
-}): Promise<{ unitCost: number; retailMarginPct: number }> {
+export async function fastUnitCost(
+  product: {
+    id: string;
+    retailPrice: number;
+    cachedUnitCost: number | null;
+  },
+  /** When `true` (default) the caller is OK waiting for a full BOM walk if
+   *  the cache is empty. When `false`, a cache miss returns 0 immediately
+   *  so a bulk caller (the catalog list on first boot) can finish the
+   *  response fast; the real cost will fill in on subsequent visits as
+   *  individual product pages warm the cache. */
+  options: { allowLiveFallback?: boolean } = {},
+): Promise<{ unitCost: number; retailMarginPct: number }> {
   if (product.cachedUnitCost !== null && product.cachedUnitCost !== undefined) {
     const unitCost = product.cachedUnitCost;
     const retailMarginPct =
@@ -23,6 +31,9 @@ export async function fastUnitCost(product: {
         ? ((product.retailPrice - unitCost) / product.retailPrice) * 100
         : 0;
     return { unitCost, retailMarginPct };
+  }
+  if (options.allowLiveFallback === false) {
+    return { unitCost: 0, retailMarginPct: 0 };
   }
   // Miss — compute live and (best-effort) write back. The update is
   // wrapped so a DB that hasn't been migrated yet (new column missing)

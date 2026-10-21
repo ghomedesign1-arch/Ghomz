@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { AddProductButton } from "@/components/row-actions/add-buttons";
 import { ProductRowActions } from "@/components/row-actions/product-row-actions";
 import { ProductImageUpload } from "@/components/products/product-image-upload";
+import { WarmCacheButton } from "@/components/products/warm-cache-button";
 import { canWrite, isAdmin } from "@/lib/rbac";
 import {
   Card,
@@ -42,7 +43,20 @@ const CATEGORY_LABEL: Record<string, string> = {
   OTHER:        "Other",
 };
 
-function MarginCell({ unitCost, retailPrice, retailMarginPct }: { unitCost: number; retailPrice: number; retailMarginPct: number }) {
+function MarginCell({
+  unitCost,
+  retailPrice,
+  retailMarginPct,
+  cached,
+}: {
+  unitCost: number;
+  retailPrice: number;
+  retailMarginPct: number;
+  cached?: boolean;
+}) {
+  if (cached === false) {
+    return <span className="text-xs text-muted-foreground">—</span>;
+  }
   return (
     <div className="space-y-0.5">
       <div
@@ -133,6 +147,7 @@ export default async function ProductsPage() {
                 <a href="/products/color-merge">Merge colours</a>
               </Button>
             )}
+            {writeAccess && <WarmCacheButton />}
             {writeAccess && <AddProductButton />}
           </>
         }
@@ -208,7 +223,7 @@ export default async function ProductsPage() {
                                 {p.widthCm}×{p.depthCm}×{p.heightCm} cm
                               </span>
                               <span>·</span>
-                              <span className="tabular-nums">Cost {formatLE(p.unitCost)}</span>
+                              <span className="tabular-nums">Cost {p.cached === false ? "—" : formatLE(p.unitCost)}</span>
                               <span>·</span>
                               <span className="tabular-nums">Stock {p.stockQty}</span>
                             </div>
@@ -224,13 +239,13 @@ export default async function ProductsPage() {
                         {p.widthCm} × {p.depthCm} × {p.heightCm} cm
                       </TableCell>
                       <TableCell className="hidden text-right tabular-nums text-muted-foreground md:table-cell">
-                        {formatLE(p.unitCost)}
+                        {p.cached === false ? "—" : formatLE(p.unitCost)}
                       </TableCell>
                       <TableCell className="text-right tabular-nums font-medium">
                         {formatLE(p.retailPrice)}
                       </TableCell>
                       <TableCell className="text-right">
-                        <MarginCell unitCost={p.unitCost} retailPrice={p.retailPrice} retailMarginPct={p.retailMarginPct} />
+                        <MarginCell unitCost={p.unitCost} retailPrice={p.retailPrice} retailMarginPct={p.retailMarginPct} cached={p.cached} />
                       </TableCell>
                       <TableCell className="hidden text-right tabular-nums sm:table-cell">
                         {p.stockQty}
