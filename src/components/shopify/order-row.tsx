@@ -760,7 +760,9 @@ Reply here as soon as you've sent it and we'll fire up the workshop! 🪚✨`;
                       Custom
                     </span>
                   )}
-                  <MattressBadge variantTitle={li.variantTitle} sku={li.sku} />
+                  {!/baby\s*bloom/i.test(li.title) && (
+                    <MattressBadge variantTitle={li.variantTitle} sku={li.sku} />
+                  )}
                 </div>
                 {li.variantTitle && (
                   <div className="text-xs text-foreground/80">
