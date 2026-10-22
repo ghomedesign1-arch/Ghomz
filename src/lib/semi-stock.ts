@@ -39,8 +39,8 @@ function matchItem(
 /**
  * Reconcile stock allocations with the current state of the given orders.
  * An order holds stock while it has a deposit or is paid and isn't
- * cancelled / refunded. Only orders placed after the stock item was created
- * count, so adding today's count doesn't get eaten by old orders.
+ * cancelled / refunded. Orders placed before the item existed only count
+ * while still New / Scheduled.
  */
 export async function syncOrdersStock(
   orders: ShopifyOrderSummary[],
@@ -68,12 +68,30 @@ export async function syncOrdersStock(
     const holds =
       (kind === "deposit" || kind === "paid") && meta.status !== "CANCELLED";
     if (!holds) continue;
+    const notStarted = meta.status === "NEW" || meta.status === "SCHEDULED";
+    const placedAt = new Date(o.created_at);
     for (const li of effectiveLineItems(o, meta)) {
       if (li.quantity <= 0) continue;
+      const key = `${o.id}:${li.id}`;
       const item = matchItem(items, li.title, li.variantTitle, li.sku);
-      if (!item) continue;
-      if (new Date(o.created_at) < item.createdAt) continue;
-      desired.set(`${o.id}:${li.id}`, {
+      // Orders placed before tracking began only take stock while they
+      // haven't been started — the factory already used sponge for the rest.
+      const eligible = item && (notStarted || placedAt >= item.createdAt);
+      if (!eligible) {
+        // Keep a unit already taken (e.g. order moved on to In production).
+        const kept = existingByKey.get(key);
+        if (kept) {
+          desired.set(key, {
+            itemId: kept.itemId,
+            orderId: kept.orderId,
+            orderName: kept.orderName,
+            lineItemId: kept.lineItemId,
+            qty: kept.qty,
+          });
+        }
+        continue;
+      }
+      desired.set(key, {
         itemId: item.id,
         orderId: String(o.id),
         orderName: o.name,

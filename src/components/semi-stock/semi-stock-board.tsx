@@ -159,7 +159,7 @@ function AddItemForm({
         </form>
         <p className="mt-2 text-xs text-muted-foreground">
           The model name must match the Shopify product title (e.g. &ldquo;Tiny
-          Cloud&rdquo;). Only orders placed after you add an item take from it.
+          Cloud&rdquo;). Deposit / paid orders take from it; older orders only if still New or Scheduled.
         </p>
       </CardContent>
     </Card>
