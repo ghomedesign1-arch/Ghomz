@@ -7,6 +7,7 @@ import {
   FileText,
   LayoutDashboard,
   Layers,
+  Package,
   ReceiptText,
   Scissors,
   Settings,
@@ -53,6 +54,7 @@ export const NAV: NavGroup[] = [
     items: [
       { href: "/shopify-orders", label: "Shopify orders",    icon: ShoppingCart },
       { href: "/production",     label: "Production",        icon: Factory },
+      { href: "/semi-stock",     label: "Semi-finished stock", icon: Package },
       { href: "/custom-orders",  label: "Custom orders",     icon: ClipboardList },
       { href: "/pricing",        label: "Pricing scenarios", icon: Tags },
       { href: "/purchases",      label: "Purchases",         icon: ReceiptText },

@@ -2,7 +2,9 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { HttpError, requireRole, withApi } from "@/lib/rbac";
 import { resolveProductCost } from "@/lib/product-cost";
+import { syncOrdersStock } from "@/lib/semi-stock";
 import {
+  fetchOrderById,
   getOrderMeta,
   getShopifyToken,
   MAX_CALL_ATTEMPTS,
@@ -213,6 +215,19 @@ export const PATCH = withApi(async (
   }
 
   const next = await setOrderMeta(orderId, patch);
+
+  const affectsStock = (
+    ["paymentMode", "depositAmount", "status", "lineOverrides", "discount"] as const
+  ).some((k) => k in patch);
+  if (affectsStock) {
+    try {
+      const order = await fetchOrderById(orderId);
+      if (order) await syncOrdersStock([order], () => next);
+    } catch (e) {
+      console.error("[semi-stock] sync failed", e);
+    }
+  }
+
   return NextResponse.json(next);
 });
 

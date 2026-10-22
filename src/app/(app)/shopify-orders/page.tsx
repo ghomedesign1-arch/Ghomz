@@ -34,6 +34,7 @@ import {
 import { ShopifyOrderRow } from "@/components/shopify/order-row";
 import { RevenueSummary } from "@/components/shopify/revenue-summary";
 import type { ProductionQueueItem } from "@/components/shopify/production-queue";
+import { syncOrdersStock } from "@/lib/semi-stock";
 
 export const dynamic = "force-dynamic";
 
@@ -130,6 +131,10 @@ export default async function ShopifyOrdersPage({
       thanksSentAt: null,
       lineOverrides: {},
     };
+
+  await syncOrdersStock(orders, metaFor).catch((e) =>
+    console.error("[semi-stock] sync failed", e),
+  );
 
   const tileCounts: Record<string, number> = {
     NEW: 0,

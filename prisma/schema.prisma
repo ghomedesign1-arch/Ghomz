@@ -629,6 +629,49 @@ model PurchaseItem {
 /// Tiny key/value store for workspace-wide settings. First user is the brand
 /// logo URL hosted on Cloudinary — saved as `brand.logoUrl`. New small global
 /// flags should land here too instead of growing standalone tables.
+/// Semi-finished stock (e.g. sponge sets for "Nest" 120 cm). On-hand is
+/// sum(movements.delta) − sum(allocations.qty).
+model SemiStockItem {
+  id          String                @id @default(cuid())
+  model       String
+  sizeCm      Int
+  lowStockAt  Int                   @default(3)
+  createdAt   DateTime              @default(now())
+  movements   SemiStockMovement[]
+  allocations SemiStockAllocation[]
+
+  @@unique([model, sizeCm])
+}
+
+model SemiStockMovement {
+  id        String        @id @default(cuid())
+  itemId    String
+  delta     Int
+  note      String?
+  createdAt DateTime      @default(now())
+  item      SemiStockItem @relation(fields: [itemId], references: [id], onDelete: Cascade)
+
+  @@index([itemId])
+}
+
+/// One row per Shopify line item that has taken a unit from stock. Rows are
+/// upserted / deleted to match the order's current state, so re-syncing is
+/// idempotent.
+model SemiStockAllocation {
+  id         String        @id @default(cuid())
+  itemId     String
+  orderId    String
+  orderName  String
+  lineItemId String
+  qty        Int
+  createdAt  DateTime      @default(now())
+  updatedAt  DateTime      @updatedAt
+  item       SemiStockItem @relation(fields: [itemId], references: [id], onDelete: Cascade)
+
+  @@unique([orderId, lineItemId])
+  @@index([itemId])
+}
+
 model Setting {
   key       String   @id
   value     String

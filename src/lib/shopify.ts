@@ -185,6 +185,26 @@ export async function fetchRecentOrders(
   return data.orders ?? [];
 }
 
+export async function fetchOrderById(
+  orderId: number,
+): Promise<ShopifyOrderSummary | null> {
+  const conn = await getShopifyToken();
+  if (!conn) return null;
+  const res = await fetch(
+    `https://${conn.shop}/admin/api/${API_VERSION}/orders/${orderId}.json`,
+    {
+      headers: {
+        "X-Shopify-Access-Token": conn.token,
+        "Content-Type": "application/json",
+      },
+      cache: "no-store",
+    },
+  );
+  if (!res.ok) return null;
+  const data = (await res.json()) as { order?: ShopifyOrderSummary };
+  return data.order ?? null;
+}
+
 export function shopAdminOrderUrl(shop: string, orderId: number): string {
   return `https://admin.shopify.com/store/${shop.replace(".myshopify.com", "")}/orders/${orderId}`;
 }
