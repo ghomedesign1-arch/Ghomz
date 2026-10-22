@@ -760,6 +760,7 @@ Reply here as soon as you've sent it and we'll fire up the workshop! 🪚✨`;
                       Custom
                     </span>
                   )}
+                  <MattressBadge variantTitle={li.variantTitle} sku={li.sku} />
                 </div>
                 {li.variantTitle && (
                   <div className="text-xs text-foreground/80">
@@ -1300,6 +1301,36 @@ function fmt(v: string | number | null | undefined): string {
   const n = Number(v ?? 0);
   if (!Number.isFinite(n)) return "0";
   return n.toLocaleString("en-EG", { maximumFractionDigits: 2 });
+}
+
+function MattressBadge({
+  variantTitle,
+  sku,
+}: {
+  variantTitle: string | null | undefined;
+  sku: string | null | undefined;
+}) {
+  const parts = (variantTitle ?? "")
+    .split("/")
+    .map((s) => s.trim().toLowerCase());
+  let withMattress: boolean | null = null;
+  if (parts.includes("with")) withMattress = true;
+  else if (parts.includes("without")) withMattress = false;
+  else if (sku) {
+    const last = sku.split("-").pop()?.toUpperCase();
+    if (last === "WM") withMattress = true;
+    else if (last === "NM") withMattress = false;
+  }
+  if (withMattress === null) return null;
+  return withMattress ? (
+    <span className="shrink-0 rounded-full bg-indigo-100 px-2 py-0.5 text-[10px] font-semibold text-indigo-800">
+      With mattress · مع مرتبة
+    </span>
+  ) : (
+    <span className="shrink-0 rounded-full bg-orange-100 px-2 py-0.5 text-[10px] font-semibold text-orange-800">
+      No mattress · بدون مرتبة
+    </span>
+  );
 }
 
 function PaymentBadge({
