@@ -26,10 +26,10 @@ import { Field, FieldGrid } from "@/components/forms/field";
 import { ApiError } from "@/lib/api-client";
 
 interface UploadCuttingListDialogProps {
-  /** Products you can attach a cutting list to. */
-  products: { id: string; name: string; sku: string }[];
-  /** Pre-select this product (e.g. when triggered from a product detail). */
-  defaultProductId?: string;
+  /** Cutting-list items you can attach a file to. */
+  items: { id: string; name: string }[];
+  /** Pre-select this item (e.g. when triggered from an item card). */
+  defaultItemId?: string;
   /** Customize the trigger label. */
   triggerLabel?: string;
   triggerVariant?: "default" | "outline";
@@ -38,16 +38,16 @@ interface UploadCuttingListDialogProps {
 const MAX_BYTES = 20 * 1024 * 1024;
 
 export function UploadCuttingListDialog({
-  products,
-  defaultProductId,
+  items,
+  defaultItemId,
   triggerLabel = "Upload cutting list",
   triggerVariant = "default",
 }: UploadCuttingListDialogProps) {
   const router = useRouter();
   const [open, setOpen] = React.useState(false);
   const [submitting, setSubmitting] = React.useState(false);
-  const [productId, setProductId] = React.useState(
-    defaultProductId ?? products[0]?.id ?? "",
+  const [itemId, setItemId] = React.useState(
+    defaultItemId ?? items[0]?.id ?? "",
   );
   const [title, setTitle] = React.useState("");
   const [notes, setNotes] = React.useState("");
@@ -58,7 +58,7 @@ export function UploadCuttingListDialog({
 
   React.useEffect(() => {
     if (open) {
-      setProductId(defaultProductId ?? products[0]?.id ?? "");
+      setItemId(defaultItemId ?? items[0]?.id ?? "");
       setTitle("");
       setNotes("");
       setFile(null);
@@ -66,7 +66,7 @@ export function UploadCuttingListDialog({
       if (fileInputRef.current) fileInputRef.current.value = "";
       if (thumbInputRef.current) thumbInputRef.current.value = "";
     }
-  }, [open, defaultProductId, products]);
+  }, [open, defaultItemId, items]);
 
   async function onSubmit(event: React.FormEvent) {
     event.preventDefault();
@@ -74,8 +74,8 @@ export function UploadCuttingListDialog({
       toast.error("Pick a PDF, image, or DWG/DXF file first");
       return;
     }
-    if (!productId) {
-      toast.error("Pick a product");
+    if (!itemId) {
+      toast.error("Pick an item");
       return;
     }
     if (file.size > MAX_BYTES) {
@@ -86,7 +86,7 @@ export function UploadCuttingListDialog({
     try {
       const fd = new FormData();
       fd.append("file", file);
-      fd.append("productId", productId);
+      fd.append("itemId", itemId);
       if (title) fd.append("title", title);
       if (notes) fd.append("notes", notes);
       if (thumbnail) fd.append("thumbnail", thumbnail);
@@ -112,14 +112,14 @@ export function UploadCuttingListDialog({
     }
   }
 
-  const noProducts = products.length === 0;
+  const noItems = items.length === 0;
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button variant={triggerVariant} disabled={noProducts}>
+        <Button variant={triggerVariant} disabled={noItems}>
           <Upload className="h-4 w-4" />{" "}
-          {noProducts ? "Create a product first" : triggerLabel}
+          {noItems ? "Add an item first" : triggerLabel}
         </Button>
       </DialogTrigger>
       <DialogContent className="max-w-xl">
@@ -127,23 +127,20 @@ export function UploadCuttingListDialog({
           <DialogTitle>Upload cutting list</DialogTitle>
           <DialogDescription>
             Attach a PDF, image, or AutoCAD <strong>DWG / DXF</strong> file the
-            factory uses to cut sponge for this product. Max 20 MB.
+            factory uses to cut sponge for this item. Max 20 MB.
           </DialogDescription>
         </DialogHeader>
 
         <form onSubmit={onSubmit} className="space-y-4">
-          <Field label="Product">
-            <Select value={productId} onValueChange={setProductId}>
+          <Field label="Item">
+            <Select value={itemId} onValueChange={setItemId}>
               <SelectTrigger>
-                <SelectValue placeholder="Pick a product…" />
+                <SelectValue placeholder="Pick an item…" />
               </SelectTrigger>
               <SelectContent>
-                {products.map((p) => (
-                  <SelectItem key={p.id} value={p.id}>
-                    {p.name}{" "}
-                    <span className="text-xs text-muted-foreground">
-                      ({p.sku})
-                    </span>
+                {items.map((i) => (
+                  <SelectItem key={i.id} value={i.id}>
+                    {i.name}
                   </SelectItem>
                 ))}
               </SelectContent>

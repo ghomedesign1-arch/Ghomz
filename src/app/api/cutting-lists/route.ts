@@ -28,12 +28,12 @@ const ACCEPTED_TYPES = new Set([
 const ACCEPTED_EXTS = new Set(["dwg", "dxf"]);
 
 export const GET = withApi(async (req: NextRequest) => {
-  const productId = new URL(req.url).searchParams.get("productId");
-  const where = productId ? { productId } : {};
+  const itemId = new URL(req.url).searchParams.get("itemId");
+  const where = itemId ? { itemId } : {};
   const lists = await prisma.cuttingList.findMany({
     where,
     include: {
-      product: { select: { id: true, name: true, sku: true } },
+      item: { select: { id: true, name: true } },
       uploadedBy: { select: { name: true } },
     },
     orderBy: { createdAt: "desc" },
@@ -44,8 +44,7 @@ export const GET = withApi(async (req: NextRequest) => {
 /**
  * POST /api/cutting-lists — multipart upload of a PDF/image cutting list.
  *
- * Files land under `public/uploads/cutting-lists/{productId}/{uuid}.{ext}` so
- * Next.js serves them as static assets via `/uploads/...`. Stored size /
+ * Files go to Cloudinary under `cutting-lists/items/{itemId}`. Stored size /
  * mime type are recorded on the DB row for display + safety checks.
  */
 export const POST = withApi(async (req: NextRequest) => {
@@ -54,15 +53,15 @@ export const POST = withApi(async (req: NextRequest) => {
   const form = await req.formData();
   const file = form.get("file");
   const thumbnail = form.get("thumbnail");
-  const productId = String(form.get("productId") ?? "");
+  const itemId = String(form.get("itemId") ?? "");
   const title = stringOrUndefined(form.get("title"));
   const notes = stringOrUndefined(form.get("notes"));
 
   if (!(file instanceof File)) {
     throw new HttpError(422, "No file provided");
   }
-  if (!productId) {
-    throw new HttpError(422, "productId is required");
+  if (!itemId) {
+    throw new HttpError(422, "itemId is required");
   }
   if (file.size > MAX_BYTES) {
     throw new HttpError(413, `File too large (max ${MAX_BYTES / 1024 / 1024} MB)`);
@@ -87,13 +86,13 @@ export const POST = withApi(async (req: NextRequest) => {
       throw new HttpError(413, "Thumbnail is too large");
     }
   }
-  const product = await prisma.product.findUnique({ where: { id: productId } });
-  if (!product) throw new HttpError(404, "Product not found");
+  const item = await prisma.cuttingListItem.findUnique({ where: { id: itemId } });
+  if (!item) throw new HttpError(404, "Cutting list item not found");
 
   // ── Main file → Cloudinary ────────────────────────────────────────────
   // DWG / DXF / PDF go up as `raw` so Cloudinary returns the original bytes
   // on download. Images go as `image` so transformations stay available.
-  const folder = `cutting-lists/${productId}`;
+  const folder = `cutting-lists/items/${itemId}`;
   const mainResource = resourceKindFor(file.type);
   // PDFs share their binary signature with Adobe Illustrator; pin the format
   // so Cloudinary stores them as .pdf and serves Content-Type: application/pdf.
@@ -117,7 +116,7 @@ export const POST = withApi(async (req: NextRequest) => {
 
   const created = await prisma.cuttingList.create({
     data: {
-      productId,
+      itemId,
       fileName: file.name,
       filePath: mainUpload.url,
       fileType: file.type,
@@ -129,7 +128,7 @@ export const POST = withApi(async (req: NextRequest) => {
       uploadedById: session.user?.id,
     },
     include: {
-      product: { select: { id: true, name: true, sku: true } },
+      item: { select: { id: true, name: true } },
       uploadedBy: { select: { name: true } },
     },
   });

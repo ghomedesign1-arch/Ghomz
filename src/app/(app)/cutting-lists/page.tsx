@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { Check } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -17,17 +16,20 @@ import {
   type CuttingListFile,
 } from "@/components/cutting-lists/product-files-section";
 import { CuttingNoteEditor } from "@/components/cutting-lists/cutting-note-editor";
+import {
+  AddCuttingItemButton,
+  CuttingItemActions,
+} from "@/components/cutting-lists/item-controls";
+import { ensureCuttingListsMigrated } from "@/lib/cutting-lists";
 
 export const dynamic = "force-dynamic";
 
 async function load() {
   try {
-    // Only base products show up here — variants share the parent's cutting
-    // list since the sponge cut shapes don't change between Base and Premium.
-    const products = await prisma.product.findMany({
-      where: { parentId: null },
+    await ensureCuttingListsMigrated();
+    const items = await prisma.cuttingListItem.findMany({
       include: {
-        cuttingLists: {
+        files: {
           include: {
             uploadedBy: { select: { name: true } },
             doneBy: { select: { name: true } },
@@ -37,43 +39,34 @@ async function load() {
       },
       orderBy: { name: "asc" },
     });
-    return { products, ready: true as const };
-  } catch {
-    return {
-      products: [] as Awaited<ReturnType<typeof prisma.product.findMany>>,
-      ready: false as const,
-    };
+    return { items, ready: true as const };
+  } catch (e) {
+    console.error("[cutting-lists] load failed", e);
+    return { items: [], ready: false as const };
   }
 }
 
 export default async function CuttingListsPage() {
-  const [{ products, ready }, writeAccess] = await Promise.all([
+  const [{ items, ready }, writeAccess] = await Promise.all([
     load(),
     canWrite(),
   ]);
 
-  const totalFiles = products.reduce(
-    (a, p) => a + ((p as { cuttingLists?: unknown[] }).cuttingLists?.length ?? 0),
-    0,
-  );
-  const productsWithFiles = products.filter(
-    (p) => (p as { cuttingLists?: unknown[] }).cuttingLists?.length,
-  ).length;
-
-  const productOptions = products.map((p) => ({
-    id: p.id,
-    name: p.name,
-    sku: p.sku,
-  }));
+  const totalFiles = items.reduce((a, i) => a + i.files.length, 0);
+  const itemsWithFiles = items.filter((i) => i.files.length > 0).length;
+  const itemOptions = items.map((i) => ({ id: i.id, name: i.name }));
 
   return (
     <div className="space-y-8">
       <PageHeader
         title="Sponge cutting lists"
-        description="Upload the PDF or image catalogs the factory uses to cut sponge for each product. Files are stored locally and downloadable straight from this page."
+        description="Upload the PDF, image or DWG/DXF files the factory uses to cut sponge. This section is separate from Products — add and name items freely."
         actions={
           writeAccess && ready ? (
-            <UploadCuttingListDialog products={productOptions} />
+            <>
+              <AddCuttingItemButton />
+              <UploadCuttingListDialog items={itemOptions} />
+            </>
           ) : null
         }
       />
@@ -82,55 +75,46 @@ export default async function CuttingListsPage() {
         <Tile
           label="Files uploaded"
           value={`${totalFiles}`}
-          hint="Across all products"
+          hint="Across all items"
         />
         <Tile
-          label="Products documented"
-          value={`${productsWithFiles}`}
-          hint={`of ${products.length} active SKUs`}
+          label="Items documented"
+          value={`${itemsWithFiles}`}
+          hint={`of ${items.length} items`}
         />
         <Tile
-          label="Catalog coverage"
+          label="Coverage"
           value={
-            products.length === 0
+            items.length === 0
               ? "—"
-              : `${Math.round((productsWithFiles / products.length) * 100)}%`
+              : `${Math.round((itemsWithFiles / items.length) * 100)}%`
           }
           hint={
-            productsWithFiles < products.length
-              ? "Some products still need a cutting list"
-              : "All products have at least one file"
+            itemsWithFiles < items.length
+              ? "Some items still need a cutting list"
+              : "All items have at least one file"
           }
         />
       </div>
 
-      {products.length === 0 ? (
+      {items.length === 0 ? (
         <Card>
           <CardContent className="px-6 py-10 text-center text-sm text-muted-foreground">
-            No products yet. Create a product first from the Products page.
+            No items yet. Click <b>Add item</b> to create one.
           </CardContent>
         </Card>
       ) : (
         <div className="space-y-4">
-          {products.map((p) => {
-            const files =
-              (p as { cuttingLists?: CuttingListFile[] }).cuttingLists ?? [];
+          {items.map((item) => {
+            const files = item.files as CuttingListFile[];
             const doneCount = files.filter((f) => f.done).length;
             const allDone = files.length > 0 && doneCount === files.length;
             return (
-              <Card key={p.id}>
+              <Card key={item.id}>
                 <CardHeader className="flex flex-row items-start justify-between space-y-0">
                   <div className="space-y-1">
                     <CardTitle className="flex items-center gap-2">
-                      <Link
-                        href={`/products/${p.id}`}
-                        className="hover:underline"
-                      >
-                        {p.name}
-                      </Link>
-                      <Badge variant="secondary" className="text-[10px]">
-                        {p.sku}
-                      </Badge>
+                      {item.name}
                       {files.length > 0 && (
                         <Badge
                           variant={allDone ? "success" : "outline"}
@@ -148,23 +132,30 @@ export default async function CuttingListsPage() {
                     </CardDescription>
                   </div>
                   {writeAccess && (
-                    <UploadCuttingListDialog
-                      products={productOptions}
-                      defaultProductId={p.id}
-                      triggerLabel="Upload"
-                      triggerVariant="outline"
-                    />
+                    <div className="flex items-center gap-1">
+                      <CuttingItemActions
+                        itemId={item.id}
+                        name={item.name}
+                        fileCount={files.length}
+                      />
+                      <UploadCuttingListDialog
+                        items={itemOptions}
+                        defaultItemId={item.id}
+                        triggerLabel="Upload"
+                        triggerVariant="outline"
+                      />
+                    </div>
                   )}
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <CuttingNoteEditor
-                    productId={p.id}
-                    initialNote={p.cuttingNote ?? null}
+                    itemId={item.id}
+                    initialNote={item.note ?? null}
                     canEdit={writeAccess}
                   />
                   {files.length > 0 && (
                     <ProductFilesSection
-                      productId={p.id}
+                      itemId={item.id}
                       files={files}
                       writeAccess={writeAccess}
                     />

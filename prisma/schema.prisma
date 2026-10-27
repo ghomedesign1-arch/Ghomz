@@ -574,9 +574,25 @@ model CustomOrderItem {
 
 /// Cutting-list attachment for a product — typically a PDF or image the
 /// factory uses to know exactly how to cut sponge for this SKU.
+/// A named entry on the cutting-lists page. Independent of Product so the
+/// cutting-list section can be managed on its own.
+model CuttingListItem {
+  id              String        @id @default(cuid())
+  name            String
+  note            String?
+  /// Product this item was migrated from (one-time backfill bookkeeping).
+  legacyProductId String?       @unique
+  createdAt       DateTime      @default(now())
+  files           CuttingList[]
+
+  @@index([name])
+}
+
 model CuttingList {
   id           String   @id @default(cuid())
-  productId    String
+  itemId       String?
+  /// Legacy link kept only so the one-time migration can find old files.
+  productId    String?
   /// Original filename as the user uploaded it (for display + download).
   fileName     String
   /// Server-side path the file is served from (e.g. `/uploads/cutting-lists/{id}/{stored}`).
@@ -598,11 +614,13 @@ model CuttingList {
   doneAt       DateTime?
   doneById     String?
 
-  product    Product @relation(fields: [productId], references: [id], onDelete: Cascade)
-  uploadedBy User?   @relation(fields: [uploadedById], references: [id])
-  doneBy     User?   @relation("CuttingListDoneBy", fields: [doneById], references: [id])
+  item       CuttingListItem? @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  product    Product?         @relation(fields: [productId], references: [id], onDelete: SetNull)
+  uploadedBy User?            @relation(fields: [uploadedById], references: [id])
+  doneBy     User?            @relation("CuttingListDoneBy", fields: [doneById], references: [id])
 
   @@index([productId])
+  @@index([itemId])
 }
 
 model PurchaseItem {

@@ -9,22 +9,22 @@ import { Textarea } from "@/components/ui/textarea";
 import { apiPatch } from "@/lib/api-client";
 
 interface CuttingNoteEditorProps {
-  productId: string;
+  itemId: string;
   initialNote: string | null;
   /** When false, the note renders read-only (no edit button). */
   canEdit: boolean;
 }
 
 /**
- * Per-product note shown on the cutting-lists page. Click the small Edit
+ * Per-item note shown on the cutting-lists page. Click the small Edit
  * pencil to swap into a textarea + Save/Cancel; Save flushes to
- * PATCH /api/products/:id/cutting-note and refreshes the server tree.
+ * PATCH /api/cutting-lists/items/:id and refreshes the server tree.
  *
  * Empty notes collapse the block down to a thin "Add note" link so a row
  * without notes doesn't waste vertical space.
  */
 export function CuttingNoteEditor({
-  productId,
+  itemId,
   initialNote,
   canEdit,
 }: CuttingNoteEditorProps) {
@@ -40,7 +40,7 @@ export function CuttingNoteEditor({
   async function save(value: string | null) {
     setSaving(true);
     try {
-      await apiPatch(`/api/products/${productId}/cutting-note`, { note: value });
+      await apiPatch(`/api/cutting-lists/items/${itemId}`, { note: value });
       toast.success(value ? "Note saved" : "Note cleared");
       setEditing(false);
       router.refresh();

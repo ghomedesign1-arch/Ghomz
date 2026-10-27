@@ -58,7 +58,9 @@ export const PATCH = withApi(async (
   const thumbnailEntry = form.get("thumbnail");
   const removeThumbnail = form.get("removeThumbnail") === "1";
 
-  const folder = `cutting-lists/${list.productId}`;
+  const folder = list.itemId
+    ? `cutting-lists/items/${list.itemId}`
+    : `cutting-lists/${list.productId}`;
 
   // ── Main file replacement ───────────────────────────────────────────────
   let newFilePath: string | undefined;
@@ -131,7 +133,7 @@ export const PATCH = withApi(async (
       ...(newThumbnailPath !== undefined && { thumbnailPath: newThumbnailPath, thumbnailType: newThumbnailType }),
     },
     include: {
-      product: { select: { id: true, name: true, sku: true } },
+      item: { select: { id: true, name: true } },
       uploadedBy: { select: { name: true } },
     },
   });

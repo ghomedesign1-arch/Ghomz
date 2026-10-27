@@ -57,25 +57,25 @@ const SORT_OPTIONS: { value: SortKey; label: string }[] = [
 ];
 
 interface ProductFilesSectionProps {
-  productId: string;
+  itemId: string;
   files: CuttingListFile[];
   writeAccess: boolean;
 }
 
 /**
- * Per-product files grid with its own sort selector. Lives on the cutting
- * lists page; each product card uses its own instance so sort choices don't
+ * Per-item files grid with its own sort selector. Lives on the cutting
+ * lists page; each item card uses its own instance so sort choices don't
  * cross-contaminate between products.
  *
- * Sort preference is remembered in localStorage keyed by productId so the
+ * Sort preference is remembered in localStorage keyed by itemId so the
  * user's choice survives reloads — no DB round-trip needed.
  */
 export function ProductFilesSection({
-  productId,
+  itemId,
   files,
   writeAccess,
 }: ProductFilesSectionProps) {
-  const storageKey = `cutting-lists:sort:${productId}`;
+  const storageKey = `cutting-lists:sort:${itemId}`;
   const [sort, setSort] = React.useState<SortKey>("newest");
 
   React.useEffect(() => {
