@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { AlarmClock, ExternalLink, X } from "lucide-react";
+import { AlarmClock, Ban, ExternalLink, X } from "lucide-react";
 
 /** Re-renders every 30s so countdowns stay current without a page reload. */
 export function useNow(intervalMs = 30_000): number {
@@ -20,7 +20,7 @@ export function formatLeft(ms: number): string {
   return h > 0 ? `${h}h ${m}m` : `${m}m`;
 }
 
-/** Ticket badge: counts down 24h after the cancellation notice, then turns red. */
+/** Ticket badge: small pill that counts down 24h; tap it for the actions. */
 export function CancelCountdownBadge({
   deadline,
   shopUrl,
@@ -35,51 +35,73 @@ export function CancelCountdownBadge({
   onStop: () => void;
 }) {
   const now = useNow();
+  const [open, setOpen] = React.useState(false);
+  const ref = React.useRef<HTMLSpanElement>(null);
   const left = new Date(deadline).getTime() - now;
   const due = left <= 0;
 
+  React.useEffect(() => {
+    if (!open) return;
+    function onDocClick(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    }
+    document.addEventListener("mousedown", onDocClick);
+    return () => document.removeEventListener("mousedown", onDocClick);
+  }, [open]);
+
+  const itemCls =
+    "flex w-full items-center gap-1.5 rounded px-2 py-1.5 text-left text-xs hover:bg-secondary disabled:opacity-50";
+
   return (
-    <span
-      className={`inline-flex items-center gap-1.5 rounded-full border px-2 py-0.5 text-[11px] font-semibold ${
-        due
-          ? "animate-pulse border-rose-400 bg-rose-600 text-white"
-          : "border-rose-200 bg-rose-50 text-rose-700"
-      }`}
-      title={`24h after the cancellation message · ${new Date(deadline).toLocaleString("en-GB")}`}
-    >
-      <AlarmClock className="h-3 w-3" />
-      {due ? "24h passed — cancel now" : `Cancel in ${formatLeft(left)}`}
-      {due && (
-        <>
+    <span ref={ref} className="relative inline-block">
+      <button
+        type="button"
+        onClick={() => setOpen((o) => !o)}
+        title={`24h after the cancellation message · ${new Date(deadline).toLocaleString("en-GB")}`}
+        className={`inline-flex items-center gap-1 whitespace-nowrap rounded-full border px-2 py-0.5 text-[10px] font-semibold ${
+          due
+            ? "border-rose-600 bg-rose-600 text-white"
+            : "border-rose-200 bg-rose-50 text-rose-700"
+        }`}
+      >
+        <AlarmClock className="h-3 w-3" />
+        {due ? "Cancel now" : `Cancel ${formatLeft(left)}`}
+      </button>
+      {open && (
+        <span className="absolute left-0 top-full z-20 mt-1 block w-44 rounded-lg border bg-popover p-1 font-sans text-foreground shadow-lg">
           <a
             href={shopUrl}
             target="_blank"
             rel="noreferrer"
-            className="inline-flex items-center gap-0.5 rounded-full bg-white/20 px-1.5 hover:bg-white/30"
+            className={itemCls}
+            onClick={() => setOpen(false)}
           >
-            Shopify <ExternalLink className="h-2.5 w-2.5" />
+            <ExternalLink className="h-3 w-3" /> Open in Shopify
           </a>
           <button
             type="button"
             disabled={busy}
-            onClick={onMarkCancelled}
-            className="rounded-full bg-white/20 px-1.5 hover:bg-white/30"
+            className={itemCls}
+            onClick={() => {
+              setOpen(false);
+              onMarkCancelled();
+            }}
           >
-            Mark cancelled
+            <Ban className="h-3 w-3" /> Mark cancelled
           </button>
-        </>
+          <button
+            type="button"
+            disabled={busy}
+            className={itemCls}
+            onClick={() => {
+              setOpen(false);
+              if (confirm("Stop the 24h timer? (e.g. the customer replied)")) onStop();
+            }}
+          >
+            <X className="h-3 w-3" /> Stop timer (customer replied)
+          </button>
+        </span>
       )}
-      <button
-        type="button"
-        disabled={busy}
-        onClick={() => {
-          if (confirm("Stop the 24h timer? (e.g. the customer replied)")) onStop();
-        }}
-        title="Stop timer — customer replied"
-        className="rounded-full p-0.5 hover:bg-black/10"
-      >
-        <X className="h-3 w-3" />
-      </button>
     </span>
   );
 }
