@@ -403,6 +403,25 @@ export function resolvePaymentKind(
   return "unpaid";
 }
 
+/** Hours the customer gets to reply after the WhatsApp cancellation notice. */
+export const CANCEL_GRACE_HOURS = 24;
+
+/**
+ * When the cancellation notice was sent and the order is still open and
+ * unpaid, returns the time it can be cancelled in Shopify. Null otherwise.
+ */
+export function cancelDeadline(
+  order: Parameters<typeof resolvePaymentKind>[0],
+  meta: ShopifyOrderMeta,
+): Date | null {
+  if (!meta.cancellationSentAt) return null;
+  if (meta.status === "CANCELLED" || meta.status === "SHIPPED") return null;
+  if (resolvePaymentKind(order, meta) !== "unpaid") return null;
+  const sent = new Date(meta.cancellationSentAt).getTime();
+  if (Number.isNaN(sent)) return null;
+  return new Date(sent + CANCEL_GRACE_HOURS * 3_600_000);
+}
+
 const metaKey = (id: number) => `${META_KEY_PREFIX}${id}`;
 
 /** Default delivery promise: 14 days after the order is placed. */

@@ -37,6 +37,7 @@ import {
   DEFAULT_LEAD_TIME_DAYS,
   DUE_SOON_WINDOW_DAYS,
   MAX_CALL_ATTEMPTS,
+  cancelDeadline,
   effectiveDeliveryDate,
   effectiveLineItems,
   effectiveSubtotal,
@@ -49,6 +50,7 @@ import {
   type ShopifyPaymentMode,
 } from "@/lib/shopify";
 import { LineItemEditDialog } from "@/components/shopify/line-item-edit-dialog";
+import { CancelCountdownBadge } from "@/components/shopify/cancel-countdown";
 
 const STATUS_OPTS: { value: ShopifyOrderStatus; label: string }[] = [
   { value: "NEW", label: "New" },
@@ -137,6 +139,7 @@ export function ShopifyOrderRow({
   const isDueSoon =
     !isTerminal && daysToDue >= 0 && daysToDue <= DUE_SOON_WINDOW_DAYS;
   const dueDateIso = dueDate.toISOString().slice(0, 10);
+  const cancelBy = cancelDeadline(order, meta);
 
   async function save(patch: Partial<ShopifyOrderMeta>, key: string) {
     setSaving(key);
@@ -521,7 +524,11 @@ Reply here as soon as you've sent it and we'll fire up the workshop! 🪚✨`;
   }
 
   async function callOp(
-    body: { logCallAttempt?: CallOutcome; resetCallAttempts?: true },
+    body: {
+      logCallAttempt?: CallOutcome;
+      resetCallAttempts?: true;
+      markCancellationSent?: false;
+    },
     key: string,
   ) {
     setSaving(key);
@@ -606,6 +613,17 @@ Reply here as soon as you've sent it and we'll fire up the workshop! 🪚✨`;
                     ? "Due today"
                     : `Due in ${daysToDue}d`}
                 </span>
+              )}
+              {cancelBy && (
+                <CancelCountdownBadge
+                  deadline={cancelBy.toISOString()}
+                  shopUrl={shopUrl}
+                  busy={saving === "status" || saving === "cancelSent"}
+                  onMarkCancelled={() => save({ status: "CANCELLED" }, "status")}
+                  onStop={() =>
+                    callOp({ markCancellationSent: false }, "cancelSent")
+                  }
+                />
               )}
               {meta.productionLogId && (
                 <Badge variant="success" className="gap-1 text-[10px]">

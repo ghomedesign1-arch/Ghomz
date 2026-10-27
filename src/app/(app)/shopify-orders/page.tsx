@@ -4,6 +4,7 @@ import { PageHeader } from "@/components/layout/page-header";
 import { prisma } from "@/lib/prisma";
 import {
   DUE_SOON_WINDOW_DAYS,
+  cancelDeadline,
   effectiveDeliveryDate,
   effectiveLineItems,
   fetchRecentOrders,
@@ -36,6 +37,10 @@ import { RevenueSummary } from "@/components/shopify/revenue-summary";
 import type { ProductionQueueItem } from "@/components/shopify/production-queue";
 import { getStockSummary, syncOrdersStock } from "@/lib/semi-stock";
 import { SemiStockPanel } from "@/components/shopify/semi-stock-panel";
+import {
+  CancelAlerts,
+  type CancelWatchEntry,
+} from "@/components/shopify/cancel-countdown";
 
 export const dynamic = "force-dynamic";
 
@@ -137,6 +142,25 @@ export default async function ShopifyOrdersPage({
     console.error("[semi-stock] sync failed", e),
   );
   const stockRows = await getStockSummary().catch(() => []);
+
+  const cancelWatch: CancelWatchEntry[] = orders.flatMap((o) => {
+    const deadline = cancelDeadline(o, metaFor(o));
+    if (!deadline) return [];
+    const customer =
+      [o.customer?.first_name, o.customer?.last_name]
+        .filter(Boolean)
+        .join(" ")
+        .trim() || "Guest";
+    return [
+      {
+        id: o.id,
+        name: o.name,
+        customer,
+        deadline: deadline.toISOString(),
+        shopUrl: shopAdminOrderUrl(connection.shop, o.id),
+      },
+    ];
+  });
 
   const tileCounts: Record<string, number> = {
     NEW: 0,
@@ -555,6 +579,8 @@ export default async function ShopifyOrdersPage({
       />
 
       <NewOrdersWatcher />
+
+      <CancelAlerts entries={cancelWatch} />
 
       {error && (
         <Card>
