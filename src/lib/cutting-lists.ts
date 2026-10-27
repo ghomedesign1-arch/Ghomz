@@ -63,3 +63,70 @@ export async function ensureCuttingListsMigrated(): Promise<void> {
     update: {},
   });
 }
+
+const CATEGORIES_SEEDED_KEY = "cuttingLists.categoriesSeeded";
+
+const PRODUCT_CATEGORY_LABEL: Record<string, string> = {
+  L_SHAPE_SOFA: "L-Shape",
+  MODULAR_SOFA: "Modular Sofa",
+  SOFA_3_SEAT: "3-Seat Sofa",
+  SOFA_2_SEAT: "2-Seat Sofa",
+  CHAIR: "Chairs",
+  KIDS_BED: "Beds",
+  OTTOMAN: "Ottomans",
+  BEAN_SEAT: "Bean Seats",
+  OUTDOOR: "Outdoor",
+  OTHER: "Other",
+};
+const LABEL_ORDER = Object.values(PRODUCT_CATEGORY_LABEL);
+
+/**
+ * One-time: give migrated items a starting category from their original
+ * product's category. Only categories actually used are created.
+ */
+export async function ensureCuttingCategoriesSeeded(): Promise<void> {
+  const flag = await prisma.setting.findUnique({ where: { key: CATEGORIES_SEEDED_KEY } });
+  if (flag) return;
+
+  const items = await prisma.cuttingListItem.findMany({
+    where: { legacyProductId: { not: null }, categoryId: null },
+    select: { id: true, legacyProductId: true },
+  });
+  const products = await prisma.product.findMany({
+    where: { id: { in: items.map((i) => i.legacyProductId as string) } },
+    select: { id: true, category: true },
+  });
+  const labelByProduct = new Map(
+    products.map((p) => [p.id, PRODUCT_CATEGORY_LABEL[p.category] ?? "Other"]),
+  );
+  const labels = Array.from(new Set(Array.from(labelByProduct.values()))).sort(
+    (a, b) => LABEL_ORDER.indexOf(a) - LABEL_ORDER.indexOf(b),
+  );
+
+  await prisma.cuttingListCategory.createMany({
+    data: labels.map((name, i) => ({ name, position: i })),
+    skipDuplicates: true,
+  });
+  const cats = await prisma.cuttingListCategory.findMany({
+    where: { name: { in: labels } },
+    select: { id: true, name: true },
+  });
+  const catByName = new Map(cats.map((c) => [c.name, c.id]));
+
+  for (const label of labels) {
+    const ids = items
+      .filter((i) => labelByProduct.get(i.legacyProductId as string) === label)
+      .map((i) => i.id);
+    if (ids.length === 0) continue;
+    await prisma.cuttingListItem.updateMany({
+      where: { id: { in: ids } },
+      data: { categoryId: catByName.get(label) },
+    });
+  }
+
+  await prisma.setting.upsert({
+    where: { key: CATEGORIES_SEEDED_KEY },
+    create: { key: CATEGORIES_SEEDED_KEY, value: new Date().toISOString() },
+    update: {},
+  });
+}

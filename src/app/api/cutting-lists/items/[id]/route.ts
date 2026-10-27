@@ -13,8 +13,25 @@ export const PATCH = withApi(async (
   const body = (await req.json().catch(() => ({}))) as {
     name?: unknown;
     note?: unknown;
+    categoryId?: unknown;
   };
-  const data: { name?: string; note?: string | null } = {};
+  const data: { name?: string; note?: string | null; categoryId?: string | null } = {};
+
+  if ("categoryId" in body) {
+    await requireRole("ADMIN", "MANAGER");
+    if (body.categoryId === null || body.categoryId === "") {
+      data.categoryId = null;
+    } else if (typeof body.categoryId === "string") {
+      const cat = await prisma.cuttingListCategory.findUnique({
+        where: { id: body.categoryId },
+        select: { id: true },
+      });
+      if (!cat) throw new HttpError(404, "Category not found");
+      data.categoryId = cat.id;
+    } else {
+      throw new HttpError(422, "categoryId must be a string or null");
+    }
+  }
 
   if ("name" in body) {
     await requireRole("ADMIN", "MANAGER");

@@ -20,13 +20,25 @@ import {
   AddCuttingItemButton,
   CuttingItemActions,
 } from "@/components/cutting-lists/item-controls";
-import { ensureCuttingListsMigrated } from "@/lib/cutting-lists";
+import {
+  ensureCuttingCategoriesSeeded,
+  ensureCuttingListsMigrated,
+} from "@/lib/cutting-lists";
+import {
+  CategoryBadge,
+  ManageCategoriesButton,
+} from "@/components/cutting-lists/category-controls";
 
 export const dynamic = "force-dynamic";
 
 async function load() {
   try {
     await ensureCuttingListsMigrated();
+    await ensureCuttingCategoriesSeeded();
+    const categories = await prisma.cuttingListCategory.findMany({
+      select: { id: true, name: true },
+      orderBy: [{ position: "asc" }, { name: "asc" }],
+    });
     const items = await prisma.cuttingListItem.findMany({
       include: {
         files: {
@@ -39,15 +51,15 @@ async function load() {
       },
       orderBy: { name: "asc" },
     });
-    return { items, ready: true as const };
+    return { items, categories, ready: true as const };
   } catch (e) {
     console.error("[cutting-lists] load failed", e);
-    return { items: [], ready: false as const };
+    return { items: [], categories: [], ready: false as const };
   }
 }
 
 export default async function CuttingListsPage() {
-  const [{ items, ready }, writeAccess] = await Promise.all([
+  const [{ items, categories, ready }, writeAccess] = await Promise.all([
     load(),
     canWrite(),
   ]);
@@ -55,6 +67,21 @@ export default async function CuttingListsPage() {
   const totalFiles = items.reduce((a, i) => a + i.files.length, 0);
   const itemsWithFiles = items.filter((i) => i.files.length > 0).length;
   const itemOptions = items.map((i) => ({ id: i.id, name: i.name }));
+
+  const groups = [
+    ...categories.map((c) => ({
+      key: c.id,
+      label: c.name,
+      items: items.filter((i) => i.categoryId === c.id),
+    })),
+    {
+      key: "none",
+      label: "No category",
+      items: items.filter(
+        (i) => !i.categoryId || !categories.some((c) => c.id === i.categoryId),
+      ),
+    },
+  ].filter((g) => g.items.length > 0);
 
   return (
     <div className="space-y-8">
@@ -64,6 +91,7 @@ export default async function CuttingListsPage() {
         actions={
           writeAccess && ready ? (
             <>
+              <ManageCategoriesButton categories={categories} />
               <AddCuttingItemButton />
               <UploadCuttingListDialog items={itemOptions} />
             </>
@@ -104,8 +132,16 @@ export default async function CuttingListsPage() {
           </CardContent>
         </Card>
       ) : (
-        <div className="space-y-4">
-          {items.map((item) => {
+        <div className="space-y-8">
+          {groups.map((group) => (
+          <section key={group.key} className="space-y-4">
+            <h2 className="flex items-center gap-2 text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+              {group.label}
+              <span className="rounded-full bg-secondary px-2 py-0.5 text-[10px] font-semibold normal-case tracking-normal">
+                {group.items.length}
+              </span>
+            </h2>
+          {group.items.map((item) => {
             const files = item.files as CuttingListFile[];
             const doneCount = files.filter((f) => f.done).length;
             const allDone = files.length > 0 && doneCount === files.length;
@@ -113,8 +149,14 @@ export default async function CuttingListsPage() {
               <Card key={item.id}>
                 <CardHeader className="flex flex-row items-start justify-between space-y-0">
                   <div className="space-y-1">
-                    <CardTitle className="flex items-center gap-2">
+                    <CardTitle className="flex flex-wrap items-center gap-2">
                       {item.name}
+                      <CategoryBadge
+                        itemId={item.id}
+                        categoryId={item.categoryId}
+                        categories={categories}
+                        canEdit={writeAccess}
+                      />
                       {files.length > 0 && (
                         <Badge
                           variant={allDone ? "success" : "outline"}
@@ -164,6 +206,8 @@ export default async function CuttingListsPage() {
               </Card>
             );
           })}
+          </section>
+          ))}
         </div>
       )}
     </div>

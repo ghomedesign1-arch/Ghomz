@@ -576,16 +576,29 @@ model CustomOrderItem {
 /// factory uses to know exactly how to cut sponge for this SKU.
 /// A named entry on the cutting-lists page. Independent of Product so the
 /// cutting-list section can be managed on its own.
+/// User-defined grouping for the cutting-lists page; `position` sets the
+/// display order (lowest first).
+model CuttingListCategory {
+  id        String            @id @default(cuid())
+  name      String            @unique
+  position  Int               @default(0)
+  createdAt DateTime          @default(now())
+  items     CuttingListItem[]
+}
+
 model CuttingListItem {
   id              String        @id @default(cuid())
   name            String
   note            String?
+  categoryId      String?
+  category        CuttingListCategory? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
   /// Product this item was migrated from (one-time backfill bookkeeping).
   legacyProductId String?       @unique
   createdAt       DateTime      @default(now())
   files           CuttingList[]
 
   @@index([name])
+  @@index([categoryId])
 }
 
 model CuttingList {
