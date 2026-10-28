@@ -110,6 +110,10 @@ export const PATCH = withApi(async (
     const v = body.scheduledFor;
     patch.scheduledFor = v === null || v === "" ? null : String(v);
   }
+  if ("location" in body) {
+    const v = typeof body.location === "string" ? body.location.trim() : "";
+    patch.location = v ? v.slice(0, 60) : null;
+  }
   if (body.markConfirmationSent === true) {
     patch.confirmationSentAt = new Date().toISOString();
   } else if (body.markConfirmationSent === false) {

@@ -14,6 +14,7 @@ import {
   FileDown,
   FileText,
   Loader2,
+  MapPin,
   MessageCircle,
   Paperclip,
   Phone,
@@ -51,6 +52,7 @@ import {
 } from "@/lib/shopify";
 import { LineItemEditDialog } from "@/components/shopify/line-item-edit-dialog";
 import { CancelCountdownBadge } from "@/components/shopify/cancel-countdown";
+import { EGYPT_AREAS, autoArea, orderArea } from "@/lib/locations";
 
 const STATUS_OPTS: { value: ShopifyOrderStatus; label: string }[] = [
   { value: "NEW", label: "New" },
@@ -140,6 +142,9 @@ export function ShopifyOrderRow({
     !isTerminal && daysToDue >= 0 && daysToDue <= DUE_SOON_WINDOW_DAYS;
   const dueDateIso = dueDate.toISOString().slice(0, 10);
   const cancelBy = cancelDeadline(order, meta);
+  const area = orderArea(order, meta);
+  const shopifyArea =
+    autoArea(order.shipping_address) ?? autoArea(order.billing_address);
 
   async function save(patch: Partial<ShopifyOrderMeta>, key: string) {
     setSaving(key);
@@ -614,6 +619,13 @@ Reply here as soon as you've sent it and we'll fire up the workshop! 🪚✨`;
                     : `Due in ${daysToDue}d`}
                 </span>
               )}
+              <LocationBadge
+                area={area}
+                shopifyArea={shopifyArea}
+                isManual={Boolean(meta.location)}
+                busy={saving === "location"}
+                onChange={(v) => save({ location: v }, "location")}
+              />
               {cancelBy && (
                 <CancelCountdownBadge
                   deadline={cancelBy.toISOString()}
@@ -1279,6 +1291,54 @@ function ErpField({
       </label>
       {children}
     </div>
+  );
+}
+
+/** Area pill; doubles as a picker to override the Shopify address. */
+function LocationBadge({
+  area,
+  shopifyArea,
+  isManual,
+  busy,
+  onChange,
+}: {
+  area: string | null;
+  shopifyArea: string | null;
+  isManual: boolean;
+  busy: boolean;
+  onChange: (location: string | null) => void;
+}) {
+  const options: string[] = [...EGYPT_AREAS];
+  if (area && !options.includes(area)) options.unshift(area);
+  return (
+    <label
+      className={`relative inline-flex cursor-pointer items-center gap-1 whitespace-nowrap rounded-full border px-2 py-0.5 text-[10px] font-medium ${
+        area
+          ? "border-cyan-200 bg-cyan-50 text-cyan-800"
+          : "border-dashed border-slate-300 bg-white text-slate-500"
+      }`}
+      title={isManual ? "Area set manually" : "Area from the Shopify address — tap to change"}
+    >
+      <MapPin className="h-3 w-3" />
+      {area ?? "Set area"}
+      {isManual && <span className="opacity-60">•</span>}
+      <select
+        value={isManual ? (area ?? "") : ""}
+        disabled={busy}
+        onChange={(e) => onChange(e.target.value || null)}
+        className="absolute inset-0 cursor-pointer opacity-0"
+        aria-label="Change area"
+      >
+        <option value="">
+          {shopifyArea ? `Auto from Shopify (${shopifyArea})` : "Auto from Shopify"}
+        </option>
+        {options.map((a) => (
+          <option key={a} value={a}>
+            {a}
+          </option>
+        ))}
+      </select>
+    </label>
   );
 }
 

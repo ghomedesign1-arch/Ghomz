@@ -31,6 +31,7 @@ const DEFAULT_META: ShopifyOrderMeta = {
   depositRequestSentAt: null,
   cancellationSentAt: null,
   thanksSentAt: null,
+  location: null,
   lineOverrides: {},
 };
 

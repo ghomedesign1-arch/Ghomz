@@ -258,6 +258,8 @@ export interface ShopifyOrderMeta {
   depositRequestSentAt: string | null;
   cancellationSentAt: string | null;
   thanksSentAt: string | null;
+  /** Manual area override; null = use the Shopify shipping address. */
+  location: string | null;
   lineOverrides: Record<string, LineOverride>;
 }
 
@@ -293,6 +295,7 @@ export const DEFAULT_ORDER_META: ShopifyOrderMeta = {
   depositRequestSentAt: null,
   cancellationSentAt: null,
   thanksSentAt: null,
+  location: null,
   lineOverrides: {},
 };
 
