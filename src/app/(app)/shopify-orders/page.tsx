@@ -68,7 +68,7 @@ export default async function ShopifyOrdersPage({
     q?: string;
     payment?: string;
     sort?: string;
-    area?: string;
+    area?: string | string[];
     products?: string;
     factoryProducts?: string;
     product?: string;
@@ -453,7 +453,15 @@ export default async function ShopifyOrdersPage({
     );
 
   const NO_AREA = "__none";
-  const activeArea = (searchParams?.area ?? "").trim();
+  // Several areas can be picked: repeated ?area= params or a comma list.
+  const activeAreas = new Set(
+    ([] as string[])
+      .concat(searchParams?.area ?? [])
+      .flatMap((v) => v.split(","))
+      .map((v) => v.trim())
+      .filter(Boolean),
+  );
+  const activeArea = Array.from(activeAreas).join(",");
   const areaCounts = new Map<string, number>();
   let noAreaCount = 0;
   for (const o of activeOrders) {
@@ -483,9 +491,9 @@ export default async function ShopifyOrdersPage({
         return false;
       }
     }
-    if (activeArea) {
+    if (activeAreas.size > 0) {
       const a = orderArea(o, m);
-      if (activeArea === NO_AREA ? a !== null : a !== activeArea) return false;
+      if (!activeAreas.has(a ?? NO_AREA)) return false;
     }
     if (activePayment) {
       const kind = resolvePaymentKind(o, m);
@@ -814,21 +822,53 @@ export default async function ShopifyOrdersPage({
               {productsRaw && (
                 <input type="hidden" name="products" value={productsRaw} />
               )}
-              <select
-                name="area"
-                defaultValue={activeArea}
-                className="h-9 rounded-md border border-input bg-background px-2 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-ring"
-              >
-                <option value="">All areas</option>
-                {areaOptions.map(([a, n]) => (
-                  <option key={a} value={a}>
-                    📍 {a} ({n})
-                  </option>
-                ))}
-                {noAreaCount > 0 && (
-                  <option value={NO_AREA}>No area ({noAreaCount})</option>
-                )}
-              </select>
+              <details className="relative">
+                <summary className="flex h-9 cursor-pointer list-none items-center gap-1 rounded-md border border-input bg-background px-3 text-sm shadow-sm">
+                  📍{" "}
+                  {activeAreas.size === 0
+                    ? "All areas"
+                    : activeAreas.size <= 2
+                      ? Array.from(activeAreas)
+                          .map((a) => (a === NO_AREA ? "No area" : a))
+                          .join(", ")
+                      : `${activeAreas.size} areas`}
+                  <span className="text-xs opacity-60">▾</span>
+                </summary>
+                <div className="absolute left-0 z-20 mt-1 max-h-72 w-60 overflow-y-auto rounded-md border bg-popover p-2 shadow-lg">
+                  <div className="px-1 pb-1 text-[11px] text-muted-foreground">
+                    Tick areas, then press Apply
+                  </div>
+                  {areaOptions.map(([a, n]) => (
+                    <label
+                      key={a}
+                      className="flex cursor-pointer items-center gap-2 rounded px-1 py-1 text-sm hover:bg-secondary"
+                    >
+                      <input
+                        type="checkbox"
+                        name="area"
+                        value={a}
+                        defaultChecked={activeAreas.has(a)}
+                      />
+                      <span className="flex-1">{a}</span>
+                      <span className="text-xs text-muted-foreground">{n}</span>
+                    </label>
+                  ))}
+                  {noAreaCount > 0 && (
+                    <label className="flex cursor-pointer items-center gap-2 rounded px-1 py-1 text-sm hover:bg-secondary">
+                      <input
+                        type="checkbox"
+                        name="area"
+                        value={NO_AREA}
+                        defaultChecked={activeAreas.has(NO_AREA)}
+                      />
+                      <span className="flex-1">No area</span>
+                      <span className="text-xs text-muted-foreground">
+                        {noAreaCount}
+                      </span>
+                    </label>
+                  )}
+                </div>
+              </details>
               <select
                 name="sort"
                 defaultValue={sort}
