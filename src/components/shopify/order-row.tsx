@@ -824,7 +824,11 @@ Reply here as soon as you've sent it and we'll fire up the workshop! 🪚✨`;
                     orderId={order.id}
                     item={li}
                     currency={order.currency}
-                    onSaved={(next) => setMeta(next)}
+                    onSaved={(next) => {
+                      setMeta(next);
+                      // Scheduled production is server-rendered from these edits.
+                      router.refresh();
+                    }}
                   />
                 </div>
               </div>

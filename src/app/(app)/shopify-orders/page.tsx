@@ -255,12 +255,13 @@ export default async function ShopifyOrdersPage({
       productionUnits += qty;
     }
     if (m.scheduledFor) {
-      const items = o.line_items
+      // ERP edits (renamed product, new size/color, quantity) win over Shopify.
+      const items = effectiveLineItems(o, m)
         .map((li) => ({
           title: li.title,
-          variant: li.variant_title,
+          variant: li.variantTitle,
           sku: li.sku,
-          quantity: li.current_quantity ?? li.quantity ?? 0,
+          quantity: li.quantity,
         }))
         .filter((i) => i.quantity > 0);
       const customer = (
