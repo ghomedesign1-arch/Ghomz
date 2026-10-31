@@ -185,14 +185,13 @@ export function ShopifyOrderRow({
         .filter(Boolean)
         .join(" ")
         .trim() || "there";
-    const items = order.line_items
-      .filter((li) => effectiveQty(li) > 0)
+    const items = activeLineItems
       .map(
         (li) =>
-          `• ${effectiveQty(li)}× ${li.title}${li.variant_title ? ` (${li.variant_title})` : ""}`,
+          `• ${li.quantity}× ${li.title}${li.variantTitle ? ` (${li.variantTitle})` : ""}`,
       )
       .join("\n");
-    const total = fmt(currentAmount(order.current_total_price, order.total_price));
+    const total = fmt(currentTotal);
     const due = effectiveDeliveryDate(order.created_at, meta).toLocaleDateString(
       "en-GB",
       { day: "numeric", month: "short", year: "numeric" },
@@ -1359,16 +1358,6 @@ function whatsAppLink(raw: string | null | undefined): string | null {
     digits = "20" + digits;
   }
   return `https://wa.me/${digits}`;
-}
-
-function effectiveQty(li: {
-  quantity: number;
-  current_quantity?: number | null;
-}): number {
-  // Shopify leaves refunded/removed line items in the payload with
-  // `current_quantity` set to the still-active quantity (0 when removed).
-  if (li.current_quantity != null) return Math.max(0, li.current_quantity);
-  return Math.max(0, li.quantity ?? 0);
 }
 
 function currentAmount(

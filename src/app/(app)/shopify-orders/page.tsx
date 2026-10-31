@@ -300,10 +300,9 @@ export default async function ShopifyOrdersPage({
   const productCountMap = new Map<string, ProductFilterOption>();
   for (const o of activeOrders) {
     const seenInThisOrder = new Set<string>();
-    for (const li of o.line_items) {
-      const qty = li.current_quantity ?? li.quantity ?? 0;
-      if (qty <= 0) continue;
-      const key = productKey(li.title, li.variant_title);
+    for (const li of effectiveLineItems(o, metaFor(o))) {
+      if (li.quantity <= 0) continue;
+      const key = productKey(li.title, li.variantTitle);
       if (seenInThisOrder.has(key)) continue;
       seenInThisOrder.add(key);
       const existing = productCountMap.get(key);
@@ -312,7 +311,7 @@ export default async function ShopifyOrdersPage({
         productCountMap.set(key, {
           key,
           title: li.title,
-          variant: li.variant_title,
+          variant: li.variantTitle,
           count: 1,
         });
     }
@@ -385,9 +384,8 @@ export default async function ShopifyOrdersPage({
   // Distinct product names (any payment status) for the search dropdown.
   const allProductsSet = new Set<string>();
   for (const o of activeOrders) {
-    for (const li of o.line_items) {
-      const qty = li.current_quantity ?? li.quantity ?? 0;
-      if (qty > 0) allProductsSet.add(li.title);
+    for (const li of effectiveLineItems(o, metaFor(o))) {
+      if (li.quantity > 0) allProductsSet.add(li.title);
     }
   }
   const allProductsList: { name: string; orderCount: number }[] = Array.from(
@@ -396,9 +394,8 @@ export default async function ShopifyOrdersPage({
     .map((name) => ({
       name,
       orderCount: activeOrders.filter((o) =>
-        o.line_items.some(
-          (li) =>
-            (li.current_quantity ?? li.quantity ?? 0) > 0 && li.title === name,
+        effectiveLineItems(o, metaFor(o)).some(
+          (li) => li.quantity > 0 && li.title === name,
         ),
       ).length,
     }))
@@ -503,18 +500,17 @@ export default async function ShopifyOrdersPage({
       if (activePayment === "UNPAID" && kind !== "unpaid") return false;
     }
     if (activeProducts.size > 0) {
-      const hasProduct = o.line_items.some((li) => {
-        const qty = li.current_quantity ?? li.quantity ?? 0;
-        return qty > 0 && activeProducts.has(li.title);
-      });
+      const hasProduct = effectiveLineItems(o, m).some(
+        (li) => li.quantity > 0 && activeProducts.has(li.title),
+      );
       if (!hasProduct) return false;
     }
     if (selectedProducts.size > 0) {
-      const hasMatch = o.line_items.some((li) => {
-        const qty = li.current_quantity ?? li.quantity ?? 0;
-        if (qty <= 0) return false;
-        return selectedProducts.has(productKey(li.title, li.variant_title));
-      });
+      const hasMatch = effectiveLineItems(o, m).some(
+        (li) =>
+          li.quantity > 0 &&
+          selectedProducts.has(productKey(li.title, li.variantTitle)),
+      );
       if (!hasMatch) return false;
     }
     if (query) {
