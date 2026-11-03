@@ -185,6 +185,57 @@ export async function fetchRecentOrders(
   return data.orders ?? [];
 }
 
+/** Open, not-yet-fulfilled Shopify orders of any age. */
+async function fetchOpenUnfulfilledOrders(): Promise<ShopifyOrderSummary[]> {
+  const conn = await getShopifyToken();
+  if (!conn) throw new Error("Shopify not connected");
+  const url = new URL(
+    `https://${conn.shop}/admin/api/${API_VERSION}/orders.json`,
+  );
+  url.searchParams.set("status", "open");
+  url.searchParams.set("fulfillment_status", "unfulfilled");
+  url.searchParams.set("limit", "250");
+  const res = await fetch(url, {
+    headers: {
+      "X-Shopify-Access-Token": conn.token,
+      "Content-Type": "application/json",
+    },
+    cache: "no-store",
+  });
+  if (!res.ok) {
+    const text = await res.text().catch(() => "");
+    throw new Error(`Shopify open orders fetch failed (${res.status}): ${text}`);
+  }
+  const data = (await res.json()) as { orders?: ShopifyOrderSummary[] };
+  return data.orders ?? [];
+}
+
+/**
+ * Orders from the last `days` plus older ones still being worked on: open and
+ * unfulfilled in Shopify, and not Shipped / Cancelled in the ERP. Keeps
+ * long-running orders from dropping off the page when they age past the window.
+ */
+export async function fetchRecentAndActiveOrders(
+  days = 30,
+): Promise<ShopifyOrderSummary[]> {
+  const [recent, open] = await Promise.all([
+    fetchRecentOrders(days),
+    fetchOpenUnfulfilledOrders().catch((err) => {
+      console.error("[shopify] open orders fetch failed", err);
+      return [] as ShopifyOrderSummary[];
+    }),
+  ]);
+  const seen = new Set(recent.map((o) => o.id));
+  const older = open.filter((o) => !seen.has(o.id));
+  if (older.length === 0) return recent;
+  const meta = await getOrdersMeta(older.map((o) => o.id));
+  const stillActive = older.filter((o) => {
+    const status = (meta.get(o.id) ?? DEFAULT_ORDER_META).status;
+    return status !== "SHIPPED" && status !== "CANCELLED";
+  });
+  return [...recent, ...stillActive];
+}
+
 export async function fetchOrderById(
   orderId: number,
 ): Promise<ShopifyOrderSummary | null> {

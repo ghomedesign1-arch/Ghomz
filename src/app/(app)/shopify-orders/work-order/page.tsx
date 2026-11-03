@@ -3,7 +3,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { PageHeader } from "@/components/layout/page-header";
 import {
   effectiveLineItems,
-  fetchRecentOrders,
+  fetchRecentAndActiveOrders,
   getOrdersMeta,
   getShopifyToken,
   type ShopifyOrderMeta,
@@ -59,7 +59,7 @@ export default async function WorkOrderPage({
 
   let orders: ShopifyOrderSummary[] = [];
   try {
-    orders = await fetchRecentOrders(60);
+    orders = await fetchRecentAndActiveOrders(60);
   } catch {
     /* ignore — empty state below */
   }

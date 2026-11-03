@@ -7,7 +7,7 @@ import {
   cancelDeadline,
   effectiveDeliveryDate,
   effectiveLineItems,
-  fetchRecentOrders,
+  fetchRecentAndActiveOrders,
   getOrdersMeta,
   getShopifyToken,
   resolvePaymentKind,
@@ -105,7 +105,7 @@ export default async function ShopifyOrdersPage({
   let orders: ShopifyOrderSummary[] = [];
   let error: string | null = null;
   try {
-    orders = await fetchRecentOrders(30);
+    orders = await fetchRecentAndActiveOrders(30);
   } catch (err) {
     error = err instanceof Error ? err.message : "Failed to load orders";
   }
@@ -608,7 +608,7 @@ export default async function ShopifyOrdersPage({
     <div className="space-y-6">
       <PageHeader
         title="Shopify orders"
-        description={`Last 30 days from ${connection.shop} · ${activeOrders.length} order${activeOrders.length === 1 ? "" : "s"}`}
+        description={`Last 30 days + older open orders from ${connection.shop} · ${activeOrders.length} order${activeOrders.length === 1 ? "" : "s"}`}
         actions={
           <div className="flex items-center gap-2">
             <InvoiceBrandingDialog />
