@@ -143,15 +143,15 @@ export default async function PrintShopifyTicketsPage({
   for (const t of tickets) counts[t.kind] = (counts[t.kind] ?? 0) + 1;
 
   return (
-    <div dir="rtl" lang="ar" className={`${cairo.className} min-h-screen bg-gray-100 text-black print:bg-white`}>
+    <div dir="rtl" lang="ar" className={`${cairo.className} min-h-screen bg-gray-100 text-black print:min-h-0 print:bg-white`}>
       <style>{`
-        @page { size: A4; margin: 8mm; }
+        @page { size: A4; margin: 10mm; }
         @media print {
           .no-print { display: none !important; }
-          /* Fixed-height page box with three equal slots, so tickets never
-             spill onto the next sheet (Safari ignores break-inside). */
-          .ticket-page { height: 255mm; display: flex; flex-direction: column; gap: 3mm; overflow: hidden; }
-          .ticket-page > section { height: calc((255mm - 6mm) / 3); flex: none; overflow: hidden; }
+          html, body { background: #fff !important; }
+          /* Three tickets per sheet: every group after the first starts a new page. */
+          .ticket-page + .ticket-page { break-before: page; page-break-before: always; }
+          .ticket-page > section { break-inside: avoid; page-break-inside: avoid; }
         }
       `}</style>
 
@@ -171,8 +171,7 @@ export default async function PrintShopifyTicketsPage({
         {pages.map((page, pi) => (
           <div
             key={pi}
-            className="ticket-page space-y-4 print:space-y-0"
-            style={pi < pages.length - 1 ? { breakAfter: "page", pageBreakAfter: "always" } : undefined}
+            className="ticket-page space-y-4 print:space-y-3"
           >
             {page.map((t) => (
               <section
