@@ -48,7 +48,7 @@ const PRODUCT_AR: [RegExp, string][] = [
   [/tiny\s*cloud/i, "تيني كلود"],
   [/sug[ae]r\s*snap/i, "شوجر اسناب"],
   [/sleepy/i, "سليبي بيت"],
-  [/milo/i, "ميلو بيد"],
+  [/milo|mallow|mellow/i, "ميلو بيد"],
   [/nest/i, "نست"],
 ];
 
