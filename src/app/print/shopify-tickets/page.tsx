@@ -50,7 +50,7 @@ function CheckBoxes({ count }: { count: number }) {
       {Array.from({ length: Math.min(Math.max(count, 1), 6) }, (_, i) => (
         <span
           key={i}
-          className="inline-block h-6 w-6 rounded-sm border-2 border-gray-800 bg-white"
+          className="inline-block h-6 w-6 rounded-sm border-2 border-gray-800 bg-white print:h-4 print:w-4 print:border"
         />
       ))}
     </div>
@@ -139,7 +139,7 @@ export default async function PrintShopifyTicketsPage({
 
   return (
     <div dir="rtl" lang="ar" className={`${cairo.className} min-h-screen bg-gray-100 text-black print:bg-white`}>
-      <style>{`@page { size: A4; margin: 10mm; } @media print { .no-print { display: none !important; } }`}</style>
+      <style>{`@page { size: A4; margin: 8mm; } @media print { .no-print { display: none !important; } }`}</style>
 
       <div className="no-print sticky top-0 z-10 flex flex-wrap items-center gap-3 border-b bg-white px-6 py-3 shadow-sm">
         <PrintButton />
@@ -148,7 +148,7 @@ export default async function PrintShopifyTicketsPage({
         </span>
       </div>
 
-      <div className="mx-auto max-w-[800px] space-y-4 p-6 print:max-w-none print:space-y-3 print:p-0">
+      <div className="mx-auto max-w-[800px] space-y-4 p-6 print:max-w-none print:space-y-2 print:p-0">
         {error && <div className="rounded border border-rose-300 bg-rose-50 p-4">{error}</div>}
         {!error && tickets.length === 0 && (
           <div className="rounded border bg-white p-6 text-center">لا توجد طلبات للطباعة.</div>
@@ -157,20 +157,20 @@ export default async function PrintShopifyTicketsPage({
         {tickets.map((t) => (
           <section
             key={t.id}
-            className="break-inside-avoid rounded-lg border-2 border-gray-800 bg-white p-4"
+            className="break-inside-avoid rounded-lg border-2 border-gray-800 bg-white p-4 print:rounded print:border print:p-2"
             style={{ breakInside: "avoid", pageBreakInside: "avoid" }}
           >
-            <header className="flex flex-wrap items-center justify-between gap-2 border-b border-gray-300 pb-2">
+            <header className="flex flex-wrap items-center justify-between gap-2 border-b border-gray-300 pb-2 print:pb-1">
               <div className="flex items-center gap-3">
-                <span className="text-2xl font-bold" dir="ltr">{t.name}</span>
-                <span className="rounded border border-gray-400 px-2 py-0.5 text-sm">{t.status}</span>
+                <span className="text-2xl font-bold print:text-base" dir="ltr">{t.name}</span>
+                <span className="rounded border border-gray-400 px-2 py-0.5 text-sm print:py-0 print:text-[11px]">{t.status}</span>
               </div>
-              <span className={`rounded border-2 px-3 py-1 text-base font-bold ${PAYMENT_TONE[t.kind]}`}>
+              <span className={`rounded border-2 px-3 py-1 text-base font-bold print:px-2 print:py-0 print:text-xs ${PAYMENT_TONE[t.kind]}`}>
                 {PAYMENT_AR[t.kind]}
               </span>
             </header>
 
-            <div className="grid grid-cols-2 gap-x-6 gap-y-1 py-2 text-sm">
+            <div className="grid grid-cols-2 gap-x-6 gap-y-1 py-2 text-sm print:gap-y-0 print:py-1 print:text-[11px] print:leading-snug">
               <div>
                 <b>العميل:</b> {arabicName(t.customer).text}
                 {!arabicName(t.customer).complete && (
@@ -180,16 +180,17 @@ export default async function PrintShopifyTicketsPage({
               <div><b>الهاتف:</b> <span dir="ltr">{t.phone ?? "—"}</span></div>
               <div><b>المنطقة:</b> {t.area ? (AREA_AR[t.area] ?? t.area) : "—"}</div>
               <div><b>تاريخ الطلب:</b> {t.ordered}</div>
+              <div><b>موعد التسليم:</b> {t.due}</div>
+              <div />
               <div className="col-span-2">
                 <b>العنوان:</b> {t.address.length ? arabicAddress(t.address.join("، ")) : "—"}
                 {t.address.length > 0 && arabicAddress(t.address.join("، ")) !== t.address.join("، ") && (
-                  <div className="text-xs text-gray-600">كما كتبه العميل: {t.address.join("، ")}</div>
+                  <div className="text-xs text-gray-600 print:text-[9px]">كما كتبه العميل: {t.address.join("، ")}</div>
                 )}
               </div>
-              <div className="col-span-2"><b>موعد التسليم:</b> {t.due}</div>
             </div>
 
-            <table className="w-full border-collapse text-sm">
+            <table className="w-full border-collapse text-sm print:text-[11px] print:leading-tight print:[&_td]:py-0.5 print:[&_th]:py-0.5">
               <thead>
                 <tr className="bg-gray-100">
                   <th className="border border-gray-400 px-2 py-1 text-right">المنتج</th>
@@ -219,7 +220,7 @@ export default async function PrintShopifyTicketsPage({
                     <td className="border border-gray-400 px-2 py-1">
                       {v.mattress === true ? "مع مرتبة" : v.mattress === false ? "بدون مرتبة" : "—"}
                     </td>
-                    <td className="border border-gray-400 px-2 py-1 text-center text-base font-bold">
+                    <td className="border border-gray-400 px-2 py-1 text-center text-base font-bold print:text-xs">
                       {li.quantity}
                     </td>
                     <td className="border border-gray-400 px-2 py-1 text-center">
@@ -234,7 +235,7 @@ export default async function PrintShopifyTicketsPage({
             </table>
 
             {t.notes && (
-              <div className="mt-2 rounded border border-gray-300 bg-gray-50 p-2 text-sm">
+              <div className="mt-2 rounded border border-gray-300 bg-gray-50 p-2 text-sm print:mt-1 print:p-1 print:text-[11px]">
                 <b>ملاحظات:</b> {t.notes}
               </div>
             )}
