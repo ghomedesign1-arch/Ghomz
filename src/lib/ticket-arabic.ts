@@ -125,3 +125,117 @@ export function arabicVariant(
   if (/baby\s*bloom/i.test(title)) mattress = null;
   return { size, color, mattress, extra };
 }
+
+export const AREA_AR: Record<string, string> = {
+  "Cairo": "القاهرة",
+  "Giza": "الجيزة",
+  "Alexandria": "الإسكندرية",
+  "North Coast": "الساحل الشمالي",
+  "Sharm El Sheikh": "شرم الشيخ",
+  "Hurghada": "الغردقة",
+  "El Gouna": "الجونة",
+  "Dahab": "دهب",
+  "Ain Sokhna": "العين السخنة",
+  "Qalyubia": "القليوبية",
+  "Sharqia": "الشرقية",
+  "Dakahlia": "الدقهلية",
+  "Gharbia": "الغربية",
+  "Monufia": "المنوفية",
+  "Beheira": "البحيرة",
+  "Kafr El Sheikh": "كفر الشيخ",
+  "Damietta": "دمياط",
+  "Port Said": "بورسعيد",
+  "Ismailia": "الإسماعيلية",
+  "Suez": "السويس",
+  "Fayoum": "الفيوم",
+  "Beni Suef": "بني سويف",
+  "Minya": "المنيا",
+  "Asyut": "أسيوط",
+  "Sohag": "سوهاج",
+  "Qena": "قنا",
+  "Luxor": "الأقصر",
+  "Aswan": "أسوان",
+  "Red Sea": "البحر الأحمر",
+  "South Sinai": "جنوب سيناء",
+  "North Sinai": "شمال سيناء",
+  "Matrouh": "مطروح",
+  "New Valley": "الوادي الجديد",
+};
+
+// Longer phrases first so "new cairo" wins over "cairo".
+const ADDRESS_WORDS: [string, string][] = [
+  ["6th of october", "6 أكتوبر"],
+  ["6 october", "6 أكتوبر"],
+  ["october", "أكتوبر"],
+  ["fifth settlement", "التجمع الخامس"],
+  ["5th settlement", "التجمع الخامس"],
+  ["first settlement", "التجمع الأول"],
+  ["new cairo", "القاهرة الجديدة"],
+  ["nasr city", "مدينة نصر"],
+  ["sheikh zayed", "الشيخ زايد"],
+  ["el sheikh zayed", "الشيخ زايد"],
+  ["heliopolis", "مصر الجديدة"],
+  ["maadi", "المعادي"],
+  ["zamalek", "الزمالك"],
+  ["mohandessin", "المهندسين"],
+  ["mohandeseen", "المهندسين"],
+  ["dokki", "الدقي"],
+  ["agouza", "العجوزة"],
+  ["haram", "الهرم"],
+  ["faisal", "فيصل"],
+  ["rehab", "الرحاب"],
+  ["madinaty", "مدينتي"],
+  ["shorouk", "الشروق"],
+  ["obour", "العبور"],
+  ["mokattam", "المقطم"],
+  ["smouha", "سموحة"],
+  ["sidi gaber", "سيدي جابر"],
+  ["miami", "ميامي"],
+  ["sporting", "سبورتنج"],
+  ["in front of", "أمام"],
+  ["next to", "بجوار"],
+  ["beside", "بجوار"],
+  ["near", "بالقرب من"],
+  ["behind", "خلف"],
+  ["opposite", "أمام"],
+  ["street", "شارع"],
+  ["st.", "شارع"],
+  ["st", "شارع"],
+  ["road", "طريق"],
+  ["rd", "طريق"],
+  ["square", "ميدان"],
+  ["building", "عمارة"],
+  ["bldg", "عمارة"],
+  ["bld", "عمارة"],
+  ["tower", "برج"],
+  ["floor", "الدور"],
+  ["apartment", "شقة"],
+  ["apt", "شقة"],
+  ["flat", "شقة"],
+  ["villa", "فيلا"],
+  ["compound", "كمبوند"],
+  ["district", "حي"],
+  ["block", "بلوك"],
+  ["gate", "بوابة"],
+  ["zone", "منطقة"],
+  ["area", "منطقة"],
+  ["city", "مدينة"],
+  ...Object.entries(AREA_AR).map(([en, ar]) => [en.toLowerCase(), ar] as [string, string]),
+].sort((a, b) => b[0].length - a[0].length) as [string, string][];
+
+const escapeRe = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+const ADDRESS_RE = new RegExp(
+  `(?<![A-Za-z])(${ADDRESS_WORDS.map(([en]) => escapeRe(en)).join("|")})(?![A-Za-z])`,
+  "gi",
+);
+const ADDRESS_MAP = new Map(ADDRESS_WORDS.map(([en, ar]) => [en, ar]));
+
+/**
+ * Best-effort Arabic for a customer-typed address: known places and common
+ * address words are replaced; Arabic text, numbers and unknown names stay.
+ */
+export function arabicAddress(text: string): string {
+  return text
+    .replace(ADDRESS_RE, (m) => ADDRESS_MAP.get(m.toLowerCase()) ?? m)
+    .replace(/\s*,\s*/g, "، ");
+}

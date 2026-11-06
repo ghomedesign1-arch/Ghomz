@@ -12,7 +12,14 @@ import {
   type ShopifyOrderSummary,
 } from "@/lib/shopify";
 import { orderArea } from "@/lib/locations";
-import { PAYMENT_AR, STATUS_AR, arabicProductName, arabicVariant } from "@/lib/ticket-arabic";
+import {
+  AREA_AR,
+  PAYMENT_AR,
+  STATUS_AR,
+  arabicAddress,
+  arabicProductName,
+  arabicVariant,
+} from "@/lib/ticket-arabic";
 import { PrintButton } from "@/components/shopify/print-button";
 
 export const dynamic = "force-dynamic";
@@ -33,6 +40,20 @@ function formatDate(d: Date): string {
     month: "long",
     year: "numeric",
   });
+}
+
+/** Empty squares the factory ticks by pen — one per unit. */
+function CheckBoxes({ count }: { count: number }) {
+  return (
+    <div className="flex flex-wrap justify-center gap-1">
+      {Array.from({ length: Math.min(Math.max(count, 1), 6) }, (_, i) => (
+        <span
+          key={i}
+          className="inline-block h-6 w-6 rounded-sm border-2 border-gray-800 bg-white"
+        />
+      ))}
+    </div>
+  );
 }
 
 function addressLines(a: ShopifyAddress | null): string[] {
@@ -151,9 +172,14 @@ export default async function PrintShopifyTicketsPage({
             <div className="grid grid-cols-2 gap-x-6 gap-y-1 py-2 text-sm">
               <div><b>العميل:</b> {t.customer}</div>
               <div><b>الهاتف:</b> <span dir="ltr">{t.phone ?? "—"}</span></div>
-              <div><b>المنطقة:</b> {t.area ?? "—"}</div>
+              <div><b>المنطقة:</b> {t.area ? (AREA_AR[t.area] ?? t.area) : "—"}</div>
               <div><b>تاريخ الطلب:</b> {t.ordered}</div>
-              <div className="col-span-2"><b>العنوان:</b> {t.address.length ? t.address.join("، ") : "—"}</div>
+              <div className="col-span-2">
+                <b>العنوان:</b> {t.address.length ? arabicAddress(t.address.join("، ")) : "—"}
+                {t.address.length > 0 && arabicAddress(t.address.join("، ")) !== t.address.join("، ") && (
+                  <div className="text-xs text-gray-600">كما كتبه العميل: {t.address.join("، ")}</div>
+                )}
+              </div>
               <div className="col-span-2"><b>موعد التسليم:</b> {t.due}</div>
             </div>
 
@@ -165,6 +191,8 @@ export default async function PrintShopifyTicketsPage({
                   <th className="border border-gray-400 px-2 py-1 text-right">اللون</th>
                   <th className="border border-gray-400 px-2 py-1 text-right">المرتبة</th>
                   <th className="border border-gray-400 px-2 py-1 text-center">الكمية</th>
+                  <th className="border border-gray-400 px-2 py-1 text-center">القماش</th>
+                  <th className="border border-gray-400 px-2 py-1 text-center">الإسفنج</th>
                 </tr>
               </thead>
               <tbody>
@@ -187,6 +215,12 @@ export default async function PrintShopifyTicketsPage({
                     </td>
                     <td className="border border-gray-400 px-2 py-1 text-center text-base font-bold">
                       {li.quantity}
+                    </td>
+                    <td className="border border-gray-400 px-2 py-1 text-center">
+                      <CheckBoxes count={li.quantity} />
+                    </td>
+                    <td className="border border-gray-400 px-2 py-1 text-center">
+                      <CheckBoxes count={li.quantity} />
                     </td>
                   </tr>
                 ))}
