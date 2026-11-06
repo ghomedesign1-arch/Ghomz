@@ -41,6 +41,23 @@ const COLOR_AR: Record<string, string> = {
   "terracotta": "تيراكوتا",
 };
 
+// Checked in order: "Baby Nest" must match before "Nest".
+const PRODUCT_AR: [RegExp, string][] = [
+  [/baby\s*nest/i, "بيبي نست"],
+  [/baby\s*bloom/i, "بيبي بلوم"],
+  [/tiny\s*cloud/i, "تيني كلود"],
+  [/sug[ae]r\s*snap/i, "شوجر اسناب"],
+  [/sleepy/i, "سليبي بيت"],
+  [/milo/i, "ميلو بيد"],
+  [/nest/i, "نست"],
+];
+
+/** Arabic product name, or null when the product isn't in the list. */
+export function arabicProductName(title: string): string | null {
+  for (const [re, ar] of PRODUCT_AR) if (re.test(title)) return ar;
+  return null;
+}
+
 export const STATUS_AR: Record<string, string> = {
   NEW: "جديد",
   SCHEDULED: "مجدول",

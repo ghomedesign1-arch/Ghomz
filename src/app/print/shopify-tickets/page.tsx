@@ -12,7 +12,7 @@ import {
   type ShopifyOrderSummary,
 } from "@/lib/shopify";
 import { orderArea } from "@/lib/locations";
-import { PAYMENT_AR, STATUS_AR, arabicVariant } from "@/lib/ticket-arabic";
+import { PAYMENT_AR, STATUS_AR, arabicProductName, arabicVariant } from "@/lib/ticket-arabic";
 import { PrintButton } from "@/components/shopify/print-button";
 
 export const dynamic = "force-dynamic";
@@ -171,7 +171,10 @@ export default async function PrintShopifyTicketsPage({
                 {t.lines.map(({ li, v }) => (
                   <tr key={li.id}>
                     <td className="border border-gray-400 px-2 py-1 font-semibold">
-                      {li.title}
+                      {arabicProductName(li.title) ?? li.title}
+                      {arabicProductName(li.title) && (
+                        <div className="text-xs font-normal text-gray-600" dir="ltr">{li.title}</div>
+                      )}
                       {v.extra.length > 0 && (
                         <div className="text-xs font-normal">{v.extra.join(" / ")}</div>
                       )}
