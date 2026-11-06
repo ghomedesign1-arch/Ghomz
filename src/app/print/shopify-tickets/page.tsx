@@ -21,6 +21,7 @@ import {
   arabicVariant,
 } from "@/lib/ticket-arabic";
 import { PrintButton } from "@/components/shopify/print-button";
+import { arabicName } from "@/lib/arabic-names";
 
 export const dynamic = "force-dynamic";
 
@@ -170,7 +171,12 @@ export default async function PrintShopifyTicketsPage({
             </header>
 
             <div className="grid grid-cols-2 gap-x-6 gap-y-1 py-2 text-sm">
-              <div><b>العميل:</b> {t.customer}</div>
+              <div>
+                <b>العميل:</b> {arabicName(t.customer).text}
+                {!arabicName(t.customer).complete && (
+                  <span className="text-xs text-gray-600" dir="ltr"> ({t.customer})</span>
+                )}
+              </div>
               <div><b>الهاتف:</b> <span dir="ltr">{t.phone ?? "—"}</span></div>
               <div><b>المنطقة:</b> {t.area ? (AREA_AR[t.area] ?? t.area) : "—"}</div>
               <div><b>تاريخ الطلب:</b> {t.ordered}</div>
