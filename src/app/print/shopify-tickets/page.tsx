@@ -144,7 +144,16 @@ export default async function PrintShopifyTicketsPage({
 
   return (
     <div dir="rtl" lang="ar" className={`${cairo.className} min-h-screen bg-gray-100 text-black print:bg-white`}>
-      <style>{`@page { size: A4; margin: 8mm; } @media print { .no-print { display: none !important; } }`}</style>
+      <style>{`
+        @page { size: A4; margin: 8mm; }
+        @media print {
+          .no-print { display: none !important; }
+          /* Fixed-height page box with three equal slots, so tickets never
+             spill onto the next sheet (Safari ignores break-inside). */
+          .ticket-page { height: 255mm; display: flex; flex-direction: column; gap: 3mm; overflow: hidden; }
+          .ticket-page > section { height: calc((255mm - 6mm) / 3); flex: none; overflow: hidden; }
+        }
+      `}</style>
 
       <div className="no-print sticky top-0 z-10 flex flex-wrap items-center gap-3 border-b bg-white px-6 py-3 shadow-sm">
         <PrintButton />
@@ -162,7 +171,7 @@ export default async function PrintShopifyTicketsPage({
         {pages.map((page, pi) => (
           <div
             key={pi}
-            className="space-y-4 print:space-y-2"
+            className="ticket-page space-y-4 print:space-y-0"
             style={pi < pages.length - 1 ? { breakAfter: "page", pageBreakAfter: "always" } : undefined}
           >
             {page.map((t) => (
