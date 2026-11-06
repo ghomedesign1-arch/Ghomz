@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Printer } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { PageHeader } from "@/components/layout/page-header";
 import { prisma } from "@/lib/prisma";
@@ -611,6 +612,20 @@ export default async function ShopifyOrdersPage({
         description={`Last 30 days + older open orders from ${connection.shop} · ${activeOrders.length} order${activeOrders.length === 1 ? "" : "s"}`}
         actions={
           <div className="flex items-center gap-2">
+            <Link
+              href={`/print/shopify-tickets?ids=${filtered
+                .filter((o) => {
+                  const st = metaFor(o).status;
+                  return st !== "SHIPPED" && st !== "CANCELLED";
+                })
+                .map((o) => o.id)
+                .join(",")}`}
+              target="_blank"
+              className="inline-flex h-9 items-center gap-1.5 rounded-md border border-input bg-background px-3 text-sm font-medium shadow-sm hover:bg-secondary"
+              title="Arabic tickets without prices, for the orders shown below"
+            >
+              <Printer className="h-4 w-4" /> طباعة التذاكر
+            </Link>
             <InvoiceBrandingDialog />
           </div>
         }
