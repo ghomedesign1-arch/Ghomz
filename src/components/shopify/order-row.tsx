@@ -56,7 +56,6 @@ import { CancelCountdownBadge } from "@/components/shopify/cancel-countdown";
 import { EGYPT_AREAS, autoArea, orderArea } from "@/lib/locations";
 import {
   AREA_AR,
-  PAYMENT_AR,
   arabicAddress,
   arabicProductName,
   arabicVariant,
@@ -529,11 +528,6 @@ Reply here as soon as you've sent it and we'll fire up the workshop! 🪚✨`;
           .join(" — ");
       })
       .join("\n");
-    const { kind, remaining } = resolvePayment(order, meta);
-    const payment =
-      kind === "paid" || kind === "refunded"
-        ? `*الدفع:* ${PAYMENT_AR[kind]} — لا يوجد تحصيل`
-        : `*الدفع:* ${PAYMENT_AR[kind]}\n*المطلوب تحصيله:* ${fmt(remaining)} جنيه`;
     const due = dueDate.toLocaleDateString("ar-EG", {
       weekday: "long",
       day: "numeric",
@@ -550,14 +544,11 @@ Reply here as soon as you've sent it and we'll fire up the workshop! 🪚✨`;
       `*الهاتف:* ${phone}`,
       `*المنطقة:* ${area ? (AREA_AR[area] ?? area) : "—"}`,
       `*العنوان:* ${arAddress}`,
-      rawAddress && arAddress !== rawAddress ? `(كما كتبه العميل: ${rawAddress})` : null,
       map ? `*الموقع:* ${map}` : null,
       `*موعد التسليم:* ${due}`,
       ``,
       `*المنتجات:*`,
       items,
-      ``,
-      payment,
       meta.notes?.trim() ? `\n*ملاحظات:* ${meta.notes.trim()}` : null,
     ]
       .filter((l) => l !== null)
