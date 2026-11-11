@@ -19,6 +19,7 @@ import {
   Paperclip,
   Phone,
   Send,
+  Truck,
   X,
 } from "lucide-react";
 import { toast } from "sonner";
@@ -53,6 +54,14 @@ import {
 import { LineItemEditDialog } from "@/components/shopify/line-item-edit-dialog";
 import { CancelCountdownBadge } from "@/components/shopify/cancel-countdown";
 import { EGYPT_AREAS, autoArea, orderArea } from "@/lib/locations";
+import {
+  AREA_AR,
+  PAYMENT_AR,
+  arabicAddress,
+  arabicProductName,
+  arabicVariant,
+} from "@/lib/ticket-arabic";
+import { arabicName } from "@/lib/arabic-names";
 
 const STATUS_OPTS: { value: ShopifyOrderStatus; label: string }[] = [
   { value: "NEW", label: "New" },
@@ -488,6 +497,78 @@ Reply here as soon as you've sent it and we'll fire up the workshop! 🪚✨`;
     }
   }
 
+  /** Arabic delivery sheet for the driver — WhatsApp opens so you pick the driver. */
+  function sendDeliveryToDriver() {
+    const name =
+      [order.customer?.first_name, order.customer?.last_name]
+        .filter(Boolean)
+        .join(" ")
+        .trim() ||
+      order.shipping_address?.name ||
+      "";
+    const phone =
+      order.customer?.phone ?? order.shipping_address?.phone ?? "—";
+    const addr = order.shipping_address ?? order.billing_address;
+    const rawAddress = addr
+      ? [addr.address1, addr.address2, addr.city, addr.province]
+          .map((s) => (s ?? "").trim())
+          .filter(Boolean)
+          .join("، ")
+      : "";
+    const arAddress = rawAddress ? arabicAddress(rawAddress) : "—";
+    const items = activeLineItems
+      .map((li) => {
+        const v = arabicVariant(li.title, li.variantTitle, li.sku);
+        return [
+          `• ${li.quantity}× ${arabicProductName(li.title) ?? li.title}`,
+          v.size,
+          v.color,
+          v.mattress === true ? "مع مرتبة" : v.mattress === false ? "بدون مرتبة" : null,
+        ]
+          .filter(Boolean)
+          .join(" — ");
+      })
+      .join("\n");
+    const { kind, remaining } = resolvePayment(order, meta);
+    const payment =
+      kind === "paid" || kind === "refunded"
+        ? `*الدفع:* ${PAYMENT_AR[kind]} — لا يوجد تحصيل`
+        : `*الدفع:* ${PAYMENT_AR[kind]}\n*المطلوب تحصيله:* ${fmt(remaining)} جنيه`;
+    const due = dueDate.toLocaleDateString("ar-EG", {
+      weekday: "long",
+      day: "numeric",
+      month: "long",
+    });
+    const map =
+      addr?.latitude != null && addr?.longitude != null
+        ? `https://maps.google.com/?q=${addr.latitude},${addr.longitude}`
+        : null;
+    const message = [
+      `🚚 *طلب توصيل — G-Homz*`,
+      `*رقم الطلب:* ${order.name}`,
+      `*العميل:* ${name ? arabicName(name).text : "—"}`,
+      `*الهاتف:* ${phone}`,
+      `*المنطقة:* ${area ? (AREA_AR[area] ?? area) : "—"}`,
+      `*العنوان:* ${arAddress}`,
+      rawAddress && arAddress !== rawAddress ? `(كما كتبه العميل: ${rawAddress})` : null,
+      map ? `*الموقع:* ${map}` : null,
+      `*موعد التسليم:* ${due}`,
+      ``,
+      `*المنتجات:*`,
+      items,
+      ``,
+      payment,
+      meta.notes?.trim() ? `\n*ملاحظات:* ${meta.notes.trim()}` : null,
+    ]
+      .filter((l) => l !== null)
+      .join("\n");
+    window.open(
+      `https://wa.me/?text=${encodeURIComponent(message)}`,
+      "_blank",
+      "noopener,noreferrer",
+    );
+  }
+
   async function uploadReceipt(file: File) {
     setSaving("receipt");
     try {
@@ -715,6 +796,15 @@ Reply here as soon as you've sent it and we'll fire up the workshop! 🪚✨`;
                   save({ scheduledFor: iso }, "scheduledFor")
                 }
               />
+              <button
+                type="button"
+                onClick={sendDeliveryToDriver}
+                className="inline-flex items-center gap-1 rounded-full border border-sky-300 bg-sky-50 px-2 py-0.5 text-[11px] font-medium text-sky-800 hover:bg-sky-100"
+                title="Send the delivery details in Arabic on WhatsApp"
+              >
+                <Truck className="h-3 w-3" />
+                توصيل · واتساب
+              </button>
               <a
                 href={`/api/shopify/orders/${order.id}/invoice`}
                 target="_blank"
